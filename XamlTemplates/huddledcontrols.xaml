@@ -1,0 +1,23 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:huddle="http://schemas.huddledmasses.org/wpf/controls"
+    xmlns:sysio="clr-namespace:System.IO;assembly=mscorlib"
+    xmlns:diag="clr-namespace:System.Diagnostics;assembly=System"
+    >
+   <!-- This Template is for Process, but it only handles processes with Windows!
+        And worse, it requires the Huddled.Controls library, and only works on Vista+ -->
+    <DataTemplate DataType="{x:Type diag:Process}">
+        <StackPanel MaxWidth="150" Orientation="Vertical" Margin="2">
+            <huddle:ThumbnailImage WindowSource='{Binding Path=MainWindowHandle}' />
+            <Label Content="{Binding Path=ProcessName}" 
+                   Background="{Binding Path=Background, ElementName=buffer, Mode=Default}"
+                   Foreground="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"
+                   />
+            <StackPanel.ToolTip>
+                <ToolTip Content="{Binding Path=Name}" />
+            </StackPanel.ToolTip>
+        </StackPanel>
+    </DataTemplate>
+  
+</ResourceDictionary>

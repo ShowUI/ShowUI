@@ -1,0 +1,5 @@
+# use regexp syntax, as opposed to glob
+syntax: regexp
+
+Types_Generated
+\.bak$

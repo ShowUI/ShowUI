@@ -1,0 +1,101 @@
+<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        WindowStyle='None' AllowsTransparency='True'
+        Topmost='True' Background="Transparent"  ShowInTaskbar='False'
+        SizeToContent='WidthAndHeight' WindowStartupLocation='CenterOwner' >
+   <Window.Resources>
+      <system:String x:Key="Time">12:34.56</system:String>
+      <system:Double x:Key="CpuP">0.80</system:Double>
+      <system:String x:Key="Cpu">80%</system:String>
+      <system:Double x:Key="RamP">0.20</system:Double>
+      <system:String x:Key="Ram">120Mb</system:String>
+      <Style TargetType="Label" x:Key="CpuBarGraph">
+          <Setter Property="Template">
+            <Setter.Value>
+               <ControlTemplate>
+                  <Grid Name="ControlGrid">
+                     <Border VerticalAlignment="Bottom" Name="Bar"
+                             Width="30" Height="2in" RenderTransformOrigin="0,1">
+                        <Border.Background>
+                          <LinearGradientBrush>
+                            <LinearGradientBrush.Transform>
+                              <ScaleTransform x:Name="Scaler" ScaleX="1" ScaleY="1"/>
+                            </LinearGradientBrush.Transform>
+                            <GradientStop Color="#FF01C33C" Offset="0"/>
+                            <GradientStop Color="#FFDE0000" Offset="{DynamicResource CpuP}" />
+                          </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.RenderTransform>
+                           <ScaleTransform x:Name="Scaler" ScaleX="1" ScaleY="{DynamicResource CpuP}"/>
+                        </Border.RenderTransform>
+                     </Border>
+                     <Label VerticalAlignment="Bottom" Grid.Column="0" Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content}" FontFamily="Arial" FontSize="20">
+                        <Label.LayoutTransform>
+                           <RotateTransform Angle="-90" />
+                        </Label.LayoutTransform>
+                     </Label>
+                  </Grid>
+               </ControlTemplate>
+            </Setter.Value>
+         </Setter>
+      </Style>
+      <Style TargetType="Label" x:Key="RamBarGraph">
+          <Setter Property="Template">
+            <Setter.Value>
+               <ControlTemplate>
+                  <Grid Name="ControlGrid">
+                     <Border VerticalAlignment="Bottom" Name="Bar"
+                             Width="30" Height="2in" RenderTransformOrigin="0,1">
+                        <Border.Background>
+                          <LinearGradientBrush>
+                            <LinearGradientBrush.Transform>
+                              <ScaleTransform x:Name="Scaler" ScaleX="1" ScaleY="1"/>
+                            </LinearGradientBrush.Transform>
+                            <GradientStop Color="#FF01C33C" Offset="0"/>
+                            <GradientStop Color="#FFDE0000" Offset="{DynamicResource RamP}" />
+                          </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.RenderTransform>
+                           <ScaleTransform x:Name="Scaler" ScaleX="1" ScaleY="{DynamicResource RamP}"/>
+                        </Border.RenderTransform>
+                     </Border>
+                     <Label VerticalAlignment="Bottom" Grid.Column="0" Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content}" FontFamily="Arial" FontSize="20">
+                        <Label.LayoutTransform>
+                           <RotateTransform Angle="-90" />
+                        </Label.LayoutTransform>
+                     </Label>
+                  </Grid>
+               </ControlTemplate>
+            </Setter.Value>
+         </Setter>
+      </Style>
+   </Window.Resources>
+
+
+   <Grid Height="2.2in">
+      <Grid.ColumnDefinitions>
+         <ColumnDefinition Width="35"/>
+         <ColumnDefinition Width="35"/>
+         <ColumnDefinition/>
+      </Grid.ColumnDefinitions>
+      <Label Grid.Column="0" Content="{DynamicResource Ram}" 
+             Style="{StaticResource RamBarGraph}" 
+             ToolTip="Free RAM" Name="RamBar"
+             >
+      </Label>
+      <Label Grid.Column="1" Content="{DynamicResource Cpu}" 
+             Style="{StaticResource CpuBarGraph}" 
+             ToolTip="CPU Load" Name="CpuBar" />
+      <Label Grid.Column="2" Content="{DynamicResource Time}" FontFamily="Impact, Arial" FontWeight="800" FontSize="2in" >
+         <Label.Foreground>
+            <LinearGradientBrush>
+               <GradientStop Color="#CC064A82" Offset="1"/>
+               <GradientStop Color="#FF6797BF" Offset="0.7"/>
+               <GradientStop Color="#FF6797BF" Offset="0.3"/>
+               <GradientStop Color="#FFD4DBE1" Offset="0"/>
+            </LinearGradientBrush>
+         </Label.Foreground>
+      </Label>
+   </Grid>
+</Window>
