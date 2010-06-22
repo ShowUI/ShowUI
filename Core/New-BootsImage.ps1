@@ -63,9 +63,9 @@ Param(
 )
 PROCESS {
    [ScriptBlock]$global:export = iex @"
-   { Param(`$window)
-      `$null = Export-BootsImage '$FileName' `$Window '$dpiX,$dpiY' '$pixelFormat'
-      `$Window.Close()
+   { Param(`$ss_win)
+      `$null = Export-BootsImage '$FileName' `$ss_win '$dpiX,$dpiY' '$pixelFormat'
+      `$ss_win.Close()
    }
 "@
    $global:bmod = Get-BootsModule

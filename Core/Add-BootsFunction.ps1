@@ -53,6 +53,7 @@ BEGIN {
       MkDir "$PowerBootsPath\Types_Generated"
    }
    $ErrorList = @()
+   $Boots = $PSCmdlet.MyInvocation.MyCommand.Module
 }
 END {
    [System.Windows.Markup.XamlWriter]::Save( $DependencyProperties ) | Set-Content $PowerBootsPath\DependencyPropertyCache.xml
@@ -106,40 +107,69 @@ PROCESS {
             }
          }
             
-      if(!( Test-Path $ScriptPath ) -OR $Force) {
+		if(!( Test-Path $ScriptPath ) -OR $Force) {
          $Pipelineable = @();
          ## Get (or generate) a set of parameters based on the the Type Name
-         $Parameters = "[CmdletBinding(DefaultParameterSetName='Default')]`nPARAM(`n" + [String]::Join("`n, `n", @(
-            ## Add all properties
-            foreach ($p in $T.GetProperties("Public,Instance,FlattenHierarchy") | 
-                              where {$_.CanWrite -Or $_.PropertyType.GetInterface([System.Collections.IList]) } | Sort Name -Unique)
-            {
+ 		$PropertyNames = New-Object System.Text.StringBuilder "@("
+
+      $Parameters = New-Object System.Text.StringBuilder "[CmdletBinding(DefaultParameterSetName='Default')]`nPARAM(`n"
+		 
+		 ## Add all properties
+		$Properties = $T.GetProperties("Public,Instance,FlattenHierarchy") | 
+			Where-Object { $_.CanWrite -Or $_.PropertyType.GetInterface([System.Collections.IList]) }
+			
+		$Properties = ($T.GetEvents("Public,Instance,FlattenHierarchy") + $Properties) | Sort-Object Name -Unique
+
+      foreach ($p in $Properties)
+      {
+         $null = $PropertyNames.AppendFormat(",'{0}'",$p.Name)
+			switch( $p.MemberType ) {
+				Event {
+					$null = $PropertyNames.AppendFormat(",'{0}__'",$p.Name)
+					$null = $Parameters.AppendFormat(@'
+	[Parameter()]
+	[PSObject]${{On_{0}}}
+,
+'@, $p.Name)
+            }
+            Property {
                if($p.Name -match "^$($BootsContentProperties -Join '$|^')`$") {
+                  $null = $Parameters.AppendFormat(@'
+	[Parameter(Position=1,ValueFromPipeline=$true)]
+	[Object[]]${{{0}}}
+,
+'@, $p.Name)
                   $Pipelineable += @(Add-Member -in $p.Name -Type NoteProperty -Name "IsCollection" -Value $($p.PropertyType.GetInterface([System.Collections.IList]) -ne $null) -Passthru)
-                  "`t[Parameter(ParameterSetName='Default',Position=1,ValueFromPipeline=`$true)]" +
-                  "`n`t[Object[]]`$$($p.Name)"
-               } elseif($p.PropertyType -eq [System.Boolean]) {
-                  "`t[Parameter(ParameterSetName='Default')]"+
-                  "`n`t[Switch]`$$($p.Name)"
-               } else {
-                  "`t[Parameter(ParameterSetName='Default')]"+
-                  "`n`t[Object[]]`$$($p.Name)"
+               } 
+               elseif($p.PropertyType -eq [System.Boolean]) 
+               {
+                  $null = $Parameters.AppendFormat(@'
+	[Parameter()]
+	[Switch]${{{0}}}
+,
+'@, $p.Name)
+               }
+               else 
+               {
+                  $null = $Parameters.AppendFormat(@'
+	[Parameter()]
+	[Object[]]${{{0}}}
+,
+'@, $p.Name)
                }
             }
-            
-            ## Add all events
-            foreach ($e in $T.GetEvents("Public,Instance,FlattenHierarchy"))
-            {
-               "`t[Parameter(ParameterSetName='Default')]" +
-               "`n`t[PSObject]`$On_$($e.Name)"
-            }
-         )) + "`n,`n`t[Parameter(ValueFromRemainingArguments=`$true)]`n`t[string[]]`$DependencyProps`n)"
+         }
+      }
+		$null = $Parameters.Append('	[Parameter(ValueFromRemainingArguments=$true)]
+	[string[]]$DependencyProps
+)')
+		$null = $PropertyNames.Append(')')
+			
+      $collectable = [bool]$(@(foreach($p in @($Pipelineable)){$p.IsCollection}) -contains $true)
+      $ofs = "`n";
 
-         $collectable = [bool]$(@(foreach($p in @($Pipelineable)){$p.IsCollection}) -contains $true)
-         $ofs = "`n";
-
-         #  Write-Host "Pipelineable Content Property for $TypeName: $($Pipelineable -ne $Null)" -Fore Cyan
-         #  foreach($p in $Pipelineable) {write-host "$p is $(if(!$p.IsCollection) { "not " })a collection"}
+      #  Write-Host "Pipelineable Content Property for $TypeName: $($Pipelineable -ne $Null)" -Fore Cyan
+      #  foreach($p in $Pipelineable) {write-host "$p is $(if(!$p.IsCollection) { "not " })a collection"}
 
 ### These three are "built in" to boots, so we don't need to write preloading for them
 # PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
@@ -173,16 +203,19 @@ function New-$TypeName {
 .Synopsis
    Create a new $($T.Name) object
 .Description
-   Generates a new $TypeName object, and allows setting all of it's properties
+   Generates a new $TypeName object, and allows setting all of it's properties.
+   (From the $($T.Assembly.GetName().Name) assembly v$($T.Assembly.GetName().Version))
 .Notes
- AUTHOR:    Joel Bennett http://HuddledMasses.org
- LASTEDIT:  $(Get-Date)
+ GENERATOR : $($Boots.Name) v$($Boots.Version) by Joel Bennett http://HuddledMasses.org
+ GENERATED : $(Get-Date)
+ ASSEMBLY  : $($T.Assembly.FullName)
+ FULLPATH  : $($T.Assembly.Location)
 #>
  
 $Parameters
 BEGIN {
    `$DObject = New-Object $TypeName
-   `$All = Get-Parameter New-$TypeName | ForEach-Object { `$_.Key } | Sort
+   `$All = $PropertyNames
 }
 PROCESS {
 "
@@ -195,8 +228,12 @@ if(!$collectable) {
    }
 "
 }
-
-'Set-PowerBootsProperties $PSBoundParameters ([ref]$DObject) $All'
+@'
+foreach($key in @($PSBoundParameters.Keys) | where { $PSBoundParameters[$_] -is [ScriptBlock] }) {
+   $PSBoundParameters[$key] = $PSBoundParameters[$key].GetNewClosure()
+}
+Set-PowerBootsProperties @($PSBoundParameters.GetEnumerator() | Where { [Array]::BinarySearch($All,($_.Key -replace "^On_(.*)",'$1__')) -gt 0 } ) ([ref]$DObject)
+'@
 
 if(!$collectable) {
 @'

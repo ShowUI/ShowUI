@@ -45,7 +45,7 @@ Param([int[]]$which=0)
    Set-Alias GraphLabel New-GraphLabel -Scope Global
    
    if(gcm Microsoft.PowerShell.Utility\Get-Random -EA 0) {
-      Set-Alias Get-Random Microsoft.PowerShell.Utility\Get-Random -ErrorAction SilentlyContinue
+      Set-Alias Get-Random Microsoft.PowerShell.Utility\Get-Random -ErrorAction SilentlyContinue -Option AllScope
    } else { 
       $global:randor = new-object random
       function global:Get-Random([int]$min,[int]$max=$([int]::MaxValue)){
@@ -138,20 +138,19 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
       $global:Count = 0
       WrapPanel {
          Button "Push Me" -On_Click {
-            Export-NamedControl
+            # Export-NamedElement
             $script:Count++
             $clickLabel.Content = "You clicked the button ${script:Count} times!"
          }
          Label "Nothing pushed so far" -Name clickLabel
       }
-      
-   } -Title "Test App" -On_Closing { $global:BootsOutput = $script:Count; rm variable:Count }
+   } -Title "Test App" -On_Closing { $global:BootsOutput = $script:Count; rm variable:Count } -Export
 }
 13 {
    Boots {
       WrapPanel -On_Load { $Count = 0 }  {
          Button "Push Me" -On_Click {
-            Export-NamedControl
+            Export-NamedElement
             Write-BootsOutput (++$count)
             $output.Inlines.Clear(); 
             $output.Inlines.Add("You clicked the button $count times!") 
@@ -331,7 +330,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 
    Write-Host "Initializing Performance Counters, please have patience" -fore Cyan
    ### Import PoshWpf module
-   Import-Module PowerBoots
+   Import-Module PowerBoots -Force
    ### Or, on v1:
    # Add-PSSnapin PoshWpf
 
@@ -347,7 +346,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    ## Load the XAML and show the window. It won't be updating itself yet...
    ## Note that this loads -Async so it returns control to the console
    ## We also use -Passthru to make it easier to Invoke-BootsWindow later
-   $global:clock = New-BootsWindow -Async -Passthru -FileTemplate "$PowerBootsPath\Samples\clock.xaml" 
+   $global:clock = New-BootsWindow -Async -Passthru -FileTemplate "$PowerBootsPath\Samples\Clock.xaml" 
 
    ## Create a script block which will update the UI by changing the Resources!
    $counter = 0;
@@ -385,7 +384,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
       $timer.Start()
    }
 
-   ## Note that this uses global variables, rather than Export-NamedControl
+   ## Note that this uses global variables, rather than Export-NamedElement
    Register-BootsEvent $clock -Event MouseLeftButtonDown -Action {
       $_.Handled = $true
       $clock.DragMove() # WPF Magic!
@@ -397,16 +396,57 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 }
 24 {
-   ## Demonstrate how to load XAML and use Export-NamedControl to work with controls defined in it
+   ## Demonstrate how to load XAML and use Export-NamedElement to work with controls defined in it
+   
+   ## VERY important: Define your event handlers as GLOBAL, but inside the PowerBoots scope:
    &(gmo PowerBoots) {
       function global:CalculateGas {
-         $global:invocation = $MyInvocation
-         write-host "Window $($window | ft | Out-string)"
-         Export-NamedControl $window -Verbose
+         Export-NamedElement
          $Total.Text = '${0:n2}' -f (($Miles.Text -as [Double]) / ($Mpg.Text -as [Double]) * ($Cost.Text -as [Double]))
       }
    }
 
-   New-BootsWindow -FileTemplate $PowerBootsPath\Samples\WorkingWithXaml.xaml
+   
+   ## Specify the event handlers using the PoshExtension in XAML: (.Net 4 only)
+   New-BootsWindow -Async -Source @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ps="http://schemas.huddledmasses.org/wpf/powershell"
+        Title="Trip Cost">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="28" />
+            <RowDefinition Height="28" />
+            <RowDefinition Height="28" />
+            <RowDefinition Height="28" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="110" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Label Content="Miles" VerticalAlignment="Top" />
+        <TextBox Grid.Column="1" Grid.Row="0" Height="23" Width="200" HorizontalAlignment="Stretch" Name="miles" Text="10" />
+        <Label Grid.Row="1" Content="Miles per Gallon" VerticalAlignment="Top" />
+        <TextBox Grid.Column="1" Grid.Row="1" Height="23" Width="200" HorizontalAlignment="Stretch" Name="mpg" Text="2" />
+        <Label Grid.Row="2" Content="Cost per Gallon"  VerticalAlignment="Top" />
+        <TextBox Grid.Column="1" Grid.Row="2" Height="23" Width="200" HorizontalAlignment="Stretch" Name="cost" Text="5" />
+        <!-- *******************************************
+             ** See the click handler on this Button? **
+             ******************************************* -->
+        <Button Name="calculate" Grid.Row="3" Content="_Calculate" HorizontalAlignment="Center" Click="{ps:Posh CalculateGas}" />
+        <TextBlock Grid.Column="1" Grid.Row="3" Height="23" Width="200" HorizontalAlignment="Stretch" Name="total" Text="--" />
+    </Grid>
+</Window>
+"@
+}
+25 {
+New-BootsWindow { ScrollViewer { TextBlock "Loading Fonts..." -FontSize 62 -FontFamily SegoeUI } } -Async -Passthru | 
+Invoke-BootsWindow -Script { 
+   $This.Content.Content = $( 
+      ForEach( $font in [System.Windows.Media.Fonts]::SystemFontFamilies ) { 
+         TextBlock -FontFamily $font.Source -Text "The Quick Brown Fox Jumps over the Lazy Dog" -FontSize 18; Write-Host $font
+      }
+   ) | StackPanel
+}
 }
 }

@@ -101,22 +101,30 @@ PARAM([ref]$TheObject, $Name, $Values)
 }
 
 
-function Set-PowerBootsProperties( $Parameters, [ref]$DObject, $All ) {
+function Set-PowerBootsProperties {
+[CmdletBinding()]
+param( $Parameters, [ref]$DObject )
+
    if($DebugPreference -ne "SilentlyContinue") { Write-Host; Write-Host ">>>> $($Dobject.Value.GetType().FullName)" -fore Black -back White }
-   foreach ($param in $Parameters.GetEnumerator() | ? { [Array]::BinarySearch($All,$_.Key) -ge 0 }) {
-      if($DebugPreference -ne "SilentlyContinue") { Write-Host}
+   foreach ($param in $Parameters) {
+      if($DebugPreference -ne "SilentlyContinue") { Write-Host "Processing Param: $($param|Out-String)" }
       ## INGORE DEPENDENCY PROPERTIES FOR NOW :)
       if($param.Key -eq "DependencyProps") {
       ## HANDLE EVENTS ....
       }
       elseif ($param.Key.StartsWith("On_")) {
          $EventName = $param.Key.SubString(3)
+         if($DebugPreference -ne "SilentlyContinue") { Write-Host "Event handler $($param.Key) Type: $(@($param.Value)[0].GetType().FullName)" }
          $sb = $param.Value -as [ScriptBlock]
          if(!$sb) {
             $sb = (Get-Command $param.Value -CommandType Function,ExternalScript).ScriptBlock
          }
-         ## Invoke-Expression " `$Dobject.Value.$EventName( {$($sb.GetNewClosure())} ) "
-         $Dobject.Value."Add_$EventName".Invoke( @($sb.GetNewClosure()) );
+         $Dobject.Value."Add_$EventName".Invoke( $sb );
+         # $Dobject.Value."Add_$EventName".Invoke( ($sb.GetNewClosure()) );
+         
+         # $Dobject.Value."Add_$EventName".Invoke( $PSCmdlet.MyInvocation.MyCommand.Module.NewBoundScriptBlock( $sb.GetNewClosure() ) );
+         
+         
       } ## HANDLE PROPERTIES ....
       else { 
          try {

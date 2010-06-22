@@ -20,6 +20,7 @@ GUID="cf6ddd1c-74de-4698-b9c6-2420bc5d2361"
 ModuleToProcess="BinaryAssemblies\PoshWpf.dll"
 ModuleVersion="2.0.0.0"
 PowerShellVersion="2.0"
+VariablesToExport="*"
 }
 # SIG # Begin signature block
 # MIIRDAYJKoZIhvcNAQcCoIIQ/TCCEPkCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
