@@ -449,4 +449,74 @@ Invoke-BootsWindow -Script {
    ) | StackPanel
 }
 }
+26 {
+
+   Add-BootsFunction -T System.Windows.Forms.FolderBrowserDialog | Out-Null
+
+  
+
+$Date, $Folder = New-BootsWindow -Title "Copy Logs Demo" -Source @"
+   <Window
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:ps="http://schemas.huddledmasses.org/wpf/powershell"
+       Title="Copy Logs Demo" Height="307" Width="358" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Background="{StaticResource {x:Static SystemColors.ControlBrushKey}}">
+       <Grid>
+           <TextBlock Height="35" HorizontalAlignment="Left" Margin="12,12,0,0" Name="Label" Text="Select a date of logs you wish to view and click the Choose Directory button to copy to selected directory." VerticalAlignment="Top" Width="340" TextWrapping="Wrap" TextAlignment="Left" />
+           <Button Content="Choose Directory" IsEnabled="False" Height="23" HorizontalAlignment="Left" Margin="125,230,0,0" Name="ChooseDirButton" TabIndex="2" VerticalAlignment="Top" Width="95" />
+           <Calendar Height="148" HorizontalAlignment="Left" Margin="84,53,0,0" Name="PickDate" VerticalAlignment="Top" Width="180" TabIndex="1" AllowDrop="False" FontFamily="Tahoma" />
+       </Grid>
+   </Window>
+"@ -On_Loaded  {
+   $ChooseDirButton, $PickDate  = Select-BootsElement $this ChooseDirButton, PickDate
+
+   Register-BootsEvent $PickDate "SelectedDatesChanged" -Action { 
+      $ChooseDirButton.IsEnabled = $true
+      Write-BootsOutput $PickDate.SelectedDate
+      # Calendar widget seems to capture mouse, prevent this from happening
+      $PickDate.ReleaseMouseCapture()
+   }.GetNewClosure()
+
+         
+   Register-BootsEvent $this "Click" -Action {
+   #	$dirName = $dirPicker1.selectedPath
+      $dateStr = $selectedDate.ToString('yyyy.MM.dd')
+      $FolderPicker = FolderBrowserDialog -RootFolder ([System.Environment+SpecialFolder]'MyComputer') -ShowNewFolderButton:$false -SelectedPath "C:\" -Description "Please select the folder where the log files are"
+
+      if ($FolderPicker.ShowDialog() -eq [Windows.Forms.DialogResult]::OK) {
+         Write-BootsOutput $FolderPicker.SelectedPath
+         $this.Close()
+      }
+   }.GetNewClosure()
+}
+
+# Once that returns ...
+Write-Host "Copying log files from $Folder that are newer than $Date"
+
+
+   $global:ProgressDialog =  New-BootsWindow -Async -Passthru -Name "ProgressDialog" -Title "Copying Progress" -Height 200 -Width 311 -WindowStartupLocation "CenterScreen" -ResizeMode "NoResize"  {
+      StackPanel {
+         TextBlock "Please wait, copying logs..." -Margin "12"
+         TextBlock "OK, we're not really copying. Our demo is done." -Name "CopyStatusText" -Margin "12" | Tee -var global:ProgressFileName
+         ProgressBar -Height 17 -IsIndeterminate -BorderBrush "#FF2CDC00" -Foreground "#FF00E100" -Margin "12"
+         Button "Cancel" -Width 110 -Name "CancelButton" | Tee -var global:CancelButton
+      }
+   }
+
+   Register-BootsEvent $CancelButton "Click" -Action {
+      Write-Host "Stop Copying Stuff, Hypothetically"
+      $global:ProgressDialog.Close()
+   }.GetNewClosure()
+   
+   foreach($file in ls $Folder | Where { $_.LastWriteTime -gt $Date } ) {
+      Write-Host "Copying $file"
+      Invoke-BootsWindow "Copying Progress" {param($fileName)  $Global:ProgressFileName.Text = "Copying $fileName"  } -Parameters $file
+      sleep 1
+   }
+   Write-Host "Removing $ProgressDialog"
+   Get-BootsWindow "Copying Progress" | Remove-BootsWindow 
+}
+
+
+## END OF SAMPLES
 }
