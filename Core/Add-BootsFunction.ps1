@@ -163,7 +163,7 @@ PROCESS {
 		$null = $Parameters.Append('	[Parameter(ValueFromRemainingArguments=$true)]
 	[string[]]$DependencyProps
 )')
-		$null = $PropertyNames.Append(')')
+		$null = $PropertyNames.Remove(2,1).Append(')')
 			
       $collectable = [bool]$(@(foreach($p in @($Pipelineable)){$p.IsCollection}) -contains $true)
       $ofs = "`n";
