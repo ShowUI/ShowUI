@@ -1,6 +1,7 @@
 function Set-BootsProperty {
 PARAM([ref]$TheObject, $Name, $Values)
    $DObject = $TheObject.Value
+   
    if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( $DObject )) -foreground DarkMagenta }
    if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( @($Values)[0] )) -foreground DarkMagenta }
 
@@ -105,6 +106,8 @@ function Set-PowerBootsProperties {
 [CmdletBinding()]
 param( $Parameters, [ref]$DObject )
 
+   if($DObject.Value -is [System.ComponentModel.ISupportInitialize]) { $DObject.Value.BeginInit() }
+
    if($DebugPreference -ne "SilentlyContinue") { Write-Host; Write-Host ">>>> $($Dobject.Value.GetType().FullName)" -fore Black -back White }
    foreach ($param in $Parameters) {
       if($DebugPreference -ne "SilentlyContinue") { Write-Host "Processing Param: $($param|Out-String)" }
@@ -171,6 +174,9 @@ param( $Parameters, [ref]$DObject )
       }
    }
    if($DebugPreference -ne "SilentlyContinue") { Write-Host "<<<< $($Dobject.Value.GetType().FullName)" -fore Black -back White; Write-Host }
+   
+   if($DObject.Value -is [System.ComponentModel.ISupportInitialize]) { $DObject.Value.EndInit() }
+
 }
 # SIG # Begin signature block
 # MIIRDAYJKoZIhvcNAQcCoIIQ/TCCEPkCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB

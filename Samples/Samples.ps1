@@ -50,7 +50,7 @@ Param([int[]]$which=0)
       $global:randor = new-object random
       function global:Get-Random([int]$min,[int]$max=$([int]::MaxValue)){
          if($min) {
-            $global:randor.Next($min,$max)
+            $global:randor.Next($min,$max)            
          } else {
             $global:randor.Next($max)
          }
@@ -64,6 +64,10 @@ This script just runs the various demo scripts I've written to test Boots.
 You need to pass it a number (between 1 and 29) for the samples you want to run!
 "@
 }
+
+## THE FIRST TWENTY SAMPLES ARE FROM THE PowerBoots Walkthrough Tutorial
+## THEY ARE INCLUDED HERE FOR COMPLETENESS AND TO MAKE RUNNING THEM EASIER
+
 1 {
    New-BootsWindow -SizeToContent WidthAndHeight -Content {
       Button -Content "Push Me" 
@@ -142,7 +146,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
             $script:Count++
             $clickLabel.Content = "You clicked the button ${script:Count} times!"
          }
-         Label "Nothing pushed so far" -Name clickLabel
+         Label "Nothing pushed so far" | tee -var global:clickLabel
       }
    } -Title "Test App" -On_Closing { $global:BootsOutput = $script:Count; rm variable:Count } -Export
 }
@@ -306,15 +310,16 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    } 
 }
 21 {
-   # This works with just the PoshWpf snapin
+   ## The first of a couple of Splash-Screen demos 
+   ## This version works with just the PoshWpf module/snapin (ie: it works in PoshConsole with no modules loaded)
    $global:Splash = New-BootsWindow -Async -Passthru -On_MouseDown { $this.DragMove() } -SourceTemplate '<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" WindowStyle="None" AllowsTransparency="True" Opacity="0.8" Topmost="True" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"><Image Source="http://dilbert.com/dyn/str_strip/000000000/00000000/0000000/000000/40000/1000/200/41215/41215.strip.print.gif" Height="177" /></Window>' 
-   # Imagine this is your script, working ...
-   &{ 1..25 | % { write-progress "Doing ..." "Lost of work" -percent ($_ * 4); Start-Sleep -milli 200 } }
+   ## Imagine this is your script, working ...
+   &{ 1..25 | % { Write-Progress "Doing ..." "Lost of work" -percent ($_ * 4); Start-Sleep -milli 200 } }
    # And now you're done, and want to close it
    Remove-BootsWindow -Window $Splash
 }
 22 {
-   ## This requires PowerBoots...
+   ## This version of the splash-screen requires PowerBoots...
    $global:Splash = Boots -Async -Passthru -Content { 
       Image -Height 177 -Source http://dilbert.com/dyn/str_strip/000000000/00000000/0000000/000000/40000/1000/200/41215/41215.strip.print.gif
    } -WindowStyle None -AllowsTransparency -Opacity 0.8 -Topmost -WindowStartupLocation CenterOwner -ShowInTaskbar:$False -On_MouseDown { $this.DragMove() }
@@ -397,11 +402,16 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 }
 24 {
    ## Demonstrate how to load XAML and use Export-NamedElement to work with controls defined in it
-   
-   ## VERY important: Define your event handlers as GLOBAL, but inside the PowerBoots scope:
-   &(gmo PowerBoots) {
-      function global:CalculateGas {
-         Export-NamedElement
+   ## Note: this method, using the {ps:Posh ...} markup extension for event handlers only works in .Net4
+   ##       which means, generally speaking, that you can't use it in PowerShell.exe (wihtout a global registry hack)
+   ##       But if you use the app.config to set PowerShell ISE to run in .Net4, or if you use PoshConsole, etc., 
+   ##	   then this is clearly the easiest way of writing GUIs in PowerShell
+   ## For ps:Posh to work, you must define your event handlers globally.
+   ##       for Export-NamedElement variables to work, you must be in the PowerBoots scope
+
+   &(gmo PowerBoots) {  ## This line starts a scriptblock that's defined inside the PowerBoots scope.
+      function global:CalculateGas { ## This makes the function global
+         Export-NamedElement # Exports XAML elements with name attributes into public variables
          $Total.Text = '${0:n2}' -f (($Miles.Text -as [Double]) / ($Mpg.Text -as [Double]) * ($Cost.Text -as [Double]))
       }
    }
@@ -440,26 +450,42 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 "@
 }
 25 {
+	## A few tricks here:
+	## Create a window with a scrollviewer as content, and then just put a textblock in there with a big "Loading" text ... 
+	## Using -Async -Passthru ... we output the window to the pipeline and make the window non-blocking
 New-BootsWindow { ScrollViewer { TextBlock "Loading Fonts..." -FontSize 62 -FontFamily SegoeUI } } -Async -Passthru | 
+	## We pipe the window to Invoke-BootWindow to execute a ScriptBlock on that window's thread (so we can access the UI)
 Invoke-BootsWindow -Script { 
-   $This.Content.Content = $( 
-      ForEach( $font in [System.Windows.Media.Fonts]::SystemFontFamilies ) { 
-         TextBlock -FontFamily $font.Source -Text "The Quick Brown Fox Jumps over the Lazy Dog" -FontSize 18; Write-Host $font
+	## "This" is the window, and it's Content is the scrollviewer.  We're replacing the Loading text with a StackPanel
+   $This.Content.Content = StackPanel {
+		## Here we enumerate fonts in a foreach statement (the fastest way) and ...
+      ForEach( $font in [System.Windows.Media.Fonts]::SystemFontFamilies ) {
+         ## Output a TextBlock for each one, using the Font's "Source" property as the FontFamily name, and some default text, etc
+         TextBlock -FontFamily $font.Source -Text "The Quick Brown Fox Jumps over the Lazy Dog" -FontSize 18 -Tooltip $font.Source
+         ## We can write this to the console as we go, but it makes us slower...
+         if($VerbosePreference -gt "SilentlyContinue") { Write-Host $font.Source }
       }
-   ) | StackPanel
+   }
 }
 }
 26 {
-
+   ## Remember: you can use Add-BootsFunction with any WPF control (and most Windows.Forms)
+   ## and indeed, with any .Net class which has a default parameterless constructor
+   ## what this does is generate a PowerBoots-compatible script in the Types_Generated folder 
+   ## So that you could just dot-source that script in the future to define the function
+   ## In other words: you only need to run this command once per-type.
+   ## The functions are generated statically as files and from then on 
+   ## are always loaded when you import the PowerBoots module.
    Add-BootsFunction -T System.Windows.Forms.FolderBrowserDialog | Out-Null
 
-  
-
-$Date, $Folder = New-BootsWindow -Title "Copy Logs Demo" -Source @"
+   ## A few tricks here:
+   ## Create the window from XAML exported from VisualStudio without using -Passthru
+   ## Anything that is written out (using Write-BootsOutput) from the window will be output to the pipeline
+   ## when the window closes, in the order it's written out. 
+   $Date, $Folder = New-BootsWindow -Title "Copy Logs Demo" -Source @"
    <Window
        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-       xmlns:ps="http://schemas.huddledmasses.org/wpf/powershell"
        Title="Copy Logs Demo" Height="307" Width="358" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Background="{StaticResource {x:Static SystemColors.ControlBrushKey}}">
        <Grid>
            <TextBlock Height="35" HorizontalAlignment="Left" Margin="12,12,0,0" Name="Label" Text="Select a date of logs you wish to view and click the Choose Directory button to copy to selected directory." VerticalAlignment="Top" Width="340" TextWrapping="Wrap" TextAlignment="Left" />
@@ -468,32 +494,46 @@ $Date, $Folder = New-BootsWindow -Title "Copy Logs Demo" -Source @"
        </Grid>
    </Window>
 "@ -On_Loaded  {
+## Handling the Loaded event allows us to define additional event handlers from inside the boots scope:
+   ## If you're concerned about speed...
+   ## Instead of Export-NamedElement, you can use Select-BootsElement to pick specific controls (by name) that you want
+   ## They are output from Select-BootsElement in the order which they're encountered in parent element (window)
    $ChooseDirButton, $PickDate  = Select-BootsElement $this ChooseDirButton, PickDate
-
-   Register-BootsEvent $PickDate "SelectedDatesChanged" -Action { 
-      $ChooseDirButton.IsEnabled = $true
-      Write-BootsOutput $PickDate.SelectedDate
+   
+   Register-BootsEvent $PickDate "SelectedDatesChanged" -Action {
+      # Enable the next step only AFTER you pick a date in the PAST
+      $ChooseDirButton.IsEnabled = ($PickDate.SelectedDate -lt (Get-Date))
       # Calendar widget seems to capture mouse, prevent this from happening
       $PickDate.ReleaseMouseCapture()
-   }.GetNewClosure()
+   }.GetNewClosure()  
+   ## Using GetNewClosure on the scriptblock ensures that the (local) definition of 
+   ## ChooseDirButton and PickDate are available to the scritpblock.
 
-         
+  
+   ## Notice the bubble-up nature of events in WPF:
+   ## We can handle events on the Window which really occur on child controls.
+   ## The event from the child will bubble up to us.
    Register-BootsEvent $this "Click" -Action {
    #	$dirName = $dirPicker1.selectedPath
       $dateStr = $selectedDate.ToString('yyyy.MM.dd')
       $FolderPicker = FolderBrowserDialog -RootFolder ([System.Environment+SpecialFolder]'MyComputer') -ShowNewFolderButton:$false -SelectedPath "C:\" -Description "Please select the folder where the log files are"
 
       if ($FolderPicker.ShowDialog() -eq [Windows.Forms.DialogResult]::OK) {
-         Write-BootsOutput $FolderPicker.SelectedPath
+         ## Now that they've chosen the folder, output both the date and the folder
+         Write-BootsOutput $PickDate.SelectedDate, $FolderPicker.SelectedPath
          $this.Close()
       }
    }.GetNewClosure()
 }
 
-# Once that returns ...
+# When that New-BootsWindow command returns, we know the window's been closed
+# But if $Folder and $Date aren't output, then it was closed by alt+F4 or the X button, not by selecting a folder.
+if(!$Folder -and !$Date) { exit }
 Write-Host "Copying log files from $Folder that are newer than $Date"
 
-
+## We could load this from XAML too, but this is a demo, so we're doing this one the other way.
+## There's really no reason to do this instead of using Write-Progress, 
+## But some people might want to run PowerShell -Window Hidden... and still show progress.
    $global:ProgressDialog =  New-BootsWindow -Async -Passthru -Name "ProgressDialog" -Title "Copying Progress" -Height 200 -Width 311 -WindowStartupLocation "CenterScreen" -ResizeMode "NoResize"  {
       StackPanel {
          TextBlock "Please wait, copying logs..." -Margin "12"
@@ -503,18 +543,28 @@ Write-Host "Copying log files from $Folder that are newer than $Date"
       }
    }
 
+ ## If you hit the cancel button, we should stop doing that work...
    Register-BootsEvent $CancelButton "Click" -Action {
       Write-Host "Stop Copying Stuff, Hypothetically"
       $global:ProgressDialog.Close()
    }.GetNewClosure()
    
    foreach($file in ls $Folder | Where { $_.LastWriteTime -gt $Date } ) {
+      ## to keep this relatively atomic, we will stop working if you hit cancel, but only once per loop
+      if(!$ProgressDialog.IsVisible) {
+         Write-Host "`nCancelling ...`n" -Fore Yellow -Back Black
+         break # out of the foreach
+      }
+         
       Write-Host "Copying $file"
+      ## User Invoke-BootsWindow to write the status back to the progress dialog 
       Invoke-BootsWindow "Copying Progress" {param($fileName)  $Global:ProgressFileName.Text = "Copying $fileName"  } -Parameters $file
       sleep 1
    }
-   Write-Host "Removing $ProgressDialog"
-   Get-BootsWindow "Copying Progress" | Remove-BootsWindow 
+   if($ProgressDialog.IsVisible) {
+      Write-Host "Removing $ProgressDialog"
+      Get-BootsWindow "Copying Progress" | Remove-BootsWindow 
+   }
 }
 
 

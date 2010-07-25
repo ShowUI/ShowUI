@@ -41,7 +41,6 @@ function New-BootsToast {
          Label $Message
       } -On_PreviewMouseLeftButtonDown ClosePopup -Name Toast -On_Loaded {
          Write-Host "Ok, loading toast"
-         Export-NamedControl
          $Rect = Get-VirtualScreenSize
          # Write-Host "Turning $this into $($this.Parent) and Toasting it"
          $window = $this.Parent
@@ -51,6 +50,7 @@ function New-BootsToast {
          
          $size = DoubleAnimation -From 0 -To $window.ActualHeight -Duration 0:0:0.5 -"StoryBoard.TargetProperty" "(FrameworkElement.Height)" # -"StoryBoard.TargetName" "Toast" 
          $pos = DoubleAnimation -From $window.Top -To $($window.Top - $window.ActualHeight) -Duration 0:0:0.5 -"StoryBoard.TargetProperty" "(Window.Top)"
+         Write-Host "Animate"
          $sb = StoryBoard $pos,$size
          [System.Windows.Media.Animation.StoryBoard]::SetTarget( $size, $toast )
          #[System.Windows.Media.Animation.StoryBoard]::SetTargetProperty( $size, "(FrameworkElement.Height)" )
@@ -58,8 +58,9 @@ function New-BootsToast {
          [System.Windows.Media.Animation.StoryBoard]::SetTarget( $pos, $window )
          #[System.Windows.Media.Animation.StoryBoard]::SetTargetProperty( $pos, "(Window.Top)" )
          $sb.Begin()
+         Write-Host "Done Loaded"
       }
-   } -Async -Passthru -WindowStyle None -AllowsTransparency
+   } -Async -Passthru -WindowStyle None -AllowsTransparency -Export
 
    $Global:ToastedBoots += $Toast
    #[Threading.Thread]::Sleep(600)

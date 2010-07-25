@@ -1,4 +1,4 @@
-$Script:BootsContentProperties = 'Content','Child','Children','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
+$Script:BootsContentProperties = 'Content','Child','Children','Frames','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
 function Get-BootsContentProperty {
    $Script:BootsContentProperties
 }
