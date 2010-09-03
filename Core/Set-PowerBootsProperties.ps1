@@ -4,6 +4,12 @@ PARAM([ref]$TheObject, $Name, $Values)
    
    if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( $DObject )) -foreground DarkMagenta }
    if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( @($Values)[0] )) -foreground DarkMagenta }
+   if(!$DependencyProperties.Keys.Count) { #BUGBUG => We shouldn't need to do this:
+      Write-Host "Oh noes! The dependency properties, they are missing!" -fore red
+      if(Test-Path $PowerBootsPath\DependencyPropertyCache.xml) {
+         $DependencyProperties = [System.Windows.Markup.XamlReader]::Parse( (gc $PowerBootsPath\DependencyPropertyCache.xml) )
+      }
+   }
 
    $PropertyType = $DObject.GetType().GetProperty($Name).PropertyType
    if($PropertyType -eq [System.Windows.FrameworkElementFactory] -and $DObject -is [System.Windows.FrameworkTemplate]) {
@@ -20,19 +26,41 @@ PARAM([ref]$TheObject, $Name, $Values)
       $TheObject.Value = [System.Windows.Markup.XamlReader]::Parse( $Template.get_OuterXml() )
    }
    elseif(@($Values)[0] -is [System.Windows.Data.Binding] -and !$PropertyType.IsAssignableFrom([System.Windows.Data.BindingBase])) {
-      if($DebugPreference -ne "SilentlyContinue") { Write-Host "$($DObject.GetType())::$Name is $PropertyType and the value is a Binding: $Values" -fore Cyan}
+      $Binding = @($Values)[0];
+      if($DebugPreference -ne "SilentlyContinue") { Write-Host "$($DObject.GetType())::$Name is $PropertyType and the value is a Binding: $Binding" -fore Cyan}
 
+      if(!$Binding.Source -and !$Binding.ElementName) {
+         $Binding.Source = $DObject.DataContext
+      }
       if($DependencyProperties.ContainsKey($Name)) {
          $field = @($DependencyProperties.$Name.Keys | Where { $DObject -is $_ -and $PropertyType -eq ([type]$DependencyProperties.$Name.$_.PropertyType)})[0] #  -or -like "*$Class" -and ($Param1.Value -as ([type]$_.PropertyType)
          if($field) { 
-            if($DebugPreference -ne "SilentlyContinue") { Write-Host "$($field)" -fore Blue}
-            if($DebugPreference -ne "SilentlyContinue") { Write-Host "Binding: ($field)::`"$($DependencyProperties.$Name.$field.Name)`" to $(@($Values)[0])" -fore Blue}
+            if($DebugPreference -ne "SilentlyContinue") { Write-Host "$($field)" -fore Blue }
+            if($DebugPreference -ne "SilentlyContinue") { Write-Host "Binding: ($field)::`"$($DependencyProperties.$Name.$field.Name)`" to $Binding" -fore Blue}
             
-            # [System.Windows.Data.BindingOperations]::SetBinding( $DObject, ([type]$field.DeclaringType)::"$($field.Name)", @($Values)[0] ) | out-null
-            
-            $DObject.SetBinding( ([type]$field)::"$($DependencyProperties.$Name.$field.Name)", @($Values)[0] ) | Out-Null
+            $DObject.SetBinding( ([type]$field)::"$($DependencyProperties.$Name.$field.Name)", $Binding ) | Out-Null
          } else {
             throw "Couldn't figure out $( @($DependencyProperties.$Name.Keys) -join ', ' )"
+         }
+      } else {
+         if($DebugPreference -ne "SilentlyContinue") { 
+            Write-Host "But $($DObject.GetType())::${Name}Property is not a Dependency Property, so it probably can't be bound?" -fore Cyan
+         }
+         try {
+            
+            $DObject.SetBinding( ($DObject.GetType()::"${Name}Property"), $Binding ) | Out-Null
+            
+            # $DObject.Add_Loaded( {
+            #    $this.SetBinding( ($this.GetType())::ItemsSourceProperty,  (Binding -Source $this.DataContext) )
+            # } )
+               
+            if($DebugPreference -ne "SilentlyContinue") { 
+               Write-Host ([System.Windows.Markup.XamlWriter]::Save( $Dobject )) -foreground yellow
+            }
+         } catch {
+            Write-Host "Nope, was not able to set it." -fore Red
+            Write-Host $_ -fore Red
+            Write-Host $this -fore DarkRed
          }
       }
    }
@@ -145,6 +173,7 @@ param( $Parameters, [ref]$DObject )
                $Values = $param.Value
             }
 
+            if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( $Dobject.Value )) -foreground green }
             if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( @($Values)[0] )) -foreground green }
             
             Set-BootsProperty $Dobject $Param.Key $Values

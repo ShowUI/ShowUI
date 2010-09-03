@@ -2,6 +2,19 @@ Param([int[]]$which=0)
 
    $null = [Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")  # To get the Double-Click time
 
+   if(gcm Microsoft.PowerShell.Utility\Get-Random -EA 0) {
+      Set-Alias Get-Random Microsoft.PowerShell.Utility\Get-Random -ErrorAction SilentlyContinue -Option AllScope
+   } else { 
+      $global:randor = new-object random
+      function global:Get-Random([int]$min,[int]$max=$([int]::MaxValue)){
+         if($min) {
+            $global:randor.Next($min,$max)            
+         } else {
+            $global:randor.Next($max)
+         }
+      }
+   }
+   
    function global:New-GraphLabel {
       PARAM ( 
          [String]$Label = "Name", 
@@ -44,18 +57,7 @@ Param([int[]]$which=0)
    }
    Set-Alias GraphLabel New-GraphLabel -Scope Global
    
-   if(gcm Microsoft.PowerShell.Utility\Get-Random -EA 0) {
-      Set-Alias Get-Random Microsoft.PowerShell.Utility\Get-Random -ErrorAction SilentlyContinue -Option AllScope
-   } else { 
-      $global:randor = new-object random
-      function global:Get-Random([int]$min,[int]$max=$([int]::MaxValue)){
-         if($min) {
-            $global:randor.Next($min,$max)            
-         } else {
-            $global:randor.Next($max)
-         }
-      }
-   }
+
    
 switch($which) {
 0 { 
