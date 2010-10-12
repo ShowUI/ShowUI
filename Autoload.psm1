@@ -154,8 +154,8 @@ Param([Parameter(Mandatory=$true)][String]$CommandName)
       if(!$Script:AutoloadHash[$CommandName]) { throw "Unable to determine command!" }
       
       Write-Verbose "Autoloaded DynamicParam: $CommandName from $($Script:AutoloadHash[$CommandName])"
-      
       $ScriptName, $ModuleName, $FunctionName = $Script:AutoloadHash[$CommandName]
+      Write-Verbose "Autoloading:`nScriptName: $ScriptName `nModuleName: $ModuleName `nFunctionName: $FunctionName"
       
       if(!$ScriptName){ $ScriptName = $CommandName }
       if(!$FunctionName){ $FunctionName = $CommandName }
@@ -195,6 +195,7 @@ Param([Parameter(Mandatory=$true)][String]$CommandName)
          $command = Get-Command $FunctionName -Type Function
          Write-Verbose "Loaded Module Function: $($command | ft CommandType, Name, ModuleName, Visibility|Out-String)"
       } else {
+         Write-Verbose "Importing Function without module."
          Invoke-Expression $script | out-null
          $command = Get-Command $FunctionName -Type Function
          Write-Verbose "Loaded Local Function: $($command | ft CommandType, Name, ModuleName, Visibility|Out-String)"
@@ -275,8 +276,8 @@ $Script:AutoloadHash = @{}
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBE5X5KTUXFovm+rGqSeA8weI
-# +sGgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU9B2s0vhYKJ70fnHdoil3kdkj
+# LW+gggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
 # AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
 # IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
 # VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
@@ -309,12 +310,12 @@ $Script:AutoloadHash = @{}
 # aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
 # LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
 # NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
-# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQU3ys+ltyZ
-# i2x1RFVH9C3z8F7WCeMwDQYJKoZIhvcNAQEBBQAEggEAJ+MhVwvxnnI/eL09khjE
-# GHNKMBQgLIH+KRaOsvWqK2zBqEVDDc14sevC9qhoUlBAFXB/vGX0Uvj1V+kVQV7V
-# 5+2VNXYuI1W8G27Uj8dSfRZJsnUgdCcOI4BBrNjRYq9u8UwVvZolY8EF6Zm7CxDJ
-# JPTFLYh/EwZew6K2N1ixWHUW2+MzR2Io9+frxalkc+kUEWf4h+VxM/8dU3h2FB4/
-# n+c2R7S3kMh6B5D6vwaeXiuHrVjQG6cHsmoPey8ImvP/t+0/+Q/A+4uK78ipNJL/
-# kXXPGmXp07PW/cqBXPByCR6EqLy3WFLUht7ocwh5UwyJ+70Sr4j2HDMCvm4srHVj
-# Hg==
+# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUIYnjjFl1
+# c3w8Uib+AAI2yjq/HFkwDQYJKoZIhvcNAQEBBQAEggEAhcfyckVMpb64nq2hmmjS
+# 2MNHp4k6oQc0FgGodM8k8x0XcUO2q4icTqcwHZAlmgtXW2TYAvgeUM5Tn63DeAux
+# bxpKk26RHtmf56Meq/DVu5S4UUIRZTdlyXtxm/Ljwh+tnMMeWEiaXTAYpAjrFJu2
+# YCZ/0vigY3JvRKh2LIVNKoObDaVJWTIu9Rpm8mQR/VffTLML9Se9S2lo9FQ8fLz7
+# iMnQze2amWpoGCCg2JJfD/FD4HAxpryrl9vXlB4BHPWE80mlZXfUYFHZ7UklmTJP
+# G6qqJ9OFLjxcB7DxaoLp3jDeTKCdYvoVYXaMlXI4PruoCIzzpibyXJrORnsBaLyz
+# dw==
 # SIG # End signature block

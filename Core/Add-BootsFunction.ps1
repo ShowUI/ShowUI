@@ -260,7 +260,7 @@ END {
 
       # Note: global for now, because it's probably too late to export them
       Set-Alias -Name $T.Name "New-$TypeName" -ErrorAction SilentlyContinue -ErrorVariable +ErrorList -Scope Global -Passthru:(!$Quiet)
-      AutoLoad $ScriptPath -Alias "New-$TypeName" -Function "New-$TypeName" -Module PowerBoots
+      AutoLoad $ScriptPath -Alias "New-$TypeName" -Function "New-$TypeName" -Module "PowerBoots"
    }                                                         
 }#PROCESS
 }#Add-BootsFunction

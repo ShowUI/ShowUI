@@ -23,7 +23,8 @@ $null = [Reflection.Assembly]::Load( "PresentationFramework, Version=3.0.0.0, Cu
 # . "$PowerBootsPath\Core\Export-NamedControl.ps1"
 
 ## Autoload these for public consumption if needed
-AutoLoad "$PowerBootsPath\Core\New-BootsImage.ps1" New-BootsImage PowerBoots
+AutoLoad "$PowerBootsPath\Core\New-BootsImage.ps1" -Alias New-BootsImage -Module PowerBoots
+
 ## TODO: This would be a great function to add, if we could make it ADD instead of SET.
 # AutoLoad "$PowerBootsPath\New Functions\Add-ChildControl.ps1" Add-ChildControl PowerBoots
 
@@ -51,7 +52,7 @@ if(Test-Path "$PowerBootsPath\Deprecated\Out-BootsWindow.ps1") {
          Write-Error "Out-BootsWindow disabled in MTA mode. Use New-BootsWindow instead. (You must run PowerShell with -STA switch to enable Out-BootsWindow)"
       }
    } else { # Requires -STA
-      AutoLoad "$PowerBootsPath\Deprecated\Out-BootsWindow.ps1" Out-BootsWindow PowerBoots
+      AutoLoad "$PowerBootsPath\Deprecated\Out-BootsWindow.ps1" -Alias Out-BootsWindow -Module PowerBoots
    }
 }
 
@@ -74,7 +75,7 @@ foreach($script in Get-ChildItem "$PowerBootsPath\Types_Generated\New-*.ps1", "$
    $TypeName = $script.Name -replace 'New-(.*).ps1','$1'
    
    Set-Alias -Name "$($TypeName.Split('.')[-1])" "New-$TypeName"        -EA "SilentlyContinue" -EV +ErrorList
-   AutoLoad $Script.FullName "New-$TypeName" PowerBoots
+   AutoLoad -Name $Script.FullName -Alias "New-$TypeName" -Module PowerBoots
    # Write-Host -fore yellow $(Get-Command "New-$TypeName" | Out-String)
 }
 
@@ -111,8 +112,8 @@ Export-ModuleMember -Function $BootsFunctions -Cmdlet (Get-Command -Module PoshW
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUa9BeHfOFIryasNDzk6qyeBcb
-# e2ygggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtjN9c7u1E4f7nNd2zn9BMFrK
+# 0ROgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
 # AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
 # IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
 # VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
@@ -145,12 +146,12 @@ Export-ModuleMember -Function $BootsFunctions -Cmdlet (Get-Command -Module PoshW
 # aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
 # LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
 # NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
-# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUN2sxd7zs
-# xnVWgTEPONxkL4whRv8wDQYJKoZIhvcNAQEBBQAEggEAXD0X1K7fY9VGJt+MmiKI
-# qQJuTtr5OiYX4f9JEDtLc4mb142b0DIp/zSrA5apoCmdlcNrEGTskWrnH71ropQS
-# Kyc6bFoXSYFZH86odGDmNWu+ffH7m7b6DyOIkK8VCzGIAfMDJaSEnOjtmLFV9ysI
-# Ztg84xW9xFm11+ECrBUABb8JVqXgZ7khNiBwbkTYrUvtPllcR/CwD0Ck6vCEwopG
-# CS/19H7J2ktEUW2rCNwSYM1p7SoGjj7j4Sa7xx9qTNLZHY8fzs03c0ViXRxhNo0S
-# W5WMjQ2IJ17YRlKbZuJnnXHAjiTu9PJcYalr9nZ8pvLOQbsBUJ6UE5zyqP/5TmMu
-# qw==
+# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUke09DALG
+# 5Aeni24vpetEzA2rmg8wDQYJKoZIhvcNAQEBBQAEggEAmTHaKybj91Nqp9IfBS60
+# xj7p/zCn3VlOaROnX0+nFNZZyqC2JOibZ1zV9NOY9RwQa3Ll/xKO3SyKLnufLbb2
+# X8vHBhmGJ6pet3d3tjAzStSzZEbk0LV4HJzsuak59W7BfV7eCwnjc5koVXI1IoqO
+# 2T3JsYtci3y0jSh4CTY709udghi9kP+k9y/95ITNeSyJ4aIn5kHtiSg/MSvcoZl3
+# afxi6rnOZqSZSDKXTIdFkr8vNtzw0NbWh2Rnth/G4GWlqg9aSB9C4zjogcHABaei
+# KRN35man4qn9aQ1z3dJhPr0Fx3+08cxwJTtd2VyrB05syjRixNOiFeiXscOSlTEB
+# Hw==
 # SIG # End signature block
