@@ -39,7 +39,7 @@ DYNAMICPARAM {
       } 
       elseif($Property -is [string] -and $Property.Contains(".")) 
       {
-         $Class,$Property = $Property.Split(".")
+         $Class,$Property = $Property -split "\.(?!.*\.)"
          if($DebugPreference -ne "SilentlyContinue") { 
             Write-Host "Property passed in as dotted string: $($DependencyProperties.($Property).Keys)" -foreground Cyan
          }
