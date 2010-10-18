@@ -12,6 +12,14 @@ PARAM(
    [Switch]$Passthru
 )
 DYNAMICPARAM {
+   trap { 
+      Write-Host "ERROR Evaluating DynamicParam for Dependency Property" -Fore Red
+      Write-Host "Trying to set $Property to $($Param1.Value)" -Fore Red
+      continue
+   }   
+   if($DebugPreference -ne "SilentlyContinue") { 
+      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property " -foreground Yellow 
+   }
    $paramDictionary = new-object System.Management.Automation.RuntimeDefinedParameterDictionary
    $Param1 = new-object System.Management.Automation.RuntimeDefinedParameter
    $Param1.Name = "Value"
@@ -24,24 +32,33 @@ DYNAMICPARAM {
       if($Property.GetType() -eq ([System.Windows.DependencyProperty]) -or
          $Property.GetType().IsSubclassOf(([System.Windows.DependencyProperty]))) 
       {
+         if($DebugPreference -ne "SilentlyContinue") { 
+            Write-Host "Property passed in as type. $Property -is $($Property.GetType())" -foreground Cyan
+         }
          $Param1.ParameterType = $Property.PropertyType
       } 
-      elseif($Property -is [string] -and $Property.Contains(".")) {
+      elseif($Property -is [string] -and $Property.Contains(".")) 
+      {
          $Class,$Property = $Property.Split(".")
+         if($DebugPreference -ne "SilentlyContinue") { 
+            Write-Host "Property passed in as dotted string: $($DependencyProperties.($Property).Keys)" -foreground Cyan
+         }
          if($DependencyProperties.ContainsKey($Property)){
-            $type = $DependencyProperties.$Property.Keys -like "*$Class"
+            $type = $DependencyProperties.($Property).Keys -like "*$Class"
             if($type) { 
-               $Param1.ParameterType = [type]@($DependencyProperties.$Property.$type)[0].PropertyType
+               $Param1.ParameterType = [type]@($DependencyProperties.($Property).("$type"))[0].PropertyType
             }
          }
-
-      } elseif($DependencyProperties.ContainsKey($Property)){
-         if($Element) {
-            if($DependencyProperties.$Property.ContainsKey( $element.GetType().FullName )) { 
-               $Param1.ParameterType = [type]$DependencyProperties.$Property.($element.GetType().FullName).PropertyType
-            }
+      } 
+      elseif($DependencyProperties.ContainsKey($Property))
+      {
+         if($DebugPreference -ne "SilentlyContinue") { 
+            Write-Host "Property for $($element.GetType().FullName) passed in as string: $($DependencyProperties.($Property).Keys)" -foreground Cyan
+         }
+         if($Element -and $DependencyProperties.($Property).ContainsKey( $element.GetType().FullName )) { 
+            $Param1.ParameterType = [type]$DependencyProperties.($Property).($element.GetType().FullName).PropertyType
          } else {
-            $Param1.ParameterType = [type]$DependencyProperties.$Property.Values[0].PropertyType
+            $Param1.ParameterType = [type]@($DependencyProperties.($Property).Values)[0].PropertyType
          }
       }
       else 
@@ -53,15 +70,36 @@ DYNAMICPARAM {
    {
       $Param1.ParameterType = [PSObject]
    }
+
    $paramDictionary.Add("Value", $Param1)
+   if($DebugPreference -ne "SilentlyContinue") { 
+      Write-Host "Parameter Dictionary from Dynamic Parameter:" -Foreground Cyan
+      foreach($ky in $paramDictionary.Keys) {
+         Write-Host "$ky = $($paramDictionary[$ky] | Format-Table | Out-String)" -Foreground Cyan
+      }
+      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property " -Foreground Yellow 
+   }
    return $paramDictionary
 }
+#  BEGIN {
+   #  if($DebugPreference -ne "SilentlyContinue") { 
+      #  Write-Host "Dependency Property: $($Element.GetType().FullName).$Property = $Value" -foreground Yellow 
+   #  }
+#  }
+
 PROCESS {   
+   if($DebugPreference -ne "SilentlyContinue") { 
+      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property " -foreground Cyan 
+   }
    trap { 
       Write-Host "ERROR Setting Dependency Property" -Fore Red
       Write-Host "Trying to set $Property to $($Param1.Value)" -Fore Red
       continue
    }
+   if($DebugPreference -ne "SilentlyContinue") { 
+      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property = $Value" -foreground Yellow 
+   }
+   
    if($Property.GetType() -eq ([System.Windows.DependencyProperty]) -or
       $Property.GetType().IsSubclassOf(([System.Windows.DependencyProperty]))
    ){
@@ -77,19 +115,19 @@ PROCESS {
       }
          
       if($DependencyProperties.ContainsKey("$Property")){
-         $fields = @($DependencyProperties.$Property.Keys -like "*$Class" | ? { $Param1.Value -as ([type]$DependencyProperties.$Property.$_.PropertyType)})
+         $fields = @($DependencyProperties.($Property).Keys -like "*$Class" | ? { $Param1.Value -as ([type]$DependencyProperties.$Property.$_.PropertyType)})
          if($fields.Count -eq 0 ) { 
-            $fields = @($DependencyProperties.$Property.Keys -like "*$Class")
+            $fields = @($DependencyProperties.($Property).Keys -like "*$Class")
          }
          if($fields.Count) {
             $success = $false
             foreach($field in $fields) {
                trap { 
                   Write-Host "ERROR Setting Dependency Property" -Fore Red
-                  Write-Host "Trying to set $($field)::$($DependencyProperties.$Property.$field.Name) to $($Param1.Value) -as $($DependencyProperties.$Property.$field.PropertyType)" -Fore Red
+                  Write-Host "Trying to set $($field)::$($DependencyProperties.($Property).($field).Name) to $($Param1.Value) -as $($DependencyProperties.($Property).($field).PropertyType)" -Fore Red
                   continue
                }
-               $Element.SetValue( ([type]$field)::"$($DependencyProperties.$Property.$field.Name)", ($Param1.Value -as ([type]$DependencyProperties.$Property.$field.PropertyType)))
+               $Element.SetValue( ([type]$field)::"$($DependencyProperties.($Property).($field).Name)", ($Param1.Value -as ([type]$DependencyProperties.($Property).($field).PropertyType)))
                if($?) { $success = $true; break }
             }
             if(!$success) { throw "food" }

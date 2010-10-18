@@ -188,8 +188,10 @@ param( $Parameters, [ref]$DObject )
          }
          catch [Exception]
          {
-            Write-Host "COUGHT AN EXCEPTION" -fore Red
+            Write-Host 'COUGHT AN EXCEPTION (See: $Exception and $CallStack)' -fore Red
             Write-Host $_ -fore Red
+            $Global:Exception = $_.Exception
+            $Global:CallStack = Get-PSCallStack
             Write-Host $this -fore DarkRed
          }
       }
@@ -197,7 +199,11 @@ param( $Parameters, [ref]$DObject )
       while($DependencyProps) {
          $name, $value, $DependencyProps = $DependencyProps
          $name = ([string]@($name)[0]).Trim("-")
-         if($name -and $value) {
+
+         if($DebugPreference -ne "SilentlyContinue") { 
+            Write-Host "Dependency Property: $name = $value " -foreground Yellow 
+         }
+         if($name -and ($value -ne $null)) {
             Set-DependencyProperty -Element $Dobject.Value -Property $name -Value $Value
          }
       }

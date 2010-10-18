@@ -202,12 +202,12 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 16 {
    function Get-BootsInput {
       Param([string]$Prompt = "Please enter your name:")
-      
+      $global:BootsInputPrompt = $Prompt
       Boots {
-         Border -BorderThickness 4 -BorderBrush "#BE8" -Background "#EFC" (
-            StackPanel -Margin 10  $( 
-               Label $Prompt
-               StackPanel -Orientation Horizontal $(
+         Border -BorderThickness 4 -BorderBrush "#BE8" -Background "#EFC" {
+            StackPanel -Margin 10  {
+               Label $BootsInputPrompt
+               StackPanel -Orientation Horizontal {
                   TextBox -Width 150 -On_KeyDown { 
                      if($_.Key -eq "Return") { 
                         Write-BootsOutput $global:textbox.Text
@@ -218,9 +218,9 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
                      Write-BootsOutput $global:textbox.Text
                      $BootsWindow.Close()
                   }
-               )
-            )
-         )
+               }
+            }
+         }
       } -On_Load { Invoke-BootsWindow $global:textbox { $global:textbox.Focus() } } `
       -WindowStyle None -AllowsTransparency `
       -On_PreviewMouseLeftButtonDown { 
@@ -229,6 +229,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
             $BootsWindow.DragMove() 
          }
       }
+      Remove-Item Variable:Global:BootsInputPrompt
    }
    Get-BootsInput
 }
