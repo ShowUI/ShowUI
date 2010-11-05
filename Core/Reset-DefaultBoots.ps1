@@ -1,4 +1,4 @@
-Remove-Item $PowerBootsPath\DependencyPropertyCache.xml
+Remove-Item $PowerBootsPath\DependencyPropertyCache.xml -ErrorAction SilentlyContinue
 
 
 
