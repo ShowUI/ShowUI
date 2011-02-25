@@ -4,8 +4,7 @@
     xmlns:huddle="http://schemas.huddledmasses.org/wpf/controls"
     xmlns:web="clr-namespace:WebServiceX;assembly=ojtmha83"
     >
-   <!-- This Template is for Process, but it only handles processes with Windows!
-        And worse, it requires the Huddled.Controls library, and only works on Vista+ -->
+   <!-- This Template is for "Weather" objects as output by WebServiceX -->
     <DataTemplate DataType="{x:Type web:WeatherData}">
         <StackPanel MaxWidth="100" Orientation="Vertical" Margin="2">
             <Image Source='{Binding Path=WeatherImage}' Width="55" Height="58" />

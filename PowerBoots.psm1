@@ -4,9 +4,9 @@ if(!(Test-Path Variable::PowerBootsPath)) {
 New-Variable PowerBootsPath $PSScriptRoot -Description "PowerBoots Variable: The root folder for PowerBoots" -Option Constant, ReadOnly, AllScope -Scope Global
 }
 $ParameterHashCache = @{}
-$DependencyProperties = @{}
+[Hashtable]$DependencyProperties = @{}
 if(Test-Path $PowerBootsPath\DependencyPropertyCache.xml) {
-   $DependencyProperties = [System.Windows.Markup.XamlReader]::Parse( (gc $PowerBootsPath\DependencyPropertyCache.xml) )
+   [Hashtable]$DependencyProperties = [System.Windows.Markup.XamlReader]::Parse( (gc $PowerBootsPath\DependencyPropertyCache.xml) )
 }
 $LoadedAssemblies = @(); 
 
@@ -91,6 +91,16 @@ Set-Alias -Name Boots      -Value "New-BootsWindow"         -EA "SilentlyContinu
 if($ErrorList.Count) { Write-Warning "Boots alias not created, you must use the full New-BootsWindow function name!" }
 
 $errorList = @()
+Set-Alias -Name Show-UI    -Value "New-BootsWindow"         -EA "SilentlyContinue" -EV +ErrorList
+Set-Alias -Name Show       -Value "New-BootsWindow"         -EA "SilentlyContinue" -EV +ErrorList
+if($ErrorList.Count) { Write-Warning "Show alias to New-BootsWindow not created!" }
+
+$errorList = @()
+Set-Alias -Name UIOut        -Value "Write-BootsOutput"         -EA "SilentlyContinue" -EV +ErrorList
+Set-Alias -Name Write-UIOutput      -Value "Write-BootsOutput"         -EA "SilentlyContinue" -EV +ErrorList
+if($ErrorList.Count) { Write-Warning "UIOut alias to New-BootsWindow not created!" }
+
+$errorList = @()
 Set-Alias -Name BootsImage -Value "Out-BootsImage"          -EA "SilentlyContinue" -EV +ErrorList
 if($ErrorList.Count) { Write-Warning "BootsImage alias not created, you must use the full Out-BootsImage function name!" }
 
@@ -112,8 +122,8 @@ Export-ModuleMember -Function $BootsFunctions -Cmdlet (Get-Command -Module PoshW
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtjN9c7u1E4f7nNd2zn9BMFrK
-# 0ROgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUpiUWVXZ2rnu7de9iBUlyHQ7t
+# wEqgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
 # AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
 # IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
 # VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
@@ -146,12 +156,12 @@ Export-ModuleMember -Function $BootsFunctions -Cmdlet (Get-Command -Module PoshW
 # aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
 # LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
 # NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
-# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUke09DALG
-# 5Aeni24vpetEzA2rmg8wDQYJKoZIhvcNAQEBBQAEggEAmTHaKybj91Nqp9IfBS60
-# xj7p/zCn3VlOaROnX0+nFNZZyqC2JOibZ1zV9NOY9RwQa3Ll/xKO3SyKLnufLbb2
-# X8vHBhmGJ6pet3d3tjAzStSzZEbk0LV4HJzsuak59W7BfV7eCwnjc5koVXI1IoqO
-# 2T3JsYtci3y0jSh4CTY709udghi9kP+k9y/95ITNeSyJ4aIn5kHtiSg/MSvcoZl3
-# afxi6rnOZqSZSDKXTIdFkr8vNtzw0NbWh2Rnth/G4GWlqg9aSB9C4zjogcHABaei
-# KRN35man4qn9aQ1z3dJhPr0Fx3+08cxwJTtd2VyrB05syjRixNOiFeiXscOSlTEB
-# Hw==
+# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQU3D/4OXlk
+# 5ZvcDZT/EP/2whgXTrwwDQYJKoZIhvcNAQEBBQAEggEAuVogcoPlxuxwB8oilYvA
+# +07fPvUAdAjBpjXRaskMXgCbkujL+7OhHU7MyJvdCRmCjXUUL/ZkZGPruOj8AK67
+# XbKD9defg78FSSxUjAjjG4g73pok3OxnfcdBLLWMCE/7Ib/IgQ/eLfgn1IrfW/dO
+# a3w4yIqOzOoORMFNKPWhuNVLf+wGwq6Wmck2HHdbsVUqMireq77ff5zDjtbhdq4p
+# xekhJn5F9UNbK1CORchdsnegdaCHat4+tZbUryd9dyYsGFAaV+YUXyR/C6hXOxu2
+# c3/qWTkll7lPulotj6OqlAV09Q7/PsqVeAMV8w7YW/zbqoKEIcjR7NsvUUuFmbBm
+# sg==
 # SIG # End signature block

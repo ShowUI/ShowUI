@@ -1,26 +1,41 @@
-@{
-#AliasesToExport=""
-Author="Joel Bennett"
-#CmdletsToExport=""
-CompanyName="http://HuddledMasses.org"
-Copyright="© 2009, Joel Bennett, released under the Ms-PL"
-Description="A PowerBoots module for charting and graphing"
-CLRVersion="2.0"
-#FileList=""
-#FunctionsToExport=""
-GUID="38913b49-7eb7-427a-bccd-4cb6760c0971"
-ModuleToProcess="PowerChart.psm1"
-ModuleVersion="0.0.1.0"
-PowerShellVersion="2.0"
-#PrivateData=""
-RequiredModules="PowerBoots"
-}
+## start-demo ~\Projects\Modules\PowerBoots\Samples\Next_Generation_UI.ps1
+## Next Generation UI in PowerShell
+## Joel "Jaykul" Bennett [MVP]
+## http://HuddledMasses.org
+## http://PowerBoots.CodePlex.com
+
+## Slides: What is WPF?
+
+## Let's see some examples.
+## Lets collect a few files, and a few process objects
+$files = ls C:\Users\jbennett\Pictures\3200x1200 | Get-Random -Count 10
+$procs = ps | ? { $_.MainWindowHandle -ne [IntPtr]::Zero } | Get-Random -Count 8
+
+## Now, show them (we're using data templates)
+show { $files }
+## Notice that it didn't return until after we closed the window?
+show { $procs }
+## Most controls accept piped input, and duplicate themselves:
+## We just pipe the FileInfo object to a Button:
+show { $files | Button }
+## Wouldn't it be cool if the user could pick one?
+## To do that, we need to handle the "click" event of those buttons,
+## And then Write-UIOutput:
+show { $files | Button -on_click { Write-UIOutput $this.Content; $bootswindow.close() } }
+
+## What if we don't like that really wide display? Well, it's a Wrap Panel by default.
+show { $files | Button -on_click { Write-UIOutput $this.Content; $bootswindow.close() } }
+
+## But we could use a StackPanel (Or a DockPanel or grid).
+show { $files | Button -on_click { Write-UIOutput $this.Content; $bootswindow.close() } | StackPanel }
+
+
 
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUg+ETz6ig3tDzm7QKuIxHv80E
-# HGSgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQmMbgt0jA0qxqJ1ueIAasLBs
+# m/qgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
 # AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
 # IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
 # VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
@@ -53,12 +68,12 @@ RequiredModules="PowerBoots"
 # aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
 # LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
 # NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
-# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUYVUxxJKL
-# /gYJ5GjMDpLyF4yITEYwDQYJKoZIhvcNAQEBBQAEggEAOAmfmr1SusOhK2Ci4Q07
-# 1zi1tJcJ/N6txEWUgUDSYMfTe9o4vlzyQ5eSXU+/8KoRE9zB3wNzsYOcVo8AekXL
-# efShIsov8AAPjCcFQDN9qA78WaWbHdAfcwn4wEom3DfHrdSlg2rtyUCdPMrPylds
-# LlfjMeS5NqUk8TVC5hxDsjUHz9ssVr5zAFqOq/at5BIbnPQxwZgib/H5UKmdyF/6
-# wcECKyL/WNVuNEC+jZoOEXZZYxmh2gm9Z2IBR4UuXUgMCldYVJ0lhp917t1DbFO7
-# Y2vfB7lMC+uh905RsDKmhunob6CLuYxDAGCJsPSXp2LUrGKUosqio4bH/0/0uuP1
-# aA==
+# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUbQ2UGBVJ
+# Cj3xde8DjvpjTFPIagAwDQYJKoZIhvcNAQEBBQAEggEAS9MpowK7Dq7iZ5BLDVVr
+# QheAPoNibd8NUgXizLJ8BiHrkHq67AAQ+QSE+RNnDIRsiBdkYM09JsxhwKRFTG0b
+# rImveo97/mHZUVL7QvAMVrAIBKC9r/1iKFZfxB+G58nk6VdiLt/y1vLke39Gatl+
+# 91ZSYrekRMEJdT9TKFxdDgpKKBRKlVMmgX7+rBHcSvQQaDUOTUv1T2gAkBcjfndt
+# wi15pbJSqRN4lwUwhDySaHYqXuRWeDvIy6CJolbEzDu8SjbkuenWGkzxvFFCaJDo
+# W84t4+9yGjRkzDUcViCwHVLkb3w1MHoV3bBtKoy481elSjr9ztOuKvQh53lSQ3SL
+# IA==
 # SIG # End signature block

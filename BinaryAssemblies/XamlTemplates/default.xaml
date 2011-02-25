@@ -1,6 +1,6 @@
 ﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
-	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:huddle="http://schemas.huddledmasses.org/wpf/controls"
     xmlns:sysio="clr-namespace:System.IO;assembly=mscorlib"
     xmlns:diag="clr-namespace:System.Diagnostics;assembly=System"
@@ -17,16 +17,16 @@
         <Setter Property="Foreground" Value="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"/>
         <Setter Property="Background" Value="{Binding Path=Background, ElementName=buffer, Mode=Default}"/>
         <!--
-		<Setter Property="Background">
-			<Setter.Value>
+        <Setter Property="Background">
+            <Setter.Value>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="#FF223B84" Offset="1"/>
                     <GradientStop Color="#FF57A0F4" Offset="0.5"/>
                     <GradientStop Color="#FF4B94EC" Offset="0.5"/>
                 </LinearGradientBrush>
-        	</Setter.Value>
-		</Setter>
-		-->
+            </Setter.Value>
+        </Setter>
+        -->
     </Style>
 
     <!-- 
@@ -37,60 +37,44 @@
     <!-- This Template is for FileInfo, but it really only handles picture file types -->
     <DataTemplate DataType="{x:Type sysio:FileInfo}">
         <Grid Width="125" Margin="2">
-		    <Image Source='{Binding Path=FullName}' 
+            <Image Source='{Binding Path=FullName}' 
                  HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,80"
                  MaxWidth="{Binding Source.PixelWidth,RelativeSource={RelativeSource Self}}"
                  MaxHeight="{Binding Source.PixelHeight,RelativeSource={RelativeSource Self}}"
             />
-	        <StackPanel Orientation="Vertical" Margin="0,125,0,0" >
-	            <Label Content="{Binding Path=Name}" 
-	                   Background="{Binding Path=Background, ElementName=buffer, Mode=Default}"
-	                   Foreground="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"
+            <StackPanel Orientation="Vertical" Margin="0,125,0,0" >
+                <Label Content="{Binding Path=Name}" 
+                       Background="{Binding Path=Background, ElementName=buffer, Mode=Default}"
+                       Foreground="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"
                       
-	                   />
-	            <Label Content="{Binding LastWriteTime}" 
-	            	Background="{Binding Background, ElementName=buffer, Mode=Default}"
-	            	Foreground="{Binding Foreground, ElementName=buffer, Mode=Default}"
-	                   />
-	            <Label Content="{Binding Length, Mode=OneWay}" 
-	            	Background="{Binding Background, ElementName=buffer, Mode=Default}"
-	            	Foreground="{Binding Foreground, ElementName=buffer, Mode=Default}"
-	                   />
-	            <StackPanel.ToolTip>
-	                <ToolTip Content="{Binding Path=FullName}" />
-	            </StackPanel.ToolTip>
-	        </StackPanel>
-		</Grid>
+                       />
+                <Label Content="{Binding LastWriteTime}" 
+                       Background="{Binding Background, ElementName=buffer, Mode=Default}"
+                       Foreground="{Binding Foreground, ElementName=buffer, Mode=Default}"
+                       />
+                <Label Content="{Binding Length, Mode=OneWay}" 
+                       Background="{Binding Background, ElementName=buffer, Mode=Default}"
+                       Foreground="{Binding Foreground, ElementName=buffer, Mode=Default}"
+                       />
+                <StackPanel.ToolTip>
+                    <ToolTip Content="{Binding Path=FullName}" />
+                </StackPanel.ToolTip>
+            </StackPanel>
+        </Grid>
     </DataTemplate>
-   <DataTemplate DataType="{x:Type sysio:DirectoryInfo}">
-      <StackPanel Width="150" Orientation="Vertical" Margin="2">
-         <Image Source='pack://application:,,,/PoshWpf;component/Artwork/Folder237x237.png'/>
-         <Label Content="{Binding Path=Name}" 
+    <DataTemplate DataType="{x:Type sysio:DirectoryInfo}">
+        <StackPanel Width="150" Orientation="Vertical" Margin="2">
+            <Image Source='pack://application:,,,/PoshWpf;component/Artwork/Folder237x237.png'/>
+            <Label Content="{Binding Path=Name}" 
                    Background="{Binding Path=Background, ElementName=buffer, Mode=Default}"
                    Foreground="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"
                    />
-         <Label Content="{Binding LastWriteTime}" 
-         	Background="{Binding Background, ElementName=buffer, Mode=Default}"
-         	Foreground="{Binding Foreground, ElementName=buffer, Mode=Default}"
-                   />
-         <StackPanel.ToolTip>
-            <ToolTip Content="{Binding Path=FullName}" />
-         </StackPanel.ToolTip>
-      </StackPanel>
-   </DataTemplate>
-
-   <!-- This Template is for Process, but it only handles processes with Windows!
-        And worse, it requires the Huddled.Controls library, and only works on Vista+
-   -->
-    <DataTemplate DataType="{x:Type diag:Process}">
-        <StackPanel Width="200" Orientation="Vertical" Margin="2">
-            <huddle:ThumbnailImage WindowSource='{Binding Path=MainWindowHandle}' />
-            <Label Content="{Binding Path=ProcessName}" 
-                   Background="{Binding Path=Background, ElementName=buffer, Mode=Default}"
-                   Foreground="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"
+            <Label Content="{Binding LastWriteTime}" 
+                   Background="{Binding Background, ElementName=buffer, Mode=Default}"
+                   Foreground="{Binding Foreground, ElementName=buffer, Mode=Default}"
                    />
             <StackPanel.ToolTip>
-                <ToolTip Content="{Binding Path=WorkingSet}" />
+                <ToolTip Content="{Binding Path=FullName}" />
             </StackPanel.ToolTip>
         </StackPanel>
     </DataTemplate>

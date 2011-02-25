@@ -13,12 +13,16 @@ PARAM(
 )
 DYNAMICPARAM {
    trap { 
-      Write-Host "ERROR Evaluating DynamicParam for Dependency Property" -Fore Red
+      Write-Host "ERROR Evaluating DynamicParam for Dependency Property (See: `$Exception and `$CallStack)" -Fore Red
       Write-Host "Trying to set $Property to $($Param1.Value)" -Fore Red
+      Write-Host $_ -fore Red
+      $Global:Exception = $_.Exception
+      $Global:CallStack = Get-PSCallStack
+      Write-Host $this -fore DarkRed
       continue
    }   
    if($DebugPreference -ne "SilentlyContinue") { 
-      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property " -foreground Yellow 
+      Write-Host "Dependency Property: $($Element.GetType().FullName): $Property " -foreground Yellow 
    }
    $paramDictionary = new-object System.Management.Automation.RuntimeDefinedParameterDictionary
    $Param1 = new-object System.Management.Automation.RuntimeDefinedParameter
@@ -37,23 +41,40 @@ DYNAMICPARAM {
          }
          $Param1.ParameterType = $Property.PropertyType
       } 
-      elseif($Property -is [string] -and $Property.Contains(".")) 
+      elseif($Property -is [string] -and $Property.Contains(".") -or $Property.Contains("-")) 
       {
-         $Class,$Property = $Property -split "\.(?!.*\.)"
+         if($Property.Contains("-")) { $Property = $Property -replace "-","." }
+         
+      
+         [string]$Class,[string]$PropertyName = $Property -split "\.(?!.*\.)"
+         [string]$PropertyName = $DependencyProperties.Keys -ieq $PropertyName
          if($DebugPreference -ne "SilentlyContinue") { 
-            Write-Host "Property passed in as dotted string: $($DependencyProperties.($Property).Keys)" -foreground Cyan
+            Write-Host "Property passed in as dotted string: '$Class.$PropertyName' $($DependencyProperties.$PropertyName.Keys -join ', ')" -foreground Cyan
          }
-         if($DependencyProperties.ContainsKey($Property)){
-            $type = $DependencyProperties.($Property).Keys -like "*$Class"
-            if($type) { 
-               $Param1.ParameterType = [type]@($DependencyProperties.($Property).("$type"))[0].PropertyType
+         if($PropertyName){
+            [string]$type = $DependencyProperties.$PropertyName.Keys -like "*.$Class"
+            if(!$type) {
+               [string]$type = $DependencyProperties.$PropertyName.Keys -like "*$Class"
+            }
+            if($DebugPreference -ne "SilentlyContinue") { 
+               # $Classes = $DependencyProperties.$PropertyName.Keys -join ', '
+               Write-Host "Property '$PropertyName' on $(@($type).Count) class(es): $Type" -foreground Cyan
+            }
+            if(@($type).Count -gt 1) {
+               Write-Warning "Couldn't figure which '$Class' you mean. Please use the full name of one of: '$($type -join ''',''')'"
+            } elseif($type) { 
+               $Param1.ParameterType = [type]$DependencyProperties.$PropertyName.$Type.PropertyType
+               $Property = "$Type.$PropertyName"
+            }
+            if($DebugPreference -ne "SilentlyContinue") { 
+               $Param1 | Out-String | Write-Host -fore White
             }
          }
       } 
       elseif($DependencyProperties.ContainsKey($Property))
       {
          if($DebugPreference -ne "SilentlyContinue") { 
-            Write-Host "Property for $($element.GetType().FullName) passed in as string: $($DependencyProperties.($Property).Keys)" -foreground Cyan
+            Write-Host "Property for $($element.GetType().FullName) passed in as string: $($DependencyProperties.$Property.Keys)" -foreground Cyan
          }
          if($Element -and $DependencyProperties.($Property).ContainsKey( $element.GetType().FullName )) { 
             $Param1.ParameterType = [type]$DependencyProperties.($Property).($element.GetType().FullName).PropertyType
@@ -70,7 +91,7 @@ DYNAMICPARAM {
    {
       $Param1.ParameterType = [PSObject]
    }
-
+   
    $paramDictionary.Add("Value", $Param1)
    if($DebugPreference -ne "SilentlyContinue") { 
       Write-Host "Parameter Dictionary from Dynamic Parameter:" -Foreground Cyan
@@ -89,19 +110,20 @@ DYNAMICPARAM {
 
 PROCESS {   
    if($DebugPreference -ne "SilentlyContinue") { 
-      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property " -foreground Cyan 
+      Write-Host "Dependency Property: $($Element.GetType().FullName): $Property " -foreground Magenta 
    }
    trap { 
-      Write-Host "ERROR Setting Dependency Property" -Fore Red
+      Write-Host "ERROR Evaluating DynamicParam for Dependency Property (See: `$Exception and `$CallStack)" -Fore Red
       Write-Host "Trying to set $Property to $($Param1.Value)" -Fore Red
+      Write-Host $_ -fore Red
+      $Global:Exception = $_.Exception
+      $Global:CallStack = Get-PSCallStack
+      Write-Host $this -fore DarkRed
       continue
    }
-   if($DebugPreference -ne "SilentlyContinue") { 
-      Write-Host "Dependency Property: $($Element.GetType().FullName).$Property = $Value" -foreground Yellow 
-   }
+
    
-   if($Property.GetType() -eq ([System.Windows.DependencyProperty]) -or
-      $Property.GetType().IsSubclassOf(([System.Windows.DependencyProperty]))
+   if($Property.GetType() -eq ([System.Windows.DependencyProperty]) -or $Property.GetType().IsSubclassOf(([System.Windows.DependencyProperty]))
    ){
       trap { 
          Write-Host "ERROR Setting Dependency Property" -Fore Red
@@ -110,33 +132,44 @@ PROCESS {
       }
       $Element.SetValue($Property, ($Param1.Value -as $Property.PropertyType))
    } else {
+      if("$Property".Contains("-")) { $Property = $Property -replace "-","." }
+   
       if("$Property".Contains(".")) {
-         $Class,$Property = "$Property".Split(".")
-      }
+         [string]$Class,[string]$PropertyName = $Property -split "\.(?!.*\.)"
+         [string]$PropertyName = $DependencyProperties.Keys -ieq $PropertyName
+      
+         if($DebugPreference -ne "SilentlyContinue") { 
+            Write-Host "Property passed in as dotted string: '$Class.$PropertyName' $($DependencyProperties.$PropertyName.Keys -join ', ')" -foreground Green
+         }
+         if($PropertyName -and $DependencyProperties.ContainsKey($PropertyName)){
+            $DependencyProperties.$PropertyName.Keys -like "*.$Class" | % { Write-Host "`$DependencyProperties.$PropertyName.$_.PropertyType" }
          
-      if($DependencyProperties.ContainsKey("$Property")){
-         $fields = @($DependencyProperties.($Property).Keys -like "*$Class" | ? { $Param1.Value -as ([type]$DependencyProperties.$Property.$_.PropertyType)})
-         if($fields.Count -eq 0 ) { 
-            $fields = @($DependencyProperties.($Property).Keys -like "*$Class")
-         }
-         if($fields.Count) {
-            $success = $false
-            foreach($field in $fields) {
-               trap { 
-                  Write-Host "ERROR Setting Dependency Property" -Fore Red
-                  Write-Host "Trying to set $($field)::$($DependencyProperties.($Property).($field).Name) to $($Param1.Value) -as $($DependencyProperties.($Property).($field).PropertyType)" -Fore Red
-                  continue
-               }
-               $Element.SetValue( ([type]$field)::"$($DependencyProperties.($Property).($field).Name)", ($Param1.Value -as ([type]$DependencyProperties.($Property).($field).PropertyType)))
-               if($?) { $success = $true; break }
+            $fields = @($DependencyProperties.($PropertyName).Keys -like "*.$Class" | ? { $Param1.Value -as ([type])})
+            $fields += @($DependencyProperties.($PropertyName).Keys -like "*$Class" | ? { $Param1.Value -as ([type]$DependencyProperties.$PropertyName.$_.PropertyType)})
+            if($fields.Count -eq 0 ) { 
+               $fields = @($DependencyProperties.($PropertyName).Keys -like "*$Class")
             }
-            if(!$success) { throw "food" }
+            if($fields.Count) {
+               $success = $false
+               foreach($field in $fields) {
+                  trap { 
+                     Write-Host "ERROR Setting Dependency Property" -Fore Red
+                     Write-Host "Trying to set $($field)::$($DependencyProperties.($PropertyName).($field).Name) to $($Param1.Value) -as $($DependencyProperties.($PropertyName).($field).PropertyType)" -Fore Red
+                     continue
+                  }
+                  $Element.SetValue( ([type]$field)::"$($DependencyProperties.($PropertyName).($field).Name)", ($Param1.Value -as ([type]$DependencyProperties.($PropertyName).($field).PropertyType)))
+                  if($?) { $success = $true; break }
+               }
+               if(!$success) { throw "Couldn't match $Class.$PropertyName" }
+            } else {
+               Write-Host "Couldn't find the right property: $Class.$PropertyName on $($Element.GetType().Name) of type $($Param1.Value.GetType().FullName)" -Fore Red      
+            }
          } else {
-            Write-Host "Couldn't find the right property: $Class.$Property on $($Element.GetType().Name) of type $($Param1.Value.GetType().FullName)" -Fore Red      
-         }
+            Write-Host "Unknown Dependency Property Key: $PropertyName on $($Element.GetType().Name)" -Fore Red      
+         }  
       } else {
-         Write-Host "Unknown Dependency Property Key: $Property on $($Element.GetType().Name)" -Fore Red      
-      }  
+      Write-Host "Unknown Dependency Property Key: $Property on $($Element.GetType().Name)" -Fore Red      
+      }
    }
    if( $Passthru ) {
       $Element
@@ -145,95 +178,48 @@ PROCESS {
 }
 
 # SIG # Begin signature block
-# MIIRDAYJKoZIhvcNAQcCoIIQ/TCCEPkCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUf4Nq7bZCC5vSRAIeoxfcCDrQ
-# bmiggg5CMIIHBjCCBO6gAwIBAgIBFTANBgkqhkiG9w0BAQUFADB9MQswCQYDVQQG
-# EwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERp
-# Z2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzEpMCcGA1UEAxMgU3RhcnRDb20gQ2Vy
-# dGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMDcxMDI0MjIwMTQ1WhcNMTIxMDI0MjIw
-# MTQ1WjCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzAp
-# BgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNV
-# BAMTL1N0YXJ0Q29tIENsYXNzIDIgUHJpbWFyeSBJbnRlcm1lZGlhdGUgT2JqZWN0
-# IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyiOLIjUemqAbPJ1J
-# 0D8MlzgWKbr4fYlbRVjvhHDtfhFN6RQxq0PjTQxRgWzwFQNKJCdU5ftKoM5N4YSj
-# Id6ZNavcSa6/McVnhDAQm+8H3HWoD030NVOxbjgD/Ih3HaV3/z9159nnvyxQEckR
-# ZfpJB2Kfk6aHqW3JnSvRe+XVZSufDVCe/vtxGSEwKCaNrsLc9pboUoYIC3oyzWoU
-# TZ65+c0H4paR8c8eK/mC914mBo6N0dQ512/bkSdaeY9YaQpGtW/h/W/FkbQRT3sC
-# pttLVlIjnkuY4r9+zvqhToPjxcfDYEf+XD8VGkAqle8Aa8hQ+M1qGdQjAye8OzbV
-# uUOw7wIDAQABo4ICfzCCAnswDAYDVR0TBAUwAwEB/zALBgNVHQ8EBAMCAQYwHQYD
-# VR0OBBYEFNBOD0CZbLhLGW87KLjg44gHNKq3MIGoBgNVHSMEgaAwgZ2AFE4L7xqk
-# QFulF2mHMMo0aEPQQa7yoYGBpH8wfTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0
-# YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRl
-# IFNpZ25pbmcxKTAnBgNVBAMTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9y
-# aXR5ggEBMAkGA1UdEgQCMAAwPQYIKwYBBQUHAQEEMTAvMC0GCCsGAQUFBzAChiFo
-# dHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9zZnNjYS5jcnQwYAYDVR0fBFkwVzAsoCqg
-# KIYmaHR0cDovL2NlcnQuc3RhcnRjb20ub3JnL3Nmc2NhLWNybC5jcmwwJ6AloCOG
-# IWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2NhLmNybDCBggYDVR0gBHsweTB3
-# BgsrBgEEAYG1NwEBBTBoMC8GCCsGAQUFBwIBFiNodHRwOi8vY2VydC5zdGFydGNv
-# bS5vcmcvcG9saWN5LnBkZjA1BggrBgEFBQcCARYpaHR0cDovL2NlcnQuc3RhcnRj
-# b20ub3JnL2ludGVybWVkaWF0ZS5wZGYwEQYJYIZIAYb4QgEBBAQDAgABMFAGCWCG
-# SAGG+EIBDQRDFkFTdGFydENvbSBDbGFzcyAyIFByaW1hcnkgSW50ZXJtZWRpYXRl
-# IE9iamVjdCBTaWduaW5nIENlcnRpZmljYXRlczANBgkqhkiG9w0BAQUFAAOCAgEA
-# UKLQmPRwQHAAtm7slo01fXugNxp/gTJY3+aIhhs8Gog+IwIsT75Q1kLsnnfUQfbF
-# pl/UrlB02FQSOZ+4Dn2S9l7ewXQhIXwtuwKiQg3NdD9tuA8Ohu3eY1cPl7eOaY4Q
-# qvqSj8+Ol7f0Zp6qTGiRZxCv/aNPIbp0v3rD9GdhGtPvKLRS0CqKgsH2nweovk4h
-# fXjRQjp5N5PnfBW1X2DCSTqmjweWhlleQ2KDg93W61Tw6M6yGJAGG3GnzbwadF9B
-# UW88WcRsnOWHIu1473bNKBnf1OKxxAQ1/3WwJGZWJ5UxhCpA+wr+l+NbHP5x5XZ5
-# 8xhhxu7WQ7rwIDj8d/lGU9A6EaeXv3NwwcbIo/aou5v9y94+leAYqr8bbBNAFTX1
-# pTxQJylfsKrkB8EOIx+Zrlwa0WE32AgxaKhWAGho/Ph7d6UXUSn5bw2+usvhdkW4
-# npUoxAk3RhT3+nupi1fic4NG7iQG84PZ2bbS5YxOmaIIsIAxclf25FwssWjieMwV
-# 0k91nlzUFB1HQMuE6TurAakS7tnIKTJ+ZWJBDduUbcD1094X38OvMO/++H5S45Ki
-# 3r/13YTm0AWGOvMFkEAF8LbuEyecKTaJMTiNRfBGMgnqGBfqiOnzxxRVNOw2hSQp
-# 0B+C9Ij/q375z3iAIYCbKUd/5SSELcmlLl+BuNknXE0wggc0MIIGHKADAgECAgFR
-# MA0GCSqGSIb3DQEBBQUAMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
-# b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2ln
-# bmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVk
-# aWF0ZSBPYmplY3QgQ0EwHhcNMDkxMTExMDAwMDAxWhcNMTExMTExMDYyODQzWjCB
-# qDELMAkGA1UEBhMCVVMxETAPBgNVBAgTCE5ldyBZb3JrMRcwFQYDVQQHEw5XZXN0
-# IEhlbnJpZXR0YTEtMCsGA1UECxMkU3RhcnRDb20gVmVyaWZpZWQgQ2VydGlmaWNh
-# dGUgTWVtYmVyMRUwEwYDVQQDEwxKb2VsIEJlbm5ldHQxJzAlBgkqhkiG9w0BCQEW
-# GEpheWt1bEBIdWRkbGVkTWFzc2VzLm9yZzCCASIwDQYJKoZIhvcNAQEBBQADggEP
-# ADCCAQoCggEBAMfjItJjMWVaQTECvnV/swHQP0FTYUvRizKzUubGNDNaj7v2dAWC
-# rAA+XE0lt9JBNFtCCcweDzphbWU/AAY0sEPuKobV5UGOLJvW/DcHAWdNB/wRrrUD
-# dpcsapQ0IxxKqpRTrbu5UGt442+6hJReGTnHzQbX8FoGMjt7sLrHc3a4wTH3nMc0
-# U/TznE13azfdtPOfrGzhyBFJw2H1g5Ag2cmWkwsQrOBU+kFbD4UjxIyus/Z9UQT2
-# R7bI2R4L/vWM3UiNj4M8LIuN6UaIrh5SA8q/UvDumvMzjkxGHNpPZsAPaOS+RNmU
-# Go6X83jijjbL39PJtMX+doCjS/lnclws5lUCAwEAAaOCA4EwggN9MAkGA1UdEwQC
-# MAAwDgYDVR0PAQH/BAQDAgeAMDoGA1UdJQEB/wQwMC4GCCsGAQUFBwMDBgorBgEE
-# AYI3AgEVBgorBgEEAYI3AgEWBgorBgEEAYI3CgMNMB0GA1UdDgQWBBR5tWPGCLNQ
-# yCXI5fY5ViayKj6xATCBqAYDVR0jBIGgMIGdgBTQTg9AmWy4SxlvOyi44OOIBzSq
-# t6GBgaR/MH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSsw
-# KQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMSkwJwYD
-# VQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eYIBFTCCAUIGA1Ud
-# IASCATkwggE1MIIBMQYLKwYBBAGBtTcBAgEwggEgMC4GCCsGAQUFBwIBFiJodHRw
-# Oi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRw
-# Oi8vd3d3LnN0YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMIG3BggrBgEFBQcC
-# AjCBqjAUFg1TdGFydENvbSBMdGQuMAMCAQEagZFMaW1pdGVkIExpYWJpbGl0eSwg
-# c2VlIHNlY3Rpb24gKkxlZ2FsIExpbWl0YXRpb25zKiBvZiB0aGUgU3RhcnRDb20g
-# Q2VydGlmaWNhdGlvbiBBdXRob3JpdHkgUG9saWN5IGF2YWlsYWJsZSBhdCBodHRw
-# Oi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMGMGA1UdHwRcMFowK6ApoCeG
-# JWh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2NydGMyLWNybC5jcmwwK6ApoCeGJWh0
-# dHA6Ly9jcmwuc3RhcnRzc2wuY29tL2NydGMyLWNybC5jcmwwgYkGCCsGAQUFBwEB
-# BH0wezA3BggrBgEFBQcwAYYraHR0cDovL29jc3Auc3RhcnRzc2wuY29tL3N1Yi9j
-# bGFzczIvY29kZS9jYTBABggrBgEFBQcwAoY0aHR0cDovL3d3dy5zdGFydHNzbC5j
-# b20vY2VydHMvc3ViLmNsYXNzMi5jb2RlLmNhLmNydDAjBgNVHRIEHDAahhhodHRw
-# Oi8vd3d3LnN0YXJ0c3NsLmNvbS8wDQYJKoZIhvcNAQEFBQADggEBACY+J88ZYr5A
-# 6lYz/L4OGILS7b6VQQYn2w9Wl0OEQEwlTq3bMYinNoExqCxXhFCHOi58X6r8wdHb
-# E6mU8h40vNYBI9KpvLjAn6Dy1nQEwfvAfYAL8WMwyZykPYIS/y2Dq3SB2XvzFy27
-# zpIdla8qIShuNlX22FQL6/FKBriy96jcdGEYF9rbsuWku04NqSLjNM47wCAzLs/n
-# FXpdcBL1R6QEK4MRhcEL9Ho4hGbVvmJES64IY+P3xlV2vlEJkk3etB/FpNDOQf8j
-# RTXrrBUYFvOCv20uHsRpc3kFduXt3HRV2QnAlRpG26YpZN4xvgqSGXUeqRceef7D
-# dm4iTdHK5tIxggI0MIICMAIBATCBkjCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
-# DVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmlj
-# YXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDIgUHJpbWFyeSBJ
-# bnRlcm1lZGlhdGUgT2JqZWN0IENBAgFRMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3
-# AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisG
-# AQQBgjcCAQsxDjAMBgorBgEEAYI3AgEWMCMGCSqGSIb3DQEJBDEWBBQyWEnBwjVa
-# rDSqQsPf+2N0ScjakTANBgkqhkiG9w0BAQEFAASCAQAFnB44ptS8jFJlGLJboj3/
-# pDCdYiRHx6yfX3OswiQNwGonVKFgiNi0B19jGXidlODFFAl6odYqTiz7wXxshCBG
-# WTqrcYC/W0g8HQZM1/eJQAkiFXZQ/+2QmLSZEfPZQ48Brp2emPzqklt4uTsK3NgH
-# pOp6lqN+GXSjaly9ebix/2SU6QRt5oa4JvuF7X3O9BoHQ7S8xzrTEn47W7bGylpQ
-# 5LcWKQeFFiOaDD6bxV0CBIZLMPnO7PVpdCdldE6ls522BLT5m8PsvQ58satEZLXl
-# AKt7orD1USBzAKwYuVEI0OvUEYxlmDYR+gXE/N+scSOkbHoi+O7RW8ACsFbP+6GJ
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU18AgngAwrlPrJ3LjdhgFoPT4
+# OdWgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
+# AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
+# IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
+# VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
+# Rmlyc3QtT2JqZWN0MB4XDTEwMDUxNDAwMDAwMFoXDTExMDUxNDIzNTk1OVowgZUx
+# CzAJBgNVBAYTAlVTMQ4wDAYDVQQRDAUwNjg1MDEUMBIGA1UECAwLQ29ubmVjdGlj
+# dXQxEDAOBgNVBAcMB05vcndhbGsxFjAUBgNVBAkMDTQ1IEdsb3ZlciBBdmUxGjAY
+# BgNVBAoMEVhlcm94IENvcnBvcmF0aW9uMRowGAYDVQQDDBFYZXJveCBDb3Jwb3Jh
+# dGlvbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMfUdxwiuWDb8zId
+# KuMg/jw0HndEcIsP5Mebw56t3+Rb5g4QGMBoa8a/N8EKbj3BnBQDJiY5Z2DGjf1P
+# n27g2shrDaNT1MygjYfLDntYzNKMJk4EjbBOlR5QBXPM0ODJDROg53yHcvVaXSMl
+# 498SBhXVSzPmgprBJ8FDL00o1IIAAhYUN3vNCKPBXsPETsKtnezfzBg7lOjzmljC
+# mEOoBGT1g2NrYTq3XqNo8UbbDR8KYq5G101Vl0jZEnLGdQFyh8EWpeEeksv7V+YD
+# /i/iXMSG8HiHY7vl+x8mtBCf0MYxd8u1IWif0kGgkaJeTCVwh1isMrjiUnpWX2NX
+# +3PeTmsCAwEAAaOCAW8wggFrMB8GA1UdIwQYMBaAFNrtZHQUnBQ8q92Zqb1bKE2L
+# PMnYMB0GA1UdDgQWBBTK0OAaUIi5wvnE8JonXlTXKWENvTAOBgNVHQ8BAf8EBAMC
+# B4AwDAYDVR0TAQH/BAIwADATBgNVHSUEDDAKBggrBgEFBQcDAzARBglghkgBhvhC
+# AQEEBAMCBBAwRgYDVR0gBD8wPTA7BgwrBgEEAbIxAQIBAwIwKzApBggrBgEFBQcC
+# ARYdaHR0cHM6Ly9zZWN1cmUuY29tb2RvLm5ldC9DUFMwQgYDVR0fBDswOTA3oDWg
+# M4YxaHR0cDovL2NybC51c2VydHJ1c3QuY29tL1VUTi1VU0VSRmlyc3QtT2JqZWN0
+# LmNybDA0BggrBgEFBQcBAQQoMCYwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmNv
+# bW9kb2NhLmNvbTAhBgNVHREEGjAYgRZKb2VsLkJlbm5ldHRAWGVyb3guY29tMA0G
+# CSqGSIb3DQEBBQUAA4IBAQAEss8yuj+rZvx2UFAgkz/DueB8gwqUTzFbw2prxqee
+# zdCEbnrsGQMNdPMJ6v9g36MRdvAOXqAYnf1RdjNp5L4NlUvEZkcvQUTF90Gh7OA4
+# rC4+BjH8BA++qTfg8fgNx0T+MnQuWrMcoLR5ttJaWOGpcppcptdWwMNJ0X6R2WY7
+# bBPwa/CdV0CIGRRjtASbGQEadlWoc1wOfR+d3rENDg5FPTAIdeRVIeA6a1ZYDCYb
+# 32UxoNGArb70TCpV/mTWeJhZmrPFoJvT+Lx8ttp1bH2/nq6BDAIvu0VGgKGxN4bA
+# T3WE6MuMS2fTc1F8PCGO3DAeA9Onks3Ufuy16RhHqeNcMYICTDCCAkgCAQEwgaow
+# gZUxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJVVDEXMBUGA1UEBxMOU2FsdCBMYWtl
+# IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1QgTmV0d29yazEhMB8GA1UECxMY
+# aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
+# LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
+# NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
+# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQU+AAdyvX3
+# jIYVRpGTKjtPe2JQsvIwDQYJKoZIhvcNAQEBBQAEggEAurNFrfEyqF7DCyScXr0/
+# 1lTUKC6ATfOfx8uq2xzuOi2q4xN7KUjgxsvLbn6pkuEM5TRS10+w0XDotvQA/iSx
+# MYI17BvDyxROeh2333j7MalPRkdK0Vya8VwcDDJrm/DMRzTn7ewiJOdnE4nMJzld
+# /Vnf+A4JuqGBt9/AalGfZbwBYkBb80KCnnMj5gh0qaQCY0mw35DjkdASvqaVQtYX
+# vQwMjywMgbdZj9SE1fjKTb0RPOuuWBtWl1e6dZoo3wPSjA3mfWeXRvkY4/WEQA9C
+# pWu/f9QmQXOSNAMqkkNEIExrZfqYexYe/csBxz+SeHs46WUBe/2TaMIO3mqHqs58
+# pw==
 # SIG # End signature block

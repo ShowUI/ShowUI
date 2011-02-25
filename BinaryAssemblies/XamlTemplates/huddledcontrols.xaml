@@ -5,19 +5,19 @@
     xmlns:sysio="clr-namespace:System.IO;assembly=mscorlib"
     xmlns:diag="clr-namespace:System.Diagnostics;assembly=System"
     >
-   <!-- This Template is for Process, but it only handles processes with Windows!
-        And worse, it requires the Huddled.Controls library, and only works on Vista+ -->
-    <DataTemplate DataType="{x:Type diag:Process}">
-        <StackPanel Width="150" Orientation="Vertical" Margin="2">
-            <huddle:ThumbnailImage WindowSource='{Binding Path=MainWindowHandle}' />
-            <Label Content="{Binding Path=ProcessName}" 
+	<!-- This Template is for Process, but it only handles processes with Windows!
+        And worse, it requires the Huddled.Controls library, and only works on Vista+
+   -->
+	<DataTemplate DataType="{x:Type diag:Process}">
+		<StackPanel Width="200" Orientation="Vertical" Margin="2">
+			<huddle:ThumbnailImage WindowSource='{Binding Path=MainWindowHandle}' />
+			<Label Content="{Binding Path=ProcessName}" 
                    Background="{Binding Path=Background, ElementName=buffer, Mode=Default}"
                    Foreground="{Binding Path=Foreground, ElementName=buffer, Mode=Default}"
                    />
-            <StackPanel.ToolTip>
-                <ToolTip Content="{Binding Path=Name}" />
-            </StackPanel.ToolTip>
-        </StackPanel>
-    </DataTemplate>
-  
+			<StackPanel.ToolTip>
+				<ToolTip Content="{Binding Path=WorkingSet}" />
+			</StackPanel.ToolTip>
+		</StackPanel>
+	</DataTemplate>
 </ResourceDictionary>
