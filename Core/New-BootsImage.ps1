@@ -1,41 +1,45 @@
-function New-BootsImage {
+function New-UIImage {
 #
 #.Synopsis
-#   Convert a PowerBoots element (WPF Visual) into an image
+#   Convert a Show-UI element (WPF Visual) into an image
 #.Description
 #   Takes a WPF Visual element and captures it as an image, optionally saving it to file (otherwise, it's placed on the clipboard).
 #.Parameter Content
 #   A scriptblock that generates the element that you want to capture an image of
 #.Example
-#   StackPanel -Margin "10,5,10,5" -Background White $( 
-#      Label "Please enter your name:"
-#      StackPanel -Orientation Horizontal $(
-#         TextBox -OutVariable global:textbox -Width 150 -On_KeyDown { 
-#            if($_.Key -eq "Return") { 
-#               Write-Output $textbox[0].Text
-#               $BootsWindow.Close()
-#            }
-#         }
-#         Button "Ok" -Padding "5,0,5,0" -Margin "2,0,0,0" -On_Click { 
-#            Write-Output $textbox[0].Text
-#            $BootsWindow.Close()
-#         }
-#      )
-#   ) | Out-BootsImage Statistics.jpg
+#   New-UIImage Statistics.jpg {
+#   	StackPanel -Margin "10,5,10,5" -Background White {
+#   	   Label "Please enter your name:"
+#   	   StackPanel -Orientation Horizontal {
+#   	      TextBox -OutVariable global:textbox -Width 150 -On_KeyDown { 
+#   	         if($_.Key -eq "Return") { 
+#   	            Write-Output $textbox[0].Text
+#   	            $ShowUI.ActiveWindow.Close()
+#   	         }
+#   	      }
+#   	      Button "Ok" -Padding "5,0,5,0" -Margin "2,0,0,0" -On_Click { 
+#   	         Write-Output $textbox[0].Text
+#   	         $ShowUI.ActiveWindow.Close()
+#   	      }
+#        }
+#     }
+#  } 
 #   
-#   Take a Screenshot of an input window. NOTE: this won't capture the window chrome.
+#  Take a Screenshot of an input window. NOTE: this won't capture the window chrome.
 #   
 #.Example
-#Chart -Width 200 -Height 150 -Theme Theme3 -Watermark $false -Animation $false (
-#   DataSeries $(
-#      1..(Get-Random -min 3 -max 6) | ForEach-Object {
-#         DataPoint -YValue (Get-Random 100)
-#      }
-#   )
-#) | Out-BootsImage Statistics.png  | ForEach-Object { 
+# New-UIImage Statistics.png {
+#    Chart -Width 200 -Height 150 -Theme Theme3 -Watermark $false -Animation $false {
+#       DataSeries {
+#          1..(Get-Random -min 3 -max 6) | ForEach-Object {
+#             DataPoint -YValue (Get-Random 100)
+#          }
+#       }
+#    }
+# } | ForEach-Object { 
 #   Send-FTP HuddledMasses.org (Get-Credential) -LocalFile $_ -Remotefile "/public_html/$($_.Name)" 
 #   [Windows.Clipboard]::SetText( "!http://HuddledMasses.org/$($_.Name)!" )
-#}
+# }
 #
 #   Using the Visifire charting components, generate a random chart, convert it to a png image, upload it to my webserver using the NetCmdlets Send-FTP, and finally, send the new URL to the clipboard...
 #   
@@ -64,20 +68,20 @@ Param(
 PROCESS {
    [ScriptBlock]$global:export = iex @"
    { Param(`$ss_win)
-      `$null = Export-BootsImage '$FileName' `$ss_win '$dpiX,$dpiY' '$pixelFormat'
+      `$null = Export-UIImage '$FileName' `$ss_win '$dpiX,$dpiY' '$pixelFormat'
       `$ss_win.Close()
    }
 "@
-   $global:bmod = Get-BootsModule
+   $global:bmod = Get-UIModule
    $global:Content = $Content
 
-   $null = New-BootsWindow -Title "ScreenCapWindow" {
+   $null = Show-UI -Title "ScreenCapWindow" {
       GridPanel $global:Content -Background White
    } -On_ContentRendered {
       & $global:export $this
    }
 
-   Remove-BootsWindow "ScreenCapWindow"
+   Remove-UIWindow "ScreenCapWindow"
    $files = "{0}*{1}" -f [IO.Path]::GetFileNameWithoutExtension($FileName),
                          [IO.Path]::GetExtension($FileName)
    Write-Host $files

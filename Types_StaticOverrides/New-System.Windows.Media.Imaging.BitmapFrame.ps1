@@ -1,8 +1,8 @@
-if( [Array]::BinarySearch(@(Get-BootsAssemblies), 'PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' ) -lt 0 ) {
+if( [Array]::BinarySearch(@(Get-UIAssemblies), 'PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' ) -lt 0 ) {
   $null = [Reflection.Assembly]::Load( 'PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' ) 
 }
-if($ExecutionContext.SessionState.Module.Guid -ne (Get-BootsModule).Guid) {
-	Write-Warning "BitmapFrame not invoked in PowerBoots context."
+if($ExecutionContext.SessionState.Module.Guid -ne (Get-UIModule).Guid) {
+	Write-Warning "BitmapFrame not invoked in ShowUI context."
 }
 
 function New-System.Windows.Media.Imaging.BitmapFrame {
@@ -123,7 +123,7 @@ $Stream,$CreateOptions,$CacheOptions
 foreach($key in @($PSBoundParameters.Keys) | where { $PSBoundParameters[$_] -is [ScriptBlock] }) {
    $PSBoundParameters[$key] = $PSBoundParameters[$key].GetNewClosure()
 }
-Set-PowerBootsProperties @($PSBoundParameters.GetEnumerator() | Where { [Array]::BinarySearch($All,($_.Key -replace "^On_(.*)",'$1__')) -gt 0 } ) ([ref]$DObject)
+Set-UIProperties @($PSBoundParameters.GetEnumerator() | Where { [Array]::BinarySearch($All,($_.Key -replace "^On_(.*)",'$1__')) -gt 0 } ) ([ref]$DObject)
    Microsoft.PowerShell.Utility\Write-Output $DObject
 } #Process
 }

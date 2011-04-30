@@ -1,4 +1,4 @@
-function Add-BootsFunction {
+function Add-UIFunction {
 #
 #.Synopsis
 #   Add support for a new class to Boots by creating the dynamic constructor function(s).
@@ -11,17 +11,17 @@ function Add-BootsFunction {
 #.Parameter Type
 #   The type you want to create a constructor function for.  It must have a default parameterless constructor.
 #.Example
-#   Add-BootsFunction ([System.Windows.Controls.Button])
+#   Add-UIFunction ([System.Windows.Controls.Button])
 #   
 #   Creates a new boots function for the Button control.
 #
 #.Example
-#   [Reflection.Assembly]::LoadWithPartialName( "PresentationFramework" ).GetTypes() | Add-BootsFunction
+#   [Reflection.Assembly]::LoadWithPartialName( "PresentationFramework" ).GetTypes() | Add-UIFunction
 #
 #   Will create boots functions for all the WPF components in the PresentationFramework assembly.  Note that you could also load that assembly using GetAssembly( "System.Windows.Controls.Button" ) or Load( "PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" )
 #
 #.Example
-#   Add-BootsFunction -Assembly PresentationFramework
+#   Add-UIFunction -Assembly PresentationFramework
 #
 #   Will create boots functions for all the WPF components in the PresentationFramework assembly.
 #
@@ -46,12 +46,12 @@ PARAM(
 )
 BEGIN {
    [Type[]]$Empty=@()
-   if(!(Test-Path "$PowerBootsPath\Types_Generated")) {   
-      MkDir "$PowerBootsPath\Types_Generated"
+   if(!(Test-Path "$ShowUI.InstallPath\Types_Generated")) {   
+      MkDir "$ShowUI.InstallPath\Types_Generated"
    }
 }
 END {
-   Export-CliXml -Input $DependencyProperties -Path $PowerBootsPath\DependencyPropertyCache.clixml
+   Export-CliXml -Input $DependencyProperties -Path $ShowUI.InstallPath\DependencyPropertyCache.clixml
 }
 PROCESS {
    if($_ -is [System.IO.FileSystemInfo]) { $Assembly = @($_) } else { $type = @($_) }
@@ -77,11 +77,11 @@ PROCESS {
       }
    }
 
-   $LoadedAssemblies = Get-BootsAssemblies 
+   $LoadedAssemblies = Get-UIAssemblies 
    
    foreach($T in $type) {
       $TypeName = $T.FullName
-      $ScriptPath = "$PowerBootsPath\Types_Generated\New-$TypeName.ps1"
+      $ScriptPath = "$ShowUI.InstallPath\Types_Generated\New-$TypeName.ps1"
       Write-Verbose $TypeName
 
       ## Collect all dependency properties ....
@@ -101,7 +101,7 @@ PROCESS {
       Write-Verbose "Testing $ScriptPath   ($(Test-Path $ScriptPath))"
       if(!( Test-Path $ScriptPath ) -OR $Force) {
          $ContentProperty = ""
-         $ContentPattern = "^$([string]::Join('$|^', $BootsContentProperties))`$"
+         $ContentPattern = "^$([string]::Join('$|^', $ShowUI.ContentProperties))`$"
          ## Get (or generate) a set of parameters based on the the Type Name
          $Parameters = [String]::Join("`n,`t", @(
             ## Add all properties
@@ -165,7 +165,7 @@ $Parameters
 
 BEGIN {
    ## Preload the assembly if it's not already loaded
-   if( [Array]::BinarySearch(@(Get-BootsAssemblies), '$($T.Assembly.FullName)' ) -lt 0 ) {
+   if( [Array]::BinarySearch(@(Get-UIAssemblies), '$($T.Assembly.FullName)' ) -lt 0 ) {
    $loadStatement
    }
 
@@ -197,7 +197,7 @@ if($ContentProperty){
 "
    }
 "
-'Set-PowerBootsProperties $PSBoundParameters $DObject $All'
+'Set-UIProperties $PSBoundParameters $DObject $All'
    if(!$ContentProperty -or !$ContentProperty.IsCollection) {
 @'
    Microsoft.PowerShell.Utility\Write-Output $DObject
@@ -222,7 +222,7 @@ END {
       New-Alias -Name $T.Name "New-$TypeName" -EA "SilentlyContinue" -Scope Global
    }                                                         
 }#PROCESS
-}#Add-BootsFunction
+}#Add-UIFunction
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR

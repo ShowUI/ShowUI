@@ -1,0 +1,22 @@
+@{
+#AliasesToExport=""
+Author="Joel Bennett"
+#CmdletsToExport=""
+CompanyName="http://HuddledMasses.org"
+Copyright="Copyright 2010, Joel Bennett, released under the Ms-PL"
+Description="The WPF GUI Module for PowerShell"
+CLRVersion="2.0"
+#FileList=""
+#FunctionsToExport=""
+GUID="53dc54e7-1c7d-4dcf-a4c8-54a039de2550"
+ModuleToProcess="ShowUI.psm1"
+NestedModules="PoshWpf.psd1","AutoLoad.psm1"
+ModuleVersion="0.3.0.0"
+PowerShellVersion="2.0"
+#ModuleList=@{ModuleName="PoshWpf"}
+#PrivateData=""
+RequiredAssemblies="BinaryAssemblies\Huddled.WPF.Controls.dll"
+#ScriptsToProcess="PoshWpf.ps1"
+#RequiredModules="PoshWpf"
+#VariablesToExport="ShowUI"
+}

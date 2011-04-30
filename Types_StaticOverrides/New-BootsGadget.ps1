@@ -1,12 +1,12 @@
-# New-BootsGadget {
+# New-UIGadget {
 #.Synopsis
 #   Create desktop widgets with no window chrom
 #.Description
-#   Provides a wrapper for generating widget windows with PowerBoots. It adds two parameters to the usual New-PowerBoots command: RefreshRate and On_Refresh.
+#   Provides a wrapper for generating widget windows with ShowUI. It adds two parameters to the usual Show-UI command: RefreshRate and On_Refresh.
 #  
 #   Widget windows are created with AllowsTransparency, Background = Transparent, and WindowStyle = None (among other things) and provide an automatic timer for updating the window contents, and support dragging with the mouse anywhere on the window.
 #.Param Content
-#   The PowerBoots content of the widget
+#   The ShowUI content of the widget
 #.Param RefreshRate
 #   The timespan to wait between refreshes, like "0:0:0.5" for 5 seconds
 #.Param On_Refresh
@@ -580,7 +580,7 @@ PROCESS {
    $PSBoundParameters["ResizeMode"] = "NoResize"
    $PSBoundParameters["Passthru"] = $True
    
-   $Window = New-BootsWindow @PSBoundParameters
+   $Window = Show-UI @PSBoundParameters
    if($Window) { [Huddled.Dwm]::RemoveFromAeroPeek( $Window.Handle ) }
    if($Passthru) { Write-Output $Window }
 }

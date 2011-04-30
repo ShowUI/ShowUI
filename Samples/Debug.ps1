@@ -4,7 +4,7 @@
          TextBlock -FontSize 24 {
             Hyperlink {
                Bold "Q. "
-               "Can PowerBoots do debugging?"
+               "Can ShowUI do debugging?"
             } -NavigateUri " " -On_RequestNavigate {
                if($global:Answer.Visibility -eq 2) { 
                   $global:Answer.Visibility = "Visible"

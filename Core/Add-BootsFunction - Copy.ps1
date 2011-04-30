@@ -1,7 +1,7 @@
-function Add-BootsFunction {
+function Add-UIFunction {
 <#
 .Synopsis
-   Add support for a new class to Boots by creating the dynamic constructor function(s).
+   Add support for a new class to Show-UI by creating the dynamic constructor function(s).
 .Description
    Creates a New-Namespace.Type function for each type passed in, as well as a short form "Type" alias.
 
@@ -11,22 +11,22 @@ function Add-BootsFunction {
 .Parameter Type
    The type you want to create a constructor function for.  It must have a default parameterless constructor.
 .Example
-   Add-BootsFunction ([System.Windows.Controls.Button])
+   Add-UIFunction ([System.Windows.Controls.Button])
    
-   Creates a new boots function for the Button control.
+   Creates a new Show-UI function for the Button control.
 
 .Example
-   [Reflection.Assembly]::LoadWithPartialName( "PresentationFramework" ).GetTypes() | Add-BootsFunction
+   [Reflection.Assembly]::LoadWithPartialName( "PresentationFramework" ).GetTypes() | Add-UIFunction
 
-   Will create boots functions for all the WPF components in the PresentationFramework assembly.  Note that you could also load that assembly using GetAssembly( "System.Windows.Controls.Button" ) or Load( "PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" )
+   Will create Show-UI functions for all the WPF components in the PresentationFramework assembly.  Note that you could also load that assembly using GetAssembly( "System.Windows.Controls.Button" ) or Load( "PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" )
 
 .Example
-   Add-BootsFunction -Assembly PresentationFramework
+   Add-UIFunction -Assembly PresentationFramework
 
-   Will create boots functions for all the WPF components in the PresentationFramework assembly.
+   Will create Show-UI functions for all the WPF components in the PresentationFramework assembly.
 
 .Links 
-   http://HuddledMasses.org/powerboots
+   http://Show-UI.org
 .ReturnValue
    The name(s) of the function(s) created -- so you can export them, if necessary.
 .Notes
@@ -47,12 +47,12 @@ PARAM(
 )
 BEGIN {
    [Type[]]$Empty=@()
-   if(!(Test-Path "$PowerBootsPath\Types_Generated")) {   
-      MkDir "$PowerBootsPath\Types_Generated"
+   if(!(Test-Path "$($ShowUI.InstallPath)\Types_Generated")) {   
+      MkDir "$($ShowUI.InstallPath)\Types_Generated"
    }
 }
 END {
-   Export-CliXml -Input $DependencyProperties -Path $PowerBootsPath\DependencyPropertyCache.clixml
+   Export-CliXml -Input $DependencyProperties -Path $ShowUI.InstallPath\DependencyPropertyCache.clixml
 }
 PROCESS {
    if($PSCmdlet.ParameterSetName -eq "FromAssembly") {
@@ -77,11 +77,11 @@ PROCESS {
       }
    }
 
-   $LoadedAssemblies = Get-BootsAssemblies 
+   $LoadedAssemblies = Get-UIAssemblies 
    
    foreach($T in $type) {
       $TypeName = $T.FullName
-      $ScriptPath = "$PowerBootsPath\Types_Generated\New-$TypeName.ps1"
+      $ScriptPath = "$($ShowUI.InstallPath)\Types_Generated\New-$TypeName.ps1"
       Write-Verbose $TypeName
 
       ## Collect all dependency properties ....
@@ -107,7 +107,7 @@ PROCESS {
             foreach ($p in $T.GetProperties("Public,Instance,FlattenHierarchy") | 
                               where {$_.CanWrite -Or $_.PropertyType.GetInterface([System.Collections.IList]) } | Sort Name -Unique)
             {
-               if($p.Name -match "^$($BootsContentProperties -Join '$|^')`$") {
+               if($p.Name -match "^$($ShowUI.ContentProperties -Join '$|^')`$") {
                   $Pipelineable += @(Add-Member -in $p.Name -Type NoteProperty -Name "IsCollection" -Value $($p.PropertyType.GetInterface([System.Collections.IList]) -ne $null) -Passthru)
                   "`t[Parameter(ParameterSetName='Default',Position=1,ValueFromPipeline=`$true)]" +
                   "`n`t[Object[]]`$$($p.Name)"
@@ -134,7 +134,7 @@ PROCESS {
          #  Write-Host "Pipelineable Content Property for $TypeName: $($Pipelineable -ne $Null)" -Fore Cyan
          #  foreach($p in $Pipelineable) {write-host "$p is $(if(!$p.IsCollection) { "not " })a collection"}
 
-### These three are "built in" to boots, so we don't need to write preloading for them
+### These three are "built in" to Show-UI, so we don't need to write preloading for them
 # PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
 # WindowsBase, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
 # PresentationCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
@@ -145,8 +145,7 @@ $Parameters
 
 ## Preload the assembly if it's not already loaded
 
-
-if( [Array]::BinarySearch(@(Get-BootsAssemblies), '$($T.Assembly.FullName)' ) -lt 0 ) {
+if( [Array]::BinarySearch(@(Get-UIAssemblies), '$($T.Assembly.FullName)' ) -lt 0 ) {
 $(
    $index = [Array]::BinarySearch($LoadedAssemblies, $T.Assembly.FullName)
    
@@ -158,10 +157,10 @@ $(
    }
 )
 }
-if(`$ExecutionContext.SessionState.Module.Guid -ne (Get-BootsModule).Guid) {
-	Write-Debug `"$($T.Name) not invoked in PowerBoots context. Attempting to reinvoke.`"
+if(`$ExecutionContext.SessionState.Module.Guid -ne (Get-UIModule).Guid) {
+	Write-Debug `"$($T.Name) not invoked in Show-UI context. Attempting to reinvoke.`"
    `$scriptParam = `$PSBoundParameters
-   return iex `"& (Get-BootsModule) '`$(`$MyInvocation.MyCommand.Path)' ```@PSBoundParameters`"
+   return iex `"& (Get-UIModule) '`$(`$MyInvocation.MyCommand.Path)' ```@PSBoundParameters`"
 }
 # Write-Host ""$($T.Name) in module `$(`$executioncontext.sessionstate.module) context!"" -fore Green
 
@@ -194,7 +193,7 @@ if(!$collectable) {
 "
 }
 
-'Set-PowerBootsProperties $PSBoundParameters ([ref]$DObject) $All'
+'Set-UIProperties $PSBoundParameters ([ref]$DObject) $All'
 
 if(!$collectable) {
 @'
@@ -221,7 +220,7 @@ New-$TypeName `@PSBoundParameters
       New-Alias -Name $T.Name "New-$TypeName" -EA "SilentlyContinue" -Scope Global
    }                                                         
 }#PROCESS
-}#Add-BootsFunction
+}#Add-UIFunction
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR

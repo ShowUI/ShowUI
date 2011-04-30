@@ -32,19 +32,19 @@
                <TableRowEntry>
                   <TableColumnItems>
                      <TableColumnItem>
-                        <ScriptBlock>$BootsWindow = $_; Invoke-BootsWindow $BootsWindow { (New-Object System.Windows.Interop.WindowInteropHelper $BootsWindow).Handle}</ScriptBlock>
+                        <ScriptBlock>$ShowUI.ActiveWindow = $_; Invoke-UIWindow $ShowUI.ActiveWindow { (New-Object System.Windows.Interop.WindowInteropHelper $ShowUI.ActiveWindow).Handle}</ScriptBlock>
                      </TableColumnItem>
                      <TableColumnItem>
-                        <ScriptBlock>$BootsWindow = $_; Invoke-BootsWindow $BootsWindow  {$BootsWindow.Title}</ScriptBlock>
+                        <ScriptBlock>$ShowUI.ActiveWindow = $_; Invoke-UIWindow $ShowUI.ActiveWindow  {$ShowUI.ActiveWindow.Title}</ScriptBlock>
                      </TableColumnItem>
                      <TableColumnItem>
                         <PropertyName>IsVisible</PropertyName>
                      </TableColumnItem>
                      <TableColumnItem>
-                        <ScriptBlock>$BootsWindow = $_; Invoke-BootsWindow $BootsWindow {$BootsWindow.RestoreBounds}</ScriptBlock>
+                        <ScriptBlock>$ShowUI.ActiveWindow = $_; Invoke-UIWindow $ShowUI.ActiveWindow {$ShowUI.ActiveWindow.RestoreBounds}</ScriptBlock>
                      </TableColumnItem>
                      <TableColumnItem>
-                        <ScriptBlock>$BootsWindow = $_; Invoke-BootsWindow $BootsWindow {$BootsWindow.Content.GetType().Name}</ScriptBlock>
+                        <ScriptBlock>$ShowUI.ActiveWindow = $_; Invoke-UIWindow $ShowUI.ActiveWindow {$ShowUI.ActiveWindow.Content.GetType().Name}</ScriptBlock>
                      </TableColumnItem>
                   </TableColumnItems>
                </TableRowEntry>

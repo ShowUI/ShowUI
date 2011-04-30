@@ -1,10 +1,10 @@
-if(!(Get-Command New-BootsWindow -EA SilentlyContinue)) {
+if(!(Get-Command Show-UI -EA SilentlyContinue)) {
    # Add-PsSnapin PoshWpf
-   Import-Module PowerBoots
-   Add-BootsContentProperty 'DataPoints', 'Series'
+   Import-Module ShowUI
+   Add-UIContentProperty 'DataPoints', 'Series'
    #[Void][Reflection.Assembly]::LoadFrom( (Convert-Path (Resolve-Path "~\Documents\WindowsPowershell\Libraries\WPFVisifire.Charts.dll")) )
-   Add-BootsFunction -Assembly "~\Documents\WindowsPowershell\Libraries\WPFVisifire.Charts.dll"
-   Add-BootsFunction ([System.Windows.Threading.DispatcherTimer])
+   Add-UIFunction -Assembly "~\Documents\WindowsPowershell\Libraries\WPFVisifire.Charts.dll"
+   Add-UIFunction ([System.Windows.Threading.DispatcherTimer])
 }
 
 if(Get-Command Ping-Host -EA SilentlyContinue) {
@@ -15,7 +15,7 @@ if(Get-Command Ping-Host -EA SilentlyContinue) {
 
 $global:onTick = {
 $window = $this.Tag
-   #  Invoke-BootsWindow $window {
+   #  Invoke-UIWindow $window {
       try {
          foreach($s in $window.Content.Series.GetEnumerator()) {
             $ping = &$pingcmd $s.LegendText
@@ -52,7 +52,7 @@ Param(
 )
 PROCESS {
    if($Window) {
-      Invoke-BootsWindow $Window { 
+      Invoke-UIWindow $Window { 
          $target | Add-PingHostInternal -render $renderAs -window $window
       }
       return $Window
@@ -98,8 +98,8 @@ Process {
    $script:renderAs = $renderAs
    $script:Hosts = $Hosts
       
-   $global:pingWindow = New-BootsWindow -Async {
-      Param($window) # New-Boots passes the window to us ...
+   $global:pingWindow = Show-UI -Async {
+      Param($window) # Show-UI passes the window to us ...
       # Make a new scriptblock of the OnTick handle, passing it ourselves
       # Make a timer, and stick it in the window....
       $window.Tag = @((DispatcherTimer -Interval "00:00:01.0" -On_Tick $global:onTick -Tag $window), $global:onTick)
@@ -120,7 +120,7 @@ Process {
       $this.tag[0].Remove_Tick($this.tag[1])
       $this.tag[0].Stop()
       $global:pingWindow = $null 
-      Remove-BootsWindow $this
+      Remove-UIWindow $this
    } -Title "Ping Monitor" -Passthru -height 300 -width 800 
 
    if($Passthru) {

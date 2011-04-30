@@ -1,6 +1,6 @@
 ####  Before this will work, YOU MUST HAVE:
 ####   INSTALLED the JUNE WPF Toolkit http://wpf.codeplex.com 
-####   INSTALLED, and IMPORTED in your current session, the PowerBoots Module
+####   INSTALLED, and IMPORTED in your current session, the Show-UI Module
 
 if(Get-Command New-System.Windows.VisualState) {
    ls "${Env:ProgramFiles}\WPF Toolkit",
@@ -13,14 +13,14 @@ if(Get-Command New-System.Windows.VisualState) {
 } else {
    ls "${Env:ProgramFiles}\WPF Toolkit",
       "${Env:ProgramFiles(x86)}\WPF Toolkit" -recurse -filter *Toolkit.dll -EA 0 -EV err | 
-   Add-BootsFunction
+   Add-UIFunction
 
    if($err.Count -eq 2){Write-Error "Couldn't find the 'WPF Toolkit' in your Program Files folder..." }
 }
 
-Add-BootsTemplate C:\Users\Joel\Documents\WindowsPowershell\Modules\PowerBoots\XamlTemplates\PowerCharting.xaml
+Add-UITemplate $ShowUI.InstallPath\XamlTemplates\PowerCharting.xaml
 
-# . C:\Users\Joel\Documents\WindowsPowershell\Modules\PowerBoots\New-PowerChart.ps1
+# . C:\Users\Joel\Documents\WindowsPowershell\Modules\ShowUI\New-PowerChart.ps1
 # New-PowerChart Area { ls | ? {!$_.PSIsContainer} } Name Length -Background White
 # New-PowerChart Pie { ls | ?{!$_.PSIsContainer} } Name Length
 
@@ -40,7 +40,7 @@ function Ping-Host {
 #     Write-Output $pings
 #  } Age Ping -Interval "00:00:02"                                      
 
-#  Boots { 
+#  Show { 
 #     $global:timer = DispatcherTimer -Interval "00:00:10" -On_Tick { $series.ItemsSource = ls | ? { !$_.PsIsContainer } }
 #     Chart { PieSeries -DependentValuePath Length -IndependentValuePath Name | Tee -var global:series }
 #     $timer.Start()
@@ -79,7 +79,9 @@ param(
 
 begin
 {
-   $BootsWindow.Tag = @{ 
+	show {
+	
+   $ShowUI.ActiveWindow.Tag = @{ 
       "ChartType" = $ChartType
       "ItemsSource" = $ItemsSource
       "DependentValuePath" = $DependentValuePath
@@ -90,40 +92,42 @@ begin
 
 
    if($Interval) {
-      # Write-Host "Setting Udpate Interval to $($BootsWindow.Tag.Interval)" -Fore Cyan
+      # Write-Host "Setting Udpate Interval to $($ShowUI.ActiveWindow.Tag.Interval)" -Fore Cyan
          
-      $BootsWindow.Tag.Timer = DispatcherTimer -Interval $Interval -Tag $BootsWindow.Tag -On_Tick {
+      $ShowUI.ActiveWindow.Tag.Timer = DispatcherTimer -Interval $Interval -Tag $ShowUI.ActiveWindow.Tag -On_Tick {
                         # Write-Host "tick. " -nonewline -fore cyan
                         $i=0
-                        $BootsWindow.Tag.Series | ForEach{ $_.ItemsSource = &$($BootsWindow.Tag.ItemsSource[$i++]) }
+                        $ShowUI.ActiveWindow.Tag.Series | ForEach{ $_.ItemsSource = &$($ShowUI.ActiveWindow.Tag.ItemsSource[$i++]) }
                      }
-      $this.Add_Loaded( { $BootsWindow.Tag.Timer.Start() } )
-      $this.Add_Closed( { $BootsWindow.Tag.Timer.Stop() } )
+      $this.Add_Loaded( { $ShowUI.ActiveWindow.Tag.Timer.Start() } )
+      $this.Add_Closed( { $ShowUI.ActiveWindow.Tag.Timer.Stop() } )
    }
    Chart {
       # Write-Host "Three" -Fore Cyan
-      for($c=0; $c -lt $BootsWindow.Tag.ChartType.length; $c++) {
-         $chartType = $BootsWindow.Tag.ChartType[$c].ToLower()
-         if($BootsWindow.Tag.SizeValuePath -and $BootsWindow.Tag.ChartType[$c] -eq "Bubble") {
-            # Write-Host "$($this.tag.ChartType[$c])Series -DependentValuePath $($BootsWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($BootsWindow.Tag.IndependentValuePath[$c]) -SizeValuePath $($BootsWindow.Tag.SizeValuePath[$c]) -ItemsSource `$(&{$($BootsWindow.Tag.ItemsSource[$c])}) -DataPointStyle `$this.FindResource('$($this.tag.ChartType[$c])DataPointTooltipsFix')"
-            $BootsWindow.Tag.Series += iex "$($chartType)Series -DependentValuePath $($BootsWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($BootsWindow.Tag.IndependentValuePath[$c]) -SizeValuePath $($BootsWindow.Tag.SizeValuePath[$c]) -ItemsSource `$(&{$($BootsWindow.Tag.ItemsSource[$c])})" # -DataPointStyle `$this.FindResource('$($BootsWindow.Tag.ChartType[$c])DataPointTooltipsFix')"
-            $BootsWindow.Tag.Series[-1].DataPointStyle = $this.FindResource("$($chartType)DataPointTooltipsFix")
-         } elseif($BootsWindow.Tag.ChartType[$c] -eq "Pie") {                                                                                                                                                          
-            # Write-Host "$($this.tag.ChartType[$c])Series -DependentValuePath $($BootsWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($BootsWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($BootsWindow.Tag.ItemsSource[$c])}) -StylePalette =  `$this.FindResource('$($this.tag.ChartType[$c])PaletteTooltipsFix')"
-            $BootsWindow.Tag.Series += iex "$($chartType)Series -DependentValuePath $($BootsWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($BootsWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($BootsWindow.Tag.ItemsSource[$c])})"# -StylePalette `$this.FindResource('$($chartType)PaletteTooltipsFix')"
-            $BootsWindow.Tag.Series[-1].StylePalette = $this.FindResource("$($chartType)PaletteTooltipsFix")
+      for($c=0; $c -lt $ShowUI.ActiveWindow.Tag.ChartType.length; $c++) {
+         $chartType = $ShowUI.ActiveWindow.Tag.ChartType[$c].ToLower()
+         if($ShowUI.ActiveWindow.Tag.SizeValuePath -and $ShowUI.ActiveWindow.Tag.ChartType[$c] -eq "Bubble") {
+            # Write-Host "$($this.tag.ChartType[$c])Series -DependentValuePath $($ShowUI.ActiveWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($ShowUI.ActiveWindow.Tag.IndependentValuePath[$c]) -SizeValuePath $($ShowUI.ActiveWindow.Tag.SizeValuePath[$c]) -ItemsSource `$(&{$($ShowUI.ActiveWindow.Tag.ItemsSource[$c])}) -DataPointStyle `$this.FindResource('$($this.tag.ChartType[$c])DataPointTooltipsFix')"
+            $ShowUI.ActiveWindow.Tag.Series += iex "$($chartType)Series -DependentValuePath $($ShowUI.ActiveWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($ShowUI.ActiveWindow.Tag.IndependentValuePath[$c]) -SizeValuePath $($ShowUI.ActiveWindow.Tag.SizeValuePath[$c]) -ItemsSource `$(&{$($ShowUI.ActiveWindow.Tag.ItemsSource[$c])})" # -DataPointStyle `$this.FindResource('$($ShowUI.ActiveWindow.Tag.ChartType[$c])DataPointTooltipsFix')"
+            $ShowUI.ActiveWindow.Tag.Series[-1].DataPointStyle = $this.FindResource("$($chartType)DataPointTooltipsFix")
+         } elseif($ShowUI.ActiveWindow.Tag.ChartType[$c] -eq "Pie") {                                                                                                                                                          
+            # Write-Host "$($this.tag.ChartType[$c])Series -DependentValuePath $($ShowUI.ActiveWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($ShowUI.ActiveWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($ShowUI.ActiveWindow.Tag.ItemsSource[$c])}) -StylePalette =  `$this.FindResource('$($this.tag.ChartType[$c])PaletteTooltipsFix')"
+            $ShowUI.ActiveWindow.Tag.Series += iex "$($chartType)Series -DependentValuePath $($ShowUI.ActiveWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($ShowUI.ActiveWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($ShowUI.ActiveWindow.Tag.ItemsSource[$c])})"# -StylePalette `$this.FindResource('$($chartType)PaletteTooltipsFix')"
+            $ShowUI.ActiveWindow.Tag.Series[-1].StylePalette = $this.FindResource("$($chartType)PaletteTooltipsFix")
          } else {                                                                                                                                                          
-            # Write-Host "$($this.tag.ChartType[$c])Series -DependentValuePath $($BootsWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($BootsWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($BootsWindow.Tag.ItemsSource[$c])}) -DataPointStyle `$this.FindResource('$($this.tag.ChartType[$c])DataPointTooltipsFix')"
-            $BootsWindow.Tag.Series += iex "$($chartType)Series -DependentValuePath $($BootsWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($BootsWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($BootsWindow.Tag.ItemsSource[$c])})" #-DataPointStyle `$this.FindResource('$($chartType)DataPointTooltipsFix')"
-            #$global:bind = $BootsWindow.Tag.Series[-1].SetResourceReference( ($BootsWindow.Tag.Series[-1].GetType()::DataPointStyleProperty), "$($chartType)DataPointTooltipsFix")
-            $BootsWindow.Tag.Series[-1].DataPointStyle = $this.FindResource("$($chartType)DataPointTooltipsFix")
+            # Write-Host "$($this.tag.ChartType[$c])Series -DependentValuePath $($ShowUI.ActiveWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($ShowUI.ActiveWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($ShowUI.ActiveWindow.Tag.ItemsSource[$c])}) -DataPointStyle `$this.FindResource('$($this.tag.ChartType[$c])DataPointTooltipsFix')"
+            $ShowUI.ActiveWindow.Tag.Series += iex "$($chartType)Series -DependentValuePath $($ShowUI.ActiveWindow.Tag.DependentValuePath[$c]) -IndependentValuePath $($ShowUI.ActiveWindow.Tag.IndependentValuePath[$c]) -ItemsSource `$(&{$($ShowUI.ActiveWindow.Tag.ItemsSource[$c])})" #-DataPointStyle `$this.FindResource('$($chartType)DataPointTooltipsFix')"
+            #$global:bind = $ShowUI.ActiveWindow.Tag.Series[-1].SetResourceReference( ($ShowUI.ActiveWindow.Tag.Series[-1].GetType()::DataPointStyleProperty), "$($chartType)DataPointTooltipsFix")
+            $ShowUI.ActiveWindow.Tag.Series[-1].DataPointStyle = $this.FindResource("$($chartType)DataPointTooltipsFix")
          }       
       }
-      # Write-Host "Series: $($BootsWindow.Tag.Series.Count): $($BootsWindow.Tag.Series)" -Fore Green
-      $BootsWindow.Tag.Series
+      # Write-Host "Series: $($ShowUI.ActiveWindow.Tag.Series.Count): $($ShowUI.ActiveWindow.Tag.Series)" -Fore Green
+      $ShowUI.ActiveWindow.Tag.Series
       # Write-Host "Four" -Fore Cyan
    } -Background Transparent -BorderThickness 0
    # Write-Host "Five" -Fore Green
+   
+   }
 }
 }
 

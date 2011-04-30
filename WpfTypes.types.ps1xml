@@ -5,7 +5,7 @@
         <Members>
             <ScriptProperty>
                 <Name>Handle</Name>
-                <GetScriptBlock>$BootsWindow = $this; Invoke-BootsWindow $BootsWindow { (New-Object System.Windows.Interop.WindowInteropHelper $BootsWindow).Handle}</GetScriptBlock>
+                <GetScriptBlock>$ShowUI.ActiveWindow = $this; Invoke-UIWindow $ShowUI.ActiveWindow { (New-Object System.Windows.Interop.WindowInteropHelper $ShowUI.ActiveWindow).Handle}</GetScriptBlock>
             </ScriptProperty>
         </Members>
     </Type>

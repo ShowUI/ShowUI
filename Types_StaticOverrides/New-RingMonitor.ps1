@@ -1,16 +1,16 @@
 #requires -version 2.0
-# ALSO REQUIRES PowerBoots preloaded http://boots.codeplex.com
-# ALSO REQUIRES DynamicDataDisplay.dll in PowerBoots path http://dynamicdatadisplay.codeplex.com
+# ALSO REQUIRES ShowUI preloaded http://ShowUI.codeplex.com
+# ALSO REQUIRES DynamicDataDisplay.dll in ShowUI\BinaryAssemblies path http://dynamicdatadisplay.codeplex.com
 [CmdletBinding()]
 Param(
    [TimeSpan]$global:Interval = "00:00:02",
    [Int]$global:RingSize = 200
 )
-## You have to get the DynamicDataDisplay control, and put it's DLLs in the PowerBoots folder...
-ls "$PowerBootsPath\DynamicDataDisplay*.dll" | Add-BootsFunction
+## You have to get the DynamicDataDisplay control, and put it's DLLs in the ShowUI folder...
+ls "$($ShowUI.InstallPath)\BinaryAssemblies\DynamicDataDisplay*.dll" | Add-UIFunction
 
-Add-BootsFunction -Type System.Windows.Media.Pen
-Add-BootsFunction -Type System.Windows.Media.SolidColorBrush
+Add-UIFunction -Type System.Windows.Media.Pen
+Add-UIFunction -Type System.Windows.Media.SolidColorBrush
 
 ## This sets up all the types, and requires the accelerators and the DynamicDataDisplay.dll 
 $accelerate = [type]::gettype("System.Management.Automation.TypeAccelerators") 
@@ -30,7 +30,7 @@ function Global:Add-Monitor {
       $global:YMapping = $(Get-Delegate "System.Func[TimedDouble, Double]" { param([TimedDouble]$value); $value.Value; write-Host "beep: $($value.Value)" -fore yellow })
    )
 
-   Invoke-BootsWindow $Global:Plotter {
+   Invoke-UIWindow $Global:Plotter {
       #  $dataSource = New-Object "EnumerableDataSource[TimedDoubleRing]" (New-Object TimedDoubleRing $global:RingSize)
       $ctor = [EnumerableDataSource[TimedDouble]].GetConstructor( ([System.Collections.Generic.IEnumerable``1]) )
       $Global:dataSource = $ctor.invoke( (,[TimedDoubleRing](New-Object TimedDoubleRing $global:RingSize)) )
@@ -50,7 +50,7 @@ function Global:Remove-Monitor {
 #   Remove a monitor line
    Param( [String]$global:Label="HuddledMasses" )
 
-   Invoke-BootsWindow $Global:Plotter {
+   Invoke-UIWindow $Global:Plotter {
       $Global:Plotter.Children.Remove( $(
          $Global:Plotter.Children | 
             Where-Object { ($_ -is [Microsoft.Research.DynamicDataDisplay.LineGraph]) -and ($_.Name -eq $Global:Label) } |
@@ -77,7 +77,7 @@ Param(
    [Int]$global:RingSize = 200
 )
 
-   New-BootsWindow {
+   Show-UI {
       Param($global:w)
       $w.Tag = DispatcherTimer -Interval $global:Interval -On_Tick Update-Ring
       $w.Tag.Start()

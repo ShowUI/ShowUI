@@ -588,7 +588,7 @@ param(
     ${On_SizeChanged}
 )
 
-if( -not (@(Get-BootsAssemblies) -match "DataVisualization\.Toolkit, Version=3\.5\..*") ) {
+if( -not (@(Get-UIAssemblies) -match "DataVisualization\.Toolkit, Version=3\.5\..*") ) {
    if(Get-Command New-System.Windows.VisualState) {
       "${Env:ProgramFiles}\WPF Toolkit", "${Env:ProgramFiles(x86)}\WPF Toolkit" |
       Where { Test-Path $_ } |
@@ -598,22 +598,22 @@ if( -not (@(Get-BootsAssemblies) -match "DataVisualization\.Toolkit, Version=3\.
       "${Env:ProgramFiles}\WPF Toolkit", "${Env:ProgramFiles(x86)}\WPF Toolkit" |
       Where { Test-Path $_ } |
       Get-ChildItem -recurse -filter *Toolkit.dll |
-      Add-BootsFunction
+      Add-UIFunction
    }
 }
 
-if($ExecutionContext.SessionState.Module.Guid -ne (Get-BootsModule).Guid) {
-	Write-Warning "PowerChart not invoked in PowerBoots context. Attempting to reinvoke."
+if($ExecutionContext.SessionState.Module.Guid -ne (Get-UIModule).Guid) {
+	Write-Warning "PowerChart not invoked in ShowUI context. Attempting to reinvoke."
    $scriptParam = $PSBoundParameters
-   return iex "& (Get-BootsModule) '$($MyInvocation.MyCommand.Path)' `@PSBoundParameters"
+   return iex "& (Get-UIModule) '$($MyInvocation.MyCommand.Path)' `@PSBoundParameters"
 }
 # Write-Host "Condition in module $($executioncontext.sessionstate.module) context!" -fore Green
 
 
-Add-BootsTemplate $PSScriptRoot\XamlTemplates\PowerCharting.xaml
+Add-UITemplate $PSScriptRoot\XamlTemplates\PowerCharting.xaml
 
 
-# . C:\Users\Joel\Documents\WindowsPowershell\Modules\PowerBoots\New-PowerChart.ps1
+# . C:\Users\Joel\Documents\WindowsPowershell\Modules\ShowUI\New-PowerChart.ps1
 # PowerChart Area { ls | ? {!$_.PSIsContainer} } Name Length -Background White
 # PowerChart Pie { ls | ?{!$_.PSIsContainer} } Name Length
 # PowerChart Column { ls | ?{!$_.PSIsContainer} } Name Length
@@ -643,7 +643,7 @@ Param([string[]]$Hosts)
   New-PowerChart $(@("Line")*$Hosts.Count) -Items $scripts $(@("Age")*$Hosts.Count) $(@("Ping")*$Hosts.Count) -Interval "00:00:02"                                      
 }
 
-#  Boots { 
+#  Show-UI { 
 #     $global:timer = DispatcherTimer -Interval "00:00:10" -On_Tick { $series.ItemsSource = ls | ? { !$_.PsIsContainer } }
 #     Chart { PieSeries -DependentValuePath Length -IndependentValuePath Name | Tee -var global:series }
 #     $timer.Start()
@@ -1311,7 +1311,7 @@ process {
       Write-Debug "Bound Parameters: $( $PSBoundParameters | fl | Out-string )"
 
       # Write-Host "One" -Fore Green
-      New-BootsWindow @PSBoundParameters { 
+      Show-UI @PSBoundParameters { 
          # Param($global:w)
          if($PowerChartValues."Interval") {
             # Write-Host "Setting Udpate Interval to $($PowerChartValues.Interval)" -Fore Cyan
@@ -1358,7 +1358,7 @@ process {
       } -Tag $PowerChartValues
       # Write-Host "Six" -Fore Magenta
 
-      #  $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('New-BootsWindow', [System.Management.Automation.CommandTypes]::Cmdlet)
+      #  $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Show-UI', [System.Management.Automation.CommandTypes]::Cmdlet)
       #  $scriptCmd = {& $wrappedCmd @PSBoundParameters }
       #  $steppablePipeline = $scriptCmd.GetSteppablePipeline()
       #  $steppablePipeline.Begin($PSCmdlet)

@@ -23,8 +23,8 @@
       $global:theFormatPoshTableDataGrid = $null
 		if (!(Get-Command datagrid) )
 		{
-			Import-Module PowerBoots
-         Add-BootsFunction 'C:\Program Files (x86)\WPF Toolkit\*\WPFToolkit.dll'
+			Import-Module ShowUI
+         Add-UIFunction 'C:\Program Files (x86)\WPF Toolkit\*\WPFToolkit.dll'
 		}
 	}
 	Process
@@ -36,7 +36,7 @@
 			$global:ObservableCollection = new-object System.Collections.ObjectModel.ObservableCollection[$BaseType]
          if(!$ObservableCollection) { throw "Couldn't create an ObservableCollection[$BaseType]" }
          foreach($i in $InputObject) { $ObservableCollection.Add($i) > $null }
-         boots {
+         Show-UI {
             Param($ItemCollection, $Property)
 				datagrid -RowBackground "AliceBlue" -AlternatingRowBackground "LightBlue" -On_AutoGeneratingColumn {
                Param($Source,$SourceEventArgs) 

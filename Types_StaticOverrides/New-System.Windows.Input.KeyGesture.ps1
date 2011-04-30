@@ -16,13 +16,13 @@ PARAM(
 ## Preload the assembly if it's not already loaded
 
 
-if( [Array]::BinarySearch(@(Get-BootsAssemblies), 'PresentationCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' ) -lt 0 ) {
+if( [Array]::BinarySearch(@(Get-UIAssemblies), 'PresentationCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' ) -lt 0 ) {
    $null = [Reflection.Assembly]::Load( 'PresentationCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' ) 
 }
-if($ExecutionContext.SessionState.Module.Guid -ne (Get-BootsModule).Guid) {
-	Write-Debug "KeyGesture not invoked in PowerBoots context. Attempting to reinvoke."
+if($ExecutionContext.SessionState.Module.Guid -ne (Get-UIModule).Guid) {
+	Write-Debug "KeyGesture not invoked in ShowUI context. Attempting to reinvoke."
    $scriptParam = $PSBoundParameters
-   return iex "& (Get-BootsModule) '$($MyInvocation.MyCommand.Path)' `@PSBoundParameters"
+   return iex "& (Get-UIModule) '$($MyInvocation.MyCommand.Path)' `@PSBoundParameters"
 }
 # Write-Host "KeyGesture in module $($executioncontext.sessionstate.module) context!" -fore Green
 
@@ -86,7 +86,7 @@ PROCESS {
    $null = $PSBoundParameters.Remove("Modifiers")
    $null = $PSBoundParameters.Remove("DisplayString")
 
-   Set-PowerBootsProperties $PSBoundParameters ([ref]$DObject) $All
+   Set-UIProperties $PSBoundParameters ([ref]$DObject) $All
    Microsoft.PowerShell.Utility\Write-Output $DObject
 } #Process
 }

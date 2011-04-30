@@ -55,8 +55,8 @@
          }           
       }
 
-      $property = @($parent | Get-Member -type Properties -Name (Get-BootsContentProperty))[0]
-      Set-BootsProperty [ref]$parent $property $control
+      $property = @($parent | Get-Member -type Properties -Name (Get-UIContentProperty))[0]
+      Set-UIProperty [ref]$parent $property $control
       if( $passThru ){ $control } 
    }
 }

@@ -1,8 +1,8 @@
-## start-demo ~\Projects\Modules\PowerBoots\Samples\Next_Generation_UI.ps1
+## start-demo ~\Projects\Modules\ShowUI\Samples\Next_Generation_UI.ps1
 ## Next Generation UI in PowerShell
 ## Joel "Jaykul" Bennett [MVP]
 ## http://HuddledMasses.org
-## http://PowerBoots.CodePlex.com
+## http://ShowUI.CodePlex.com
 
 ## Slides: What is WPF?
 
@@ -21,13 +21,13 @@ show { $files | Button }
 ## Wouldn't it be cool if the user could pick one?
 ## To do that, we need to handle the "click" event of those buttons,
 ## And then Write-UIOutput:
-show { $files | Button -on_click { Write-UIOutput $this.Content; $bootswindow.close() } }
+show { $files | Button -on_click { Write-UIOutput $this.Content; $ShowUI.ActiveWindow.close() } }
 
 ## What if we don't like that really wide display? Well, it's a Wrap Panel by default.
-show { $files | Button -on_click { Write-UIOutput $this.Content; $bootswindow.close() } }
+show { $files | Button -on_click { Write-UIOutput $this.Content; $ShowUI.ActiveWindow.close() } }
 
 ## But we could use a StackPanel (Or a DockPanel or grid).
-show { $files | Button -on_click { Write-UIOutput $this.Content; $bootswindow.close() } | StackPanel }
+show { $files | Button -on_click { Write-UIOutput $this.Content; $ShowUI.ActiveWindow.close() } | StackPanel }
 
 
 

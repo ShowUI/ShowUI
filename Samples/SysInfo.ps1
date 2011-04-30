@@ -3,7 +3,9 @@ ipmo PowerBoots\PoshWpf; ipmo PowerBoots
 
 ##  A simple example of how to use data templates to make it easy to convert an object to a UI element;
 
-Add-BootsTemplate  $PowerBootsPath\BinaryAssemblies\XamlTemplates\SysInfo.xaml
+Add-UITemplate  $ShowUI.InstallPath\BinaryAssemblies\XamlTemplates\SysInfo.xaml
+
+
 
 
 $asm = Add-Type -MemberDefinition @"
@@ -13,7 +15,7 @@ public string Domain { get; set; }
 
 $pc = new-object SysInfo.ComputerInfo -Prop @{ Hostname = $Env:COMPUTERNAME; Domain = $Env:USERDOMAIN }
 
-New-BootsWindow { $pc }
+Show-UI { $pc }
 
 #  $type = Add-Type -Type "namespace PowerBoots.SysInfo { public class Computer {
 #  public string Hostname;

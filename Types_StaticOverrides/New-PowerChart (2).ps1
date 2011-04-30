@@ -1,5 +1,5 @@
-if(!(Get-Command New-BootsWindow -EA 0)) {
-   Import-Module PowerBoots
+if(!(Get-Command Show-UI -EA 0)) {
+   Import-Module ShowUI
 }                                                                                                                            
 if(Get-Command New-System.Windows.VisualState) {
    ls "${Env:ProgramFiles}\WPF Toolkit",
@@ -10,12 +10,12 @@ if(Get-Command New-System.Windows.VisualState) {
 } else {
    ls "${Env:ProgramFiles}\WPF Toolkit",
       "${Env:ProgramFiles(x86)}\WPF Toolkit" -recurse -filter *Toolkit.dll -EA 0 -EV err | 
-   Add-BootsFunction
+   Add-UIFunction
 
    if($err.Count -eq 2){Write-Error "Couldn't find the 'WPF Toolkit' in your Program Files folder..." }
 }
 
-Add-BootsTemplate C:\Users\Joel\Documents\WindowsPowershell\Modules\PowerBoots\XamlTemplates\PowerCharting.xaml
+Add-UITemplate "$($ShowUI.InstallPath)\XamlTemplates\PowerCharting.xaml"
 
 # . C:\Users\Joel\Documents\WindowsPowershell\Modules\PowerBoots\New-PowerChart.ps1
 # New-PowerChart Pie { ls | ? {!$_.PSIsContainer} } Name Length
@@ -36,7 +36,7 @@ function Ping-Host {
 #     Write-Output $pings
 #  } Ago Ping -Interval "00:00:02"                                      
 
-#  Boots { 
+#  Show-UI { 
 #     $global:timer = DispatcherTimer -Interval "00:00:10" -On_Tick { $series.ItemsSource = ls | ? { !$_.PsIsContainer } }
 #     Chart { PieSeries -DependentValuePath Length -IndependentValuePath Name | Tee -var global:series }
 #     $timer.Start()
@@ -703,7 +703,7 @@ begin
 
       Write-Debug "Bound Parameters: $( $PSBoundParameters | fl | Out-string )"
 
-      New-BootsWindow @PSBoundParameters { 
+      Show-UI @PSBoundParameters { 
          Param($w)
          $w.Tag = $PowerChartValues
          Chart {
@@ -734,7 +734,7 @@ begin
       }
       Write-Verbose "six"
 
-      #  $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('New-BootsWindow', [System.Management.Automation.CommandTypes]::Cmdlet)
+      #  $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Show-UI', [System.Management.Automation.CommandTypes]::Cmdlet)
       #  $scriptCmd = {& $wrappedCmd @PSBoundParameters }
       #  $steppablePipeline = $scriptCmd.GetSteppablePipeline()
       #  $steppablePipeline.Begin($PSCmdlet)
@@ -763,7 +763,7 @@ begin
 #  }
 <#
 
-.ForwardHelpTargetName New-BootsWindow
+.ForwardHelpTargetName Show-UI
 .ForwardHelpCategory Cmdlet
 
 #>

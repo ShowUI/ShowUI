@@ -1,12 +1,12 @@
-# New-BootsWidget {
+# New-UIWidget {
 #.Synopsis
 #   Create desktop widgets with no window chrom
 #.Description
-#   Provides a wrapper for generating widget windows with PowerBoots. It adds two parameters to the usual New-PowerBoots command: RefreshRate and On_Refresh.
+#   Provides a wrapper for generating widget windows with ShowUI. It adds two parameters to the usual Show-UI command: RefreshRate and On_Refresh.
 #  
 #   Widget windows are created with AllowsTransparency, Background = Transparent, and WindowStyle = None (among other things) and provide an automatic timer for updating the window contents, and support dragging with the mouse anywhere on the window.
 #.Param Content
-#   The PowerBoots content of the widget
+#   The ShowUI content of the widget
 #.Param RefreshRate
 #   The timespan to wait between refreshes, like "0:0:0.5" for 5 seconds
 #.Param On_Refresh
@@ -561,13 +561,13 @@ param (
    ${On_SizeChanged}
 )
 
-if($ExecutionContext.SessionState.Module.Guid -ne (Get-BootsModule).Guid) {
-	Write-Warning "New-BootsWidget not invoked in PowerBoots context. Attempting to reinvoke."
+if($ExecutionContext.SessionState.Module.Guid -ne (Get-UIModule).Guid) {
+	Write-Warning "New-UIWidget not invoked in Show-UI context. Attempting to reinvoke."
    $scriptParam = $PSBoundParameters
-   return iex "& (Get-BootsModule) '$($MyInvocation.MyCommand.Path)' `@PSBoundParameters"
+   return iex "& (Get-UIModule) '$($MyInvocation.MyCommand.Path)' `@PSBoundParameters"
 }
 
-function Add-BootsWidget {
+function Add-UIWidget {
 [CmdletBinding(DefaultParameterSetName='DataTemplate')]
 param (
    [Parameter(ParameterSetName='DataTemplate', Mandatory=$False, Position=0)]
@@ -1150,7 +1150,7 @@ PROCESS {
    $null = $PSBoundParameters.Remove("RefreshRate")
    $null = $PSBoundParameters.Remove("On_Refresh")
    
-   $Window = New-BootsWindow @PSBoundParameters
+   $Window = Show-UI @PSBoundParameters
    if($Window -and $Window.Handle ) { 
       [Huddled.Dwm]::RemoveFromAeroPeek( $Window.Handle )
       #if($Handle = Select-Window -class "Progman" | Select -First 1 -Expand Handle) {
@@ -1251,7 +1251,7 @@ $null = [Reflection.Assembly]::Load("UIAutomationClient, Version=3.0.0.0, Cultur
 }
 }
 
-Add-BootsWidget @PSBoundParameters
+Add-UIWidget @PSBoundParameters
 
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB

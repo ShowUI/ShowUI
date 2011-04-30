@@ -1,8 +1,8 @@
-Remove-Item $PowerBootsPath\DependencyPropertyCache.xml -ErrorAction SilentlyContinue
+Remove-Item $ShowUI.InstallPath\DependencyPropertyCache.xml -ErrorAction SilentlyContinue
 
 
 
-Add-BootsFunction -Force -Type 'Microsoft.Win32.OpenFileDialog',
+Add-UIFunction -Force -Type 'Microsoft.Win32.OpenFileDialog',
 'Microsoft.Win32.SaveFileDialog',
 'System.Windows.Annotations.Annotation',
 'System.Windows.Annotations.AnnotationResource',

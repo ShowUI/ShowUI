@@ -62,24 +62,24 @@ Param([int[]]$which=0)
 switch($which) {
 0 { 
 @"
-This script just runs the various demo scripts I've written to test Boots.
+This script just runs the various demo scripts I've written to test ShowUI.
 You need to pass it a number (between 1 and 29) for the samples you want to run!
 "@
 }
 
-## THE FIRST TWENTY SAMPLES ARE FROM THE PowerBoots Walkthrough Tutorial
+## THE FIRST TWENTY SAMPLES ARE FROM THE ORIGINAL PowerBoots Walkthrough Tutorial
 ## THEY ARE INCLUDED HERE FOR COMPLETENESS AND TO MAKE RUNNING THEM EASIER
 
 1 {
-   New-BootsWindow -SizeToContent WidthAndHeight -Content {
+   Show-UI -SizeToContent WidthAndHeight -Content {
       Button -Content "Push Me" 
    }
 }
 2 {
-   Boots { Button -Content "Push Me" }
+   Show-UI { Button -Content "Push Me" }
 }
 3 { 
-   Boots {
+   Show-UI {
       StackPanel {
          Button "A bed of clams"
          Button "A coalition of cheetas"
@@ -88,13 +88,13 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 }
 4 {
-   Boots { "A bed of clams", "A coalition of cheetas", "A gulp of swallows" | Button | StackPanel }
+   Show-UI { "A bed of clams", "A coalition of cheetas", "A gulp of swallows" | Button | StackPanel }
 }
 5 {
-   Boots { "A bed of clams", "A coalition of cheetas", "A gulp of swallows" | Label | StackPanel | Button }
+   Show-UI { "A bed of clams", "A coalition of cheetas", "A gulp of swallows" | Label | StackPanel | Button }
 }
 6 {
-   Boots {
+   Show-UI {
       StackPanel -Margin 5 -Background Pink {
          Button -Margin 2 "A bed of clams"
          Button -Margin 2 "A coalition of cheetas"
@@ -103,13 +103,13 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 }
 7 {
-   Boots { "A bed of clams", "A coalition of cheetas", "A gulp of swallows" | Button -Margin 2 | StackPanel -Margin 5 -Background Pink }
+   Show-UI { "A bed of clams", "A coalition of cheetas", "A gulp of swallows" | Button -Margin 2 | StackPanel -Margin 5 -Background Pink }
 }
 8 {
-   Boots { Ellipse -Width 60 -Height 80 -Margin "20,10,60,20" -Fill Black }
+   Show-UI { Ellipse -Width 60 -Height 80 -Margin "20,10,60,20" -Fill Black }
 }
 9 {
-   Boots {
+   Show-UI {
       Canvas -Height 100 -Width 100 -Children $(
          Rectangle -Margin "10,10,0,0" -Width 45 -Height 45 -Stroke Purple -StrokeThickness 2 -Fill Red
          Polygon -Stroke Pink -StrokeThickness 2 -Fill DarkRed -Points "10,60", "50,60", "50,50", "65,65",
@@ -118,18 +118,18 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 }
 10 {
-   Boots {
+   Show-UI {
       Image -Source http://huddledmasses.org/images/PowerBoots/IMG_3298.jpg -MaxWidth 400 | 
    } -Title "Now those are some powerful boots!" -Async
 }
 11 {
-   Boots {
+   Show-UI {
       StackPanel -Margin 10 -Children $(
          TextBlock "A Question" -FontSize 42 -FontWeight Bold -Foreground "#FF0088" 
          TextBlock -FontSize 24 -Inlines $(
             Bold "Q. "
             "Are you starting to dig "
-            Hyperlink "PowerBoots?" -NavigateUri http://huddledmasses.org/tag/powerboots/ `
+            Hyperlink "Show-UI?" -NavigateUri http://huddledmasses.org/tag/powerboots/ `
                                     -On_RequestNavigate { [Diagnostics.Process]::Start( $this.NavigateUri ) }
          )
          TextBlock -FontSize 16 -Inlines $(
@@ -140,7 +140,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 }
 12 {
-   Boots { 
+   Show-UI { 
       $global:Count = 0
       WrapPanel {
          Button "Push Me" -On_Click {
@@ -150,14 +150,14 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
          }
          Label "Nothing pushed so far" | tee -var global:clickLabel
       }
-   } -Title "Test App" -On_Closing { $global:BootsOutput = $script:Count; rm variable:Count } -Export
+   } -Title "Test App" -On_Closing { $Global:UIOutput = $script:Count; rm variable:Count } -Export
 }
 13 {
-   Boots {
+   Show-UI {
       WrapPanel -On_Load { $Count = 0 }  {
          Button "Push Me" -On_Click {
             Export-NamedElement
-            Write-BootsOutput (++$count)
+            Write-UIOutput (++$count)
             $output.Inlines.Clear(); 
             $output.Inlines.Add("You clicked the button $count times!") 
          }
@@ -180,63 +180,63 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
                     #  -FontWeight Bold  -FontSize 40
    #  }
    
-   Boots {
-      Label "Boots" -HorizontalAlignment Center `
+   Show-UI {
+      Label "ShowUI" -HorizontalAlignment Center `
                     -VerticalAlignment Center `
                     -Foreground White -Margin 80 `
                     -FontWeight Bold  -FontSize 40
-   } -async -passthru | Invoke-BootsWindow -Element {$_} {
-      $BootsWindow.Background = RadialGradientBrush {
+   } -async -passthru | Invoke-UIWindow -Element {$_} {
+      $ShowUI.ActiveWindow.Background = RadialGradientBrush {
          GradientStop -Offset 0 -Color "#F00"
          GradientStop -Offset 1 -Color "#F90"
       }
    }
 }
 15 {
-   Boots {
+   Show-UI {
       TextBox -Width 220 
    } -Title "Enter your name" -On_Closing { 
-         Write-BootsOutput $BootsWindow.Content.Text 
+         Write-UIOutput $ShowUI.ActiveWindow.Content.Text 
    }
 }
 16 {
-   function Get-BootsInput {
+   function Get-UIInput {
       Param([string]$Prompt = "Please enter your name:")
-      $global:BootsInputPrompt = $Prompt
-      Boots {
+      $global:UIInputPrompt = $Prompt
+      Show-UI {
          Border -BorderThickness 4 -BorderBrush "#BE8" -Background "#EFC" {
             StackPanel -Margin 10  {
-               Label $BootsInputPrompt
+               Label $UIInputPrompt
                StackPanel -Orientation Horizontal {
                   TextBox -Width 150 -On_KeyDown { 
                      if($_.Key -eq "Return") { 
-                        Write-BootsOutput $global:textbox.Text
-                        $BootsWindow.Close()
+                        Write-UIOutput $global:textbox.Text
+                        $ShowUI.ActiveWindow.Close()
                      }
                   } | Tee -Variable global:textbox
                   Button "Ok" -On_Click { 
-                     Write-BootsOutput $global:textbox.Text
-                     $BootsWindow.Close()
+                     Write-UIOutput $global:textbox.Text
+                     $ShowUI.ActiveWindow.Close()
                   }
                }
             }
          }
-      } -On_Load { Invoke-BootsWindow $global:textbox { $global:textbox.Focus() } } `
+      } -On_Load { Invoke-UIWindow $global:textbox { $global:textbox.Focus() } } `
       -WindowStyle None -AllowsTransparency `
       -On_PreviewMouseLeftButtonDown { 
          if($_.Source -notmatch ".*\.(TextBox|Button)") 
          {
-            $BootsWindow.DragMove() 
+            $ShowUI.ActiveWindow.DragMove() 
          }
       }
-      Remove-Item Variable:Global:BootsInputPrompt
+      Remove-Item Variable:Global:UIInputPrompt
    }
-   Get-BootsInput
+   Get-UIInput
 }
 17 {
    ## Example 1: list of processes with most RAM usage
    ## DoubleClickAction is `kill`
-   Boots {
+   Show-UI {
       ps | sort PM -Desc | Select -First 20 | 
          GraphLabel ProcessName PM { 
             Kill $Args[0].Id -WhatIf
@@ -248,7 +248,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 18 {
    ## Example 2: list of images, with file size indicated
    ## DoubleClickAction is `open`
-   Boots {
+   Show-UI {
       ls ~/Pictures/ -recurse -Include *.jpg | 
       Select -First 10 | ## For the sake of the demo, just 10
       Sort Length -Desc |
@@ -267,19 +267,19 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 19 {
 # Write-Host "We're going to ask for your password here, so we can upload an image via FTP"
 # $credential = Get-Credential
-   New-BootsImage BootsImage-Screenshot.jpg {
+   New-UIImage ShowUI-Screenshot.jpg {
       StackPanel -Margin "10,5,10,5" {
          Label "Please enter your name:"
          StackPanel -Orientation Horizontal {
             TextBox -Width 150 -On_KeyDown { 
                if($_.Key -eq "Return") { 
-                  Write-BootsOutput $global:textbox.Text
-                  $BootsWindow.Close()
+                  Write-UIOutput $global:textbox.Text
+                  $ShowUI.ActiveWindow.Close()
                }
             } | Tee-Object -Variable global:textbox 
             Button "Ok" -Padding "5,0,5,0" -Margin "2,0,0,0" -On_Click { 
-               Write-BootsOutput $textbox.Text
-               $BootsWindow.Close()
+               Write-UIOutput $textbox.Text
+               $ShowUI.ActiveWindow.Close()
             }
          }
       } 
@@ -290,13 +290,13 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    #}
 }
 20 {
-   Boots -Async {
+   Show-UI -Async {
       StackPanel -Margin 10 {
          TextBlock "The Question" -FontSize 42 -FontWeight Bold -Foreground "#FF0088"
          TextBlock -FontSize 24 {
             Hyperlink {
                Bold "Q. "
-               "Can PowerBoots do async threads?"
+               "Can Show-UI do async threads?"
             } -NavigateUri " " -On_RequestNavigate {
                if($global:Answer.Visibility -eq 2) { 
                   $global:Answer.Visibility = "Visible"
@@ -315,22 +315,22 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 21 {
    ## The first of a couple of Splash-Screen demos 
    ## This version works with just the PoshWpf module/snapin (ie: it works in PoshConsole with no modules loaded)
-   $global:Splash = New-BootsWindow -Async -Passthru -On_MouseDown { $this.DragMove() } -SourceTemplate '<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" WindowStyle="None" AllowsTransparency="True" Opacity="0.8" Topmost="True" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"><Image Source="http://dilbert.com/dyn/str_strip/000000000/00000000/0000000/000000/40000/1000/200/41215/41215.strip.print.gif" Height="177" /></Window>' 
+   $global:Splash = Show-UI -Async -Passthru -On_MouseDown { $this.DragMove() } -SourceTemplate '<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" WindowStyle="None" AllowsTransparency="True" Opacity="0.8" Topmost="True" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"><Image Source="http://dilbert.com/dyn/str_strip/000000000/00000000/0000000/000000/40000/1000/200/41215/41215.strip.print.gif" Height="177" /></Window>' 
    ## Imagine this is your script, working ...
    &{ 1..25 | % { Write-Progress "Doing ..." "Lost of work" -percent ($_ * 4); Start-Sleep -milli 200 } }
    # And now you're done, and want to close it
-   Remove-BootsWindow -Window $Splash
+   Remove-UIWindow -Window $Splash
 }
 22 {
-   ## This version of the splash-screen requires PowerBoots...
-   $global:Splash = Boots -Async -Passthru -Content { 
+   ## This version of the splash-screen requires Show-UI...
+   $global:Splash = Show-UI -Async -Passthru -Content { 
       Image -Height 177 -Source http://dilbert.com/dyn/str_strip/000000000/00000000/0000000/000000/40000/1000/200/41215/41215.strip.print.gif
    } -WindowStyle None -AllowsTransparency -Opacity 0.8 -Topmost -WindowStartupLocation CenterOwner -ShowInTaskbar:$False -On_MouseDown { $this.DragMove() }
 
    # Imagine this is your script, working ...
    &{ 1..25 | % { write-progress "Doing ..." "Lost of work" -percent ($_ * 4); Start-Sleep -milli 200 } }
    # And now you're done, and want to close it
-   Remove-BootsWindow -Window $Splash
+   Remove-UIWindow -Window $Splash
 }
 23 {
    ## Demonstrate how to load XAML and use data-binding and Resource to animate things on it.
@@ -338,7 +338,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 
    Write-Host "Initializing Performance Counters, please have patience" -fore Cyan
    ### Import PoshWpf module
-   Import-Module PowerBoots -Force
+   Import-Module ShowUI -Force
    ### Or, on v1:
    # Add-PSSnapin PoshWpf
 
@@ -353,8 +353,8 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    Write-Host "Loading XAML window... (right-click to close it)" -fore Cyan
    ## Load the XAML and show the window. It won't be updating itself yet...
    ## Note that this loads -Async so it returns control to the console
-   ## We also use -Passthru to make it easier to Invoke-BootsWindow later
-   $global:clock = New-BootsWindow -Async -Passthru -FileTemplate "$PowerBootsPath\Samples\Clock.xaml" 
+   ## We also use -Passthru to make it easier to Invoke-UIWindow later
+   $global:clock = Show-UI -Async -Passthru -FileTemplate "$ShowUI.InstallPath\Samples\Clock.xaml" 
 
    ## Create a script block which will update the UI by changing the Resources!
    $counter = 0;
@@ -379,9 +379,9 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 
    ## Now we need to call that scriptblock on a timer. That's easy, but it
-   ## must be done on the window's thread, so we use Invoke-BootsWindow.
+   ## must be done on the window's thread, so we use Invoke-UIWindow.
    ## Notice the first argument is the window we want to run the script in
-   Invoke-BootsWindow $clock {
+   Invoke-UIWindow $clock {
       ## We'll create a timer
       $global:timer = new-object System.Windows.Threading.DispatcherTimer
       ## Which will fire 4 times every second
@@ -393,11 +393,11 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    }
 
    ## Note that this uses global variables, rather than Export-NamedElement
-   Register-BootsEvent $clock -Event MouseLeftButtonDown -Action {
+   Register-UIEvent $clock -Event MouseLeftButtonDown -Action {
       $_.Handled = $true
       $clock.DragMove() # WPF Magic!
    }
-   Register-BootsEvent $clock -Event MouseRightButtonDown -Action {
+   Register-UIEvent $clock -Event MouseRightButtonDown -Action {
       $_.Handled = $true
       $timer.Stop()  # we'd like to stop that timer now, thanks.
       $clock.Close() # and close the windows
@@ -410,9 +410,9 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
    ##       But if you use the app.config to set PowerShell ISE to run in .Net4, or if you use PoshConsole, etc., 
    ##	   then this is clearly the easiest way of writing GUIs in PowerShell
    ## For ps:Posh to work, you must define your event handlers globally.
-   ##       for Export-NamedElement variables to work, you must be in the PowerBoots scope
+   ##       for Export-NamedElement variables to work, you must be in the ShowUI scope
 
-   &(gmo PowerBoots) {  ## This line starts a scriptblock that's defined inside the PowerBoots scope.
+   &(gmo ShowUI) {  ## This line starts a scriptblock that's defined inside the ShowUI scope.
       function global:CalculateGas { ## This makes the function global
          Export-NamedElement # Exports XAML elements with name attributes into public variables
          $Total.Text = '${0:n2}' -f (($Miles.Text -as [Double]) / ($Mpg.Text -as [Double]) * ($Cost.Text -as [Double]))
@@ -421,7 +421,7 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 
    
    ## Specify the event handlers using the PoshExtension in XAML: (.Net 4 only)
-   New-BootsWindow -Async -Source @"
+   Show-UI -Async -Source @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ps="http://schemas.huddledmasses.org/wpf/powershell"
@@ -456,9 +456,9 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 	## A few tricks here:
 	## Create a window with a scrollviewer as content, and then just put a textblock in there with a big "Loading" text ... 
 	## Using -Async -Passthru ... we output the window to the pipeline and make the window non-blocking
-New-BootsWindow { ScrollViewer { TextBlock "Loading Fonts..." -FontSize 62 -FontFamily SegoeUI } } -Async -Passthru | 
+Show-UI { ScrollViewer { TextBlock "Loading Fonts..." -FontSize 62 -FontFamily SegoeUI } } -Async -Passthru | 
 	## We pipe the window to Invoke-BootWindow to execute a ScriptBlock on that window's thread (so we can access the UI)
-Invoke-BootsWindow -Script { 
+Invoke-UIWindow -Script { 
 	## "This" is the window, and it's Content is the scrollviewer.  We're replacing the Loading text with a StackPanel
    $This.Content.Content = StackPanel {
 		## Here we enumerate fonts in a foreach statement (the fastest way) and ...
@@ -472,20 +472,20 @@ Invoke-BootsWindow -Script {
 }
 }
 26 {
-   ## Remember: you can use Add-BootsFunction with any WPF control (and most Windows.Forms)
+   ## Remember: you can use Add-UIFunction with any WPF control (and most Windows.Forms)
    ## and indeed, with any .Net class which has a default parameterless constructor
-   ## what this does is generate a PowerBoots-compatible script in the Types_Generated folder 
+   ## what this does is generate a ShowUI-compatible script in the Types_Generated folder 
    ## So that you could just dot-source that script in the future to define the function
    ## In other words: you only need to run this command once per-type.
    ## The functions are generated statically as files and from then on 
-   ## are always loaded when you import the PowerBoots module.
-   Add-BootsFunction -T System.Windows.Forms.FolderBrowserDialog | Out-Null
+   ## are always loaded when you import the ShowUI module.
+   Add-UIFunction -T System.Windows.Forms.FolderBrowserDialog | Out-Null
 
    ## A few tricks here:
    ## Create the window from XAML exported from VisualStudio without using -Passthru
-   ## Anything that is written out (using Write-BootsOutput) from the window will be output to the pipeline
+   ## Anything that is written out (using Write-UIOutput) from the window will be output to the pipeline
    ## when the window closes, in the order it's written out. 
-   $Date, $Folder = New-BootsWindow -Title "Copy Logs Demo" -Source @"
+   $Date, $Folder = Show-UI -Title "Copy Logs Demo" -Source @"
    <Window
        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -497,13 +497,13 @@ Invoke-BootsWindow -Script {
        </Grid>
    </Window>
 "@ -On_Loaded  {
-## Handling the Loaded event allows us to define additional event handlers from inside the boots scope:
+## Handling the Loaded event allows us to define additional event handlers from inside the ShowUI scope:
    ## If you're concerned about speed...
-   ## Instead of Export-NamedElement, you can use Select-BootsElement to pick specific controls (by name) that you want
-   ## They are output from Select-BootsElement in the order which they're encountered in parent element (window)
-   $ChooseDirButton, $PickDate  = Select-BootsElement $this ChooseDirButton, PickDate
+   ## Instead of Export-NamedElement, you can use Select-UIElement to pick specific controls (by name) that you want
+   ## They are output from Select-UIElement in the order which they're encountered in parent element (window)
+   $ChooseDirButton, $PickDate  = Select-UIElement $this ChooseDirButton, PickDate
    
-   Register-BootsEvent $PickDate "SelectedDatesChanged" -Action {
+   Register-UIEvent $PickDate "SelectedDatesChanged" -Action {
       # Enable the next step only AFTER you pick a date in the PAST
       $ChooseDirButton.IsEnabled = ($PickDate.SelectedDate -lt (Get-Date))
       # Calendar widget seems to capture mouse, prevent this from happening
@@ -516,20 +516,20 @@ Invoke-BootsWindow -Script {
    ## Notice the bubble-up nature of events in WPF:
    ## We can handle events on the Window which really occur on child controls.
    ## The event from the child will bubble up to us.
-   Register-BootsEvent $this "Click" -Action {
+   Register-UIEvent $this "Click" -Action {
    #	$dirName = $dirPicker1.selectedPath
       $dateStr = $selectedDate.ToString('yyyy.MM.dd')
       $FolderPicker = FolderBrowserDialog -RootFolder ([System.Environment+SpecialFolder]'MyComputer') -ShowNewFolderButton:$false -SelectedPath "C:\" -Description "Please select the folder where the log files are"
 
       if ($FolderPicker.ShowDialog() -eq [Windows.Forms.DialogResult]::OK) {
          ## Now that they've chosen the folder, output both the date and the folder
-         Write-BootsOutput $PickDate.SelectedDate, $FolderPicker.SelectedPath
+         Write-UIOutput $PickDate.SelectedDate, $FolderPicker.SelectedPath
          $this.Close()
       }
    }.GetNewClosure()
 }
 
-# When that New-BootsWindow command returns, we know the window's been closed
+# When that Show-UI command returns, we know the window's been closed
 # But if $Folder and $Date aren't output, then it was closed by alt+F4 or the X button, not by selecting a folder.
 if(!$Folder -and !$Date) { exit }
 Write-Host "Copying log files from $Folder that are newer than $Date"
@@ -537,7 +537,7 @@ Write-Host "Copying log files from $Folder that are newer than $Date"
 ## We could load this from XAML too, but this is a demo, so we're doing this one the other way.
 ## There's really no reason to do this instead of using Write-Progress, 
 ## But some people might want to run PowerShell -Window Hidden... and still show progress.
-   $global:ProgressDialog =  New-BootsWindow -Async -Passthru -Name "ProgressDialog" -Title "Copying Progress" -Height 200 -Width 311 -WindowStartupLocation "CenterScreen" -ResizeMode "NoResize"  {
+   $global:ProgressDialog =  Show-UI -Async -Passthru -Name "ProgressDialog" -Title "Copying Progress" -Height 200 -Width 311 -WindowStartupLocation "CenterScreen" -ResizeMode "NoResize"  {
       StackPanel {
          TextBlock "Please wait, copying logs..." -Margin "12"
          TextBlock "OK, we're not really copying. Our demo is done." -Name "CopyStatusText" -Margin "12" | Tee -var global:ProgressFileName
@@ -547,7 +547,7 @@ Write-Host "Copying log files from $Folder that are newer than $Date"
    }
 
  ## If you hit the cancel button, we should stop doing that work...
-   Register-BootsEvent $CancelButton "Click" -Action {
+   Register-UIEvent $CancelButton "Click" -Action {
       Write-Host "Stop Copying Stuff, Hypothetically"
       $global:ProgressDialog.Close()
    }.GetNewClosure()
@@ -560,63 +560,16 @@ Write-Host "Copying log files from $Folder that are newer than $Date"
       }
          
       Write-Host "Copying $file"
-      ## User Invoke-BootsWindow to write the status back to the progress dialog 
-      Invoke-BootsWindow "Copying Progress" {param($fileName)  $Global:ProgressFileName.Text = "Copying $fileName"  } -Parameters $file
+      ## User Invoke-UIWindow to write the status back to the progress dialog 
+      Invoke-UIWindow "Copying Progress" {param($fileName)  $Global:ProgressFileName.Text = "Copying $fileName"  } -Parameters $file
       sleep 1
    }
    if($ProgressDialog.IsVisible) {
       Write-Host "Removing $ProgressDialog"
-      Get-BootsWindow "Copying Progress" | Remove-BootsWindow 
+      Get-UIWindow "Copying Progress" | Remove-UIWindow 
    }
 }
 
 
 ## END OF SAMPLES
 }
-
-# SIG # Begin signature block
-# MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUo50PpG4gbBkzkWNx8F3zr6cT
-# r/ugggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
-# AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
-# IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
-# VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
-# Rmlyc3QtT2JqZWN0MB4XDTEwMDUxNDAwMDAwMFoXDTExMDUxNDIzNTk1OVowgZUx
-# CzAJBgNVBAYTAlVTMQ4wDAYDVQQRDAUwNjg1MDEUMBIGA1UECAwLQ29ubmVjdGlj
-# dXQxEDAOBgNVBAcMB05vcndhbGsxFjAUBgNVBAkMDTQ1IEdsb3ZlciBBdmUxGjAY
-# BgNVBAoMEVhlcm94IENvcnBvcmF0aW9uMRowGAYDVQQDDBFYZXJveCBDb3Jwb3Jh
-# dGlvbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMfUdxwiuWDb8zId
-# KuMg/jw0HndEcIsP5Mebw56t3+Rb5g4QGMBoa8a/N8EKbj3BnBQDJiY5Z2DGjf1P
-# n27g2shrDaNT1MygjYfLDntYzNKMJk4EjbBOlR5QBXPM0ODJDROg53yHcvVaXSMl
-# 498SBhXVSzPmgprBJ8FDL00o1IIAAhYUN3vNCKPBXsPETsKtnezfzBg7lOjzmljC
-# mEOoBGT1g2NrYTq3XqNo8UbbDR8KYq5G101Vl0jZEnLGdQFyh8EWpeEeksv7V+YD
-# /i/iXMSG8HiHY7vl+x8mtBCf0MYxd8u1IWif0kGgkaJeTCVwh1isMrjiUnpWX2NX
-# +3PeTmsCAwEAAaOCAW8wggFrMB8GA1UdIwQYMBaAFNrtZHQUnBQ8q92Zqb1bKE2L
-# PMnYMB0GA1UdDgQWBBTK0OAaUIi5wvnE8JonXlTXKWENvTAOBgNVHQ8BAf8EBAMC
-# B4AwDAYDVR0TAQH/BAIwADATBgNVHSUEDDAKBggrBgEFBQcDAzARBglghkgBhvhC
-# AQEEBAMCBBAwRgYDVR0gBD8wPTA7BgwrBgEEAbIxAQIBAwIwKzApBggrBgEFBQcC
-# ARYdaHR0cHM6Ly9zZWN1cmUuY29tb2RvLm5ldC9DUFMwQgYDVR0fBDswOTA3oDWg
-# M4YxaHR0cDovL2NybC51c2VydHJ1c3QuY29tL1VUTi1VU0VSRmlyc3QtT2JqZWN0
-# LmNybDA0BggrBgEFBQcBAQQoMCYwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmNv
-# bW9kb2NhLmNvbTAhBgNVHREEGjAYgRZKb2VsLkJlbm5ldHRAWGVyb3guY29tMA0G
-# CSqGSIb3DQEBBQUAA4IBAQAEss8yuj+rZvx2UFAgkz/DueB8gwqUTzFbw2prxqee
-# zdCEbnrsGQMNdPMJ6v9g36MRdvAOXqAYnf1RdjNp5L4NlUvEZkcvQUTF90Gh7OA4
-# rC4+BjH8BA++qTfg8fgNx0T+MnQuWrMcoLR5ttJaWOGpcppcptdWwMNJ0X6R2WY7
-# bBPwa/CdV0CIGRRjtASbGQEadlWoc1wOfR+d3rENDg5FPTAIdeRVIeA6a1ZYDCYb
-# 32UxoNGArb70TCpV/mTWeJhZmrPFoJvT+Lx8ttp1bH2/nq6BDAIvu0VGgKGxN4bA
-# T3WE6MuMS2fTc1F8PCGO3DAeA9Onks3Ufuy16RhHqeNcMYICTDCCAkgCAQEwgaow
-# gZUxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJVVDEXMBUGA1UEBxMOU2FsdCBMYWtl
-# IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1QgTmV0d29yazEhMB8GA1UECxMY
-# aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
-# LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
-# NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
-# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQURSaY/p5A
-# 4oe8mroUdtqXnd058LUwDQYJKoZIhvcNAQEBBQAEggEAXW7J9qpWSI7m02BQEaHZ
-# VB/9dpSPiiHU+kWtYKo5KtDbVoLZ0hThX2xLEzeWTP0jBDXaz0lZdJayJp5EllDu
-# 9BQ7CyS7GsLxLJOmXAmlGDGPoYpd/IE8r9mHDIqTXnheVkW+qfwbuGGA91b8H9UK
-# q7em/r6EKe0fORT8YG25tYicUZQrec8f++e/TFw7fazSja1xYLU/yVKIaJ2jioWu
-# hXyehyaycOLKqHS5zWTzHcVI9SQlYRiliy3igkxcr5/vSxvXCc1z0bq6QpuqWHkV
-# 7FIxoTNdHpRlccq59QyPukAzhUbthCiGIFc8FQpEK+8urcHlLmPmOGIiIcIQn0Um
-# gQ==
-# SIG # End signature block

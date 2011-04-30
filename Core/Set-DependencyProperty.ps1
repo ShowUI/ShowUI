@@ -30,7 +30,7 @@ DYNAMICPARAM {
    # $Param1.Attributes.Add( (New-ParameterAttribute -Position 1) )
    $Param1.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{ Position = 1 }) )   
    ## We maybe don't need to keep this in memory?
-   # $DependencyProperties = Import-CliXml $PowerBootsPath\DependencyPropertyCache.clixml
+   # $DependencyProperties = Import-CliXml $ShowUI.InstallPath\DependencyPropertyCache.clixml
 
    if( $Property ) {
       if($Property.GetType() -eq ([System.Windows.DependencyProperty]) -or

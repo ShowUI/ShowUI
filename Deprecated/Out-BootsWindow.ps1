@@ -1,30 +1,30 @@
 ## The OLD display function
-function Out-BootsWindow {
+function Out-UI {
 <#
 .Synopsis
-   Show Boots content in a window using ShowDialog()
+   Show UI content in a window using ShowDialog()
 .Description
-   Will show a Visual Element in a simple WPF Window.  Out-Boots uses ShowDialog() so it is not Async -- execution will not continue until the window is closed.  
+   Will show a Visual Element in a simple WPF Window.  Out-UI uses ShowDialog() so it is not Async -- execution will not continue until the window is closed.  
 
-   If you need to return anything, you need to just set the $BootsOutput variable from within an event handler.
+   If you need to return anything, you need to just set the $UIOutput variable from within an event handler.
 .Parameter Content
    The content that you want to display in a Wpf Window. 
 .Parameter SizeToContent
    Controls the automatic resizing of the window to fit the contents, defaults to "WidthAndHeight"
 .Parameter Title
-      The Window Title.  Defaults to "Boots"
+      The Window Title.  Defaults to "Show"
 .Example
-   "You need to know this" | Out-Boots
+   "You need to know this" | Out-UI
    
    The simplest possible way to do a popup dialog with some text on it.
 .Example
-   Button -Content "I can count!" -on_click {$BootsOutput += $BootsOutput.Count + 1} | Boots 
+   Button -Content "I can count!" -on_click {$UIOutput += $UIOutput.Count + 1} | Out-UI 
  
    Will output a series of numbers for the number of times you click the button. Notice that the output only happens AFTER the window is closed.
 .Link
    http://HuddledMasses.org/powerboots-tutorial-walkthrough
 .ReturnValue
-   The value of the $BootsOutput (which, by default is an array).
+   The value of the $UIOutput (which, by default is an array).
 .Notes
  AUTHOR:    Joel Bennett http://HuddledMasses.org
  LASTEDIT:  2009-01-07 11:35:23
@@ -579,7 +579,7 @@ PARAM(
 )
 
 BEGIN {
-   [Object[]]$Global:BootsOutput = @()
+   [Object[]]$Global:UIOutput = @()
    ## Default value for SizeToContent 
    if(!$PSBoundParameters.ContainsKey("SizeToContent")) {
       if(!$PSBoundParameters.ContainsKey("Width") -and !$PSBoundParameters.ContainsKey("Height")) {
@@ -592,7 +592,7 @@ BEGIN {
    }
    ## Default value for SizeToContent 
    if(!$PSBoundParameters.ContainsKey("Title")) {
-      $PSBoundParameters.Add("Title", "Boots")
+      $PSBoundParameters.Add("Title", "Show")
    }   
 }
 PROCESS {
@@ -603,60 +603,13 @@ PROCESS {
    {
       if($PSBoundParameters.Content -is [ScriptBlock]) 
       {
-         Write-Host "PowerBoots"
-         $bMod = Get-BootsModule
+         Write-Host "Show-UI"
+         $bMod = Get-UIModule
          $PSBoundParameters.Content = & $bMod $PSBoundParameters.Content
       }
-      $Global:BootsWindow = Window @PSBoundParameters
+      $Global:ShowUI.ActiveWindow = Window @PSBoundParameters
    }
-   $null = $Global:BootsWindow.ShowDialog()
-   return $Global:BootsOutput
+   $null = $Global:ShowUI.ActiveWindow.ShowDialog()
+   return $Global:UIOutput
 }   
 }
-
-# SIG # Begin signature block
-# MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5uv0mcUkJBiRwMUAylrZeyjX
-# iLKgggUrMIIFJzCCBA+gAwIBAgIQKQm90jYWUDdv7EgFkuELajANBgkqhkiG9w0B
-# AQUFADCBlTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQHEw5TYWx0
-# IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYD
-# VQQLExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xHTAbBgNVBAMTFFVUTi1VU0VS
-# Rmlyc3QtT2JqZWN0MB4XDTEwMDUxNDAwMDAwMFoXDTExMDUxNDIzNTk1OVowgZUx
-# CzAJBgNVBAYTAlVTMQ4wDAYDVQQRDAUwNjg1MDEUMBIGA1UECAwLQ29ubmVjdGlj
-# dXQxEDAOBgNVBAcMB05vcndhbGsxFjAUBgNVBAkMDTQ1IEdsb3ZlciBBdmUxGjAY
-# BgNVBAoMEVhlcm94IENvcnBvcmF0aW9uMRowGAYDVQQDDBFYZXJveCBDb3Jwb3Jh
-# dGlvbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMfUdxwiuWDb8zId
-# KuMg/jw0HndEcIsP5Mebw56t3+Rb5g4QGMBoa8a/N8EKbj3BnBQDJiY5Z2DGjf1P
-# n27g2shrDaNT1MygjYfLDntYzNKMJk4EjbBOlR5QBXPM0ODJDROg53yHcvVaXSMl
-# 498SBhXVSzPmgprBJ8FDL00o1IIAAhYUN3vNCKPBXsPETsKtnezfzBg7lOjzmljC
-# mEOoBGT1g2NrYTq3XqNo8UbbDR8KYq5G101Vl0jZEnLGdQFyh8EWpeEeksv7V+YD
-# /i/iXMSG8HiHY7vl+x8mtBCf0MYxd8u1IWif0kGgkaJeTCVwh1isMrjiUnpWX2NX
-# +3PeTmsCAwEAAaOCAW8wggFrMB8GA1UdIwQYMBaAFNrtZHQUnBQ8q92Zqb1bKE2L
-# PMnYMB0GA1UdDgQWBBTK0OAaUIi5wvnE8JonXlTXKWENvTAOBgNVHQ8BAf8EBAMC
-# B4AwDAYDVR0TAQH/BAIwADATBgNVHSUEDDAKBggrBgEFBQcDAzARBglghkgBhvhC
-# AQEEBAMCBBAwRgYDVR0gBD8wPTA7BgwrBgEEAbIxAQIBAwIwKzApBggrBgEFBQcC
-# ARYdaHR0cHM6Ly9zZWN1cmUuY29tb2RvLm5ldC9DUFMwQgYDVR0fBDswOTA3oDWg
-# M4YxaHR0cDovL2NybC51c2VydHJ1c3QuY29tL1VUTi1VU0VSRmlyc3QtT2JqZWN0
-# LmNybDA0BggrBgEFBQcBAQQoMCYwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmNv
-# bW9kb2NhLmNvbTAhBgNVHREEGjAYgRZKb2VsLkJlbm5ldHRAWGVyb3guY29tMA0G
-# CSqGSIb3DQEBBQUAA4IBAQAEss8yuj+rZvx2UFAgkz/DueB8gwqUTzFbw2prxqee
-# zdCEbnrsGQMNdPMJ6v9g36MRdvAOXqAYnf1RdjNp5L4NlUvEZkcvQUTF90Gh7OA4
-# rC4+BjH8BA++qTfg8fgNx0T+MnQuWrMcoLR5ttJaWOGpcppcptdWwMNJ0X6R2WY7
-# bBPwa/CdV0CIGRRjtASbGQEadlWoc1wOfR+d3rENDg5FPTAIdeRVIeA6a1ZYDCYb
-# 32UxoNGArb70TCpV/mTWeJhZmrPFoJvT+Lx8ttp1bH2/nq6BDAIvu0VGgKGxN4bA
-# T3WE6MuMS2fTc1F8PCGO3DAeA9Onks3Ufuy16RhHqeNcMYICTDCCAkgCAQEwgaow
-# gZUxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJVVDEXMBUGA1UEBxMOU2FsdCBMYWtl
-# IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1QgTmV0d29yazEhMB8GA1UECxMY
-# aHR0cDovL3d3dy51c2VydHJ1c3QuY29tMR0wGwYDVQQDExRVVE4tVVNFUkZpcnN0
-# LU9iamVjdAIQKQm90jYWUDdv7EgFkuELajAJBgUrDgMCGgUAoHgwGAYKKwYBBAGC
-# NwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgor
-# BgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUytaahlsA
-# QXtXu3bBSlepjx2z/SIwDQYJKoZIhvcNAQEBBQAEggEAPRl1lc1E7ryOaqNvJD/7
-# njo4EnjvDXmjWCWX8E8TqkaB2Fvs5cWIFXHD7Sj2FDyZcZjPtGbmHE2XQm3PRdv5
-# j/30OVq4pno709N9x+8rlfN9xjbNn5BcFw2GlXd9534WZlblTVRXklTpez2TTZ+t
-# S8whDYexJiZKxI5n8lFosqA/Uh50eKIA546O0bWIh6ZJktAhkCCmaraaTzFFTUFg
-# AWYzwZoJBHWWnayPooJFMd8k27T5UqOIagg04sB0YWUmW8hM5kJ6ZojFkdTFJETr
-# DxGYY2vKy85NVzDrIivPWmJyVM1hN7wrLeOzxCvyIh9AsC7iGiW1tzuZuFCsyToI
-# hA==
-# SIG # End signature block

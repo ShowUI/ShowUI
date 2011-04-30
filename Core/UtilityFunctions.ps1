@@ -1,4 +1,4 @@
-function Get-BootsModule { $executioncontext.sessionstate.module }
+function Get-UIModule { $executioncontext.sessionstate.module }
 
 
 function global:Export-NamedElement {
@@ -6,7 +6,7 @@ function global:Export-NamedElement {
 ## Recursively enumerate all the descendants of the visual object and set variables if they have names
 param(
    [Parameter(ValueFromPipeline=$true, Position=1, Mandatory=$false)]
-   [System.Windows.Media.Visual] $VisualElement = $BootsWindow
+   [System.Windows.Media.Visual] $VisualElement = $ShowUI.ActiveWindow
 , 
    [string]$scope = "global"
 )
@@ -29,14 +29,14 @@ param(
 }
 
 
-#  function Get-BootsModule { 
+#  function Get-UIModule { 
 #  [CmdletBinding()]
 #  Param()
 #     $PSCmdlet.MyInvocation.MyCommand.Module 
 #  }
 
 
-function Get-BootsAssemblies {
+function Get-UIAssemblies {
 #
 #.Synopsis
 #   Get a list of FullNames for the loaded assemblies
@@ -68,7 +68,7 @@ PARAM([string]$CommandName, [switch]$IncludeCommon)
    (New-Object System.Management.Automation.CommandMetaData @(Get-Command $CommandName)[0], $IncludeCommon).Parameters.GetEnumerator()
 }
 
-function Get-BootsParam {
+function Get-UIParam {
 #
 #.Synopsis
 #   Get information about the possible parameters for a specific WPF type
@@ -77,11 +77,11 @@ function Get-BootsParam {
 #.Parameter Parameter
 #   An optional pattern for the name(s) of the parameter(s) you want help for.
 #.Example
-#   Get-BootsParam Window
+#   Get-UIParam Window
 #   
 #   Returns the list of parameters (including Events) for the WIndow class.
 #.Example
-#   Get-BootsParam Window On_TextInput
+#   Get-UIParam Window On_TextInput
 #   
 #   Returns the details about the On_TextInput, including the expected type, and the parameter attributes.
 #
@@ -94,21 +94,20 @@ PARAM([string]$CommandName, [string]$Parameter)
    }
 }
 
-## Get a list of all the boots commands
-function Get-BootsCommand {
+## Get a list of all the Show-UI commands
+function Get-UICommand {
 #.Synopsis
-#  Lists all the Boots aliases
+#  Lists all the Show-UI aliases
    $commands = get-alias | ? { $_.Definition -like "New-ObjectFromAlias" } | %{$_.Name}
    Get-Alias |? { $commands -contains $_.Definition }
-   Write-Warning "Get-BootsCommand is deprecated. Use: Get-Command -Module PowerBoots"
+   Write-Warning "Get-UICommand is deprecated. Use: Get-Command -Module ShowUI"
 }
 
-## Open an MSDN link for a boots element
-function Get-BootsHelp {
+## Open an MSDN link for a .Net class element
+function Get-MSDNHelp {
 PARAM([string]$TypeName)
-   [Diagnostics.Process]::Start( "http://msdn.microsoft.com/library/$(Get-BootsType $TypeName)" )
+   [Diagnostics.Process]::Start( "http://msdn.microsoft.com/library/$(Get-Type $TypeName)" )
 }
-
 
 # SIG # Begin signature block
 # MIIIDQYJKoZIhvcNAQcCoIIH/jCCB/oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB

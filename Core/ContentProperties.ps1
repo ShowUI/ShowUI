@@ -1,17 +1,17 @@
-$Script:BootsContentProperties = 'Content','Child','Children','Frames','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
-function Get-BootsContentProperty {
-   $Script:BootsContentProperties
+$Script:ShowUI.ContentProperties = 'Content','Child','Children','Frames','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
+function Get-UIContentProperty {
+   $Script:ShowUI.ContentProperties
 }
-function Add-BootsContentProperty {
+function Add-UIContentProperty {
 PARAM([string[]]$PropertyNames, [switch]$Passthru)
-   $Script:BootsContentProperties = $Script:BootsContentProperties + $PropertyNames | ForEach { [regex]::Escape($_) } | Sort -Unique
+   $Script:ShowUI.ContentProperties = $Script:ShowUI.ContentProperties + $PropertyNames | ForEach { [regex]::Escape($_) } | Sort -Unique
    if($Passthru) {
-      $Script:BootsContentProperties
+      $Script:ShowUI.ContentProperties
    }
 }
-function Remove-BootsContentProperty {
+function Remove-UIContentProperty {
 PARAM([string[]]$PropertyNames)
-   $Script:BootsContentProperties = $Script:BootsContentProperties | Where { $PropertyNames -notcontains $_ }
+   $Script:ShowUI.ContentProperties = $Script:ShowUI.ContentProperties | Where { $PropertyNames -notcontains $_ }
 }
 
 # SIG # Begin signature block

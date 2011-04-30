@@ -1,4 +1,4 @@
-function Set-BootsProperty {
+function Set-UIProperty {
 param([ref]$TheObject, [String]$Name, $Values)
    $DObject = $TheObject.Value
    
@@ -6,8 +6,8 @@ param([ref]$TheObject, [String]$Name, $Values)
    if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( @($Values)[0] )) -foreground DarkMagenta }
    if(!$DependencyProperties.Keys.Count) { #BUGBUG => We shouldn't need to do this:
       Write-Host "Oh noes! The dependency properties, they are missing!" -fore red
-      if(Test-Path $PowerBootsPath\DependencyPropertyCache.xml) {
-         $DependencyProperties = [System.Windows.Markup.XamlReader]::Parse( (gc $PowerBootsPath\DependencyPropertyCache.xml) )
+      if(Test-Path $ShowUI.InstallPath\DependencyPropertyCache.xml) {
+         $DependencyProperties = [System.Windows.Markup.XamlReader]::Parse( (gc $ShowUI.InstallPath\DependencyPropertyCache.xml) )
       }
    }
 
@@ -130,7 +130,7 @@ param([ref]$TheObject, [String]$Name, $Values)
 }
 
 
-function Set-PowerBootsProperties {
+function Set-UIProperties {
 [CmdletBinding()]
 param( $Parameters, [ref]$DObject )
 
@@ -165,7 +165,7 @@ param( $Parameters, [ref]$DObject )
             }
             if(@(foreach($sb in $param.Value) { $sb -is [ScriptBlock] }) -contains $true) {
                $Values = @()
-               $bMod = Get-BootsModule
+               $bMod = Get-UIModule
                foreach($sb in $param.Value) {
                   $Values += & $bMod $sb
                }
@@ -176,7 +176,7 @@ param( $Parameters, [ref]$DObject )
             if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( $Dobject.Value )) -foreground green }
             if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( @($Values)[0] )) -foreground green }
             
-            Set-BootsProperty $Dobject $Param.Key $Values
+            Set-UIProperty $Dobject $Param.Key $Values
 
             if($DebugPreference -ne "SilentlyContinue") { Write-Host ([System.Windows.Markup.XamlWriter]::Save( $Dobject.Value )) -foreground magenta }
       

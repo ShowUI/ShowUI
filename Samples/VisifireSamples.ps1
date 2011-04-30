@@ -2,8 +2,10 @@ Param([int[]]$which=0)
 
 if(!(get-command New-Visifire.Charts.DataSeries -EA 0)){
    Add-BootsContentProperty 'DataPoints', 'Series'
-   Add-BootsFunction -Assembly "$PowerBootsPath\BinaryAssemblies\WPFVisifire.Charts.dll"
+   Add-UIFunction -Assembly "$ShowUI.InstallPath\BinaryAssemblies\WPFVisifire.Charts.dll"
 }
+
+
 
 
 switch($which) {
@@ -116,7 +118,7 @@ You need to pass it a number (between 1 and 5) for each sample you want to run!
       } -inline
       sleep 5
       Export-BootsImage VisiFire-BootsImage.jpg $global:chart
-      Remove-BootsWIndow "ScreenCapWindow" 
+      Remove-UIWindow "ScreenCapWindow" 
    }
 }
 
