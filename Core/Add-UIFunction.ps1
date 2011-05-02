@@ -53,10 +53,10 @@ BEGIN {
       MkDir "$($ShowUI.InstallPath)\Types_Generated"
    }
    $ErrorList = @()
-   $ShowUI = $PSCmdlet.MyInvocation.MyCommand.Module
+   # $ShowUI = $PSCmdlet.MyInvocation.MyCommand.Module
 }
 END {
-   Set-Content -Literal $ShowUI.InstallPath\DependencyPropertyCache.xml -Value ([System.Windows.Markup.XamlWriter]::Save( $DependencyProperties ))
+   Set-Content -Literal "$($ShowUI.InstallPath)\DependencyPropertyCache.xml" -Value ([System.Windows.Markup.XamlWriter]::Save( $DependencyProperties ))
    if($ErrorList.Count) { Write-Warning "Some new Show-UI functions not aliased." }
    $ErrorList | Write-Error
 }

@@ -1,9 +1,9 @@
 ##Requires -Version 2.0
 ####################################################################################################
-if(!(Test-Path Variable::ShowUI.InstallPath)) {
+if(!(Test-Path Variable::ShowUI)) {
 New-Variable ShowUI @{} -Description "ShowUI Settings Variable" -Option ReadOnly -Scope Global
-$ShowUI.InstallPath  = $PSScriptRoot
 }
+$Global:ShowUI.InstallPath  = $PSScriptRoot
 $ParameterHashCache = @{}
 [Hashtable]$DependencyProperties = @{}
 if(Test-Path "$($ShowUI.InstallPath)\DependencyPropertyCache.xml") {
