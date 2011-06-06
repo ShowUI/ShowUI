@@ -1,116 +1,156 @@
-##Requires -Version 2.0
-####################################################################################################
-if(!(Test-Path Variable::ShowUI)) {
-New-Variable ShowUI @{} -Description "ShowUI Settings Variable" -Option ReadOnly -Scope Global
-}
-$Global:ShowUI.InstallPath  = $PSScriptRoot
-$ParameterHashCache = @{}
-[Hashtable]$DependencyProperties = @{}
-if(Test-Path "$($ShowUI.InstallPath)\DependencyPropertyCache.xml") {
-   [Hashtable]$DependencyProperties = [System.Windows.Markup.XamlReader]::Parse( (gc "$($ShowUI.InstallPath)\DependencyPropertyCache.xml") )
-}
-$LoadedAssemblies = @(); 
+param(
+[ValidateSet('Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing')]
+[string]
+$LoadBehavior = 'Normal'
+)
 
-$null = [Reflection.Assembly]::Load( "PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" )
+if ($LoadBehavior -eq 'DoNothing') { return } 
 
-## Dotsource these rather than autoloading because we're guaranteed to need them
-. "$($ShowUI.InstallPath)\Core\Add-UIFunction.ps1"
-. "$($ShowUI.InstallPath)\Core\Set-DependencyProperty.ps1"
-. "$($ShowUI.InstallPath)\Core\Set-UIProperties.ps1"
-. "$($ShowUI.InstallPath)\Core\UtilityFunctions.ps1"
-. "$($ShowUI.InstallPath)\Core\ContentProperties.ps1"
-
-## Dotsource this because calling it from inside AutoLoad messes with the -Scope value
-# . "$($ShowUI.InstallPath)\Core\Export-NamedControl.ps1"
-
-## Autoload these for public consumption if needed
-AutoLoad "$($ShowUI.InstallPath)\Core\New-UIImage.ps1" -Alias New-UIImage -Module ShowUI
-
-## TODO: This would be a great function to add, if we could make it ADD instead of SET.
-# AutoLoad "$($ShowUI.InstallPath)\New Functions\Add-ChildControl.ps1" Add-ChildControl ShowUI
-
-## Add-EventHandler is deprecated because the compiled Register-UIEvent is a better way
-#. "$($ShowUI.InstallPath)\New Functions\Add-EventHandler.ps1"
-## TODO: Can Register-UIEvent be an actual PSEvent and still execute on the thread the way I need it to?
-
-## Select-ChildControl (aka: Get-ChildControl) is deprecated because Export-NamedControls is a better way
-#. "$($ShowUI.InstallPath)\New Functions\Select-ChildControl.ps1"
-## I don't need this one, 'cause I've integrated it into the core! ;)
-# . "$($ShowUI.InstallPath)\New Functions\ConvertTo-DataTemplate.ps1"
-
-## TODO: I'm not really sure how these fit in yet
-# "$($ShowUI.InstallPath)\Core\ConvertTo-GridLength.ps1"
-# "$($ShowUI.InstallPath)\Extras\Enable-Multitouch.ps1"
-# "$($ShowUI.InstallPath)\Extras\Export-Application.ps1"
-
-# This is #Requires -STA
-$ShowUI.IsSTA  = ([System.Threading.Thread]::CurrentThread.ApartmentState -eq "STA")
-
-## In case they delete the "Deprecated" folder (like I would)...
-if(Test-Path "$($ShowUI.InstallPath)\Deprecated\Out-UI.ps1") {
-   if( !$ShowUI.IsSTA ) { 
-      function Out-UI {
-         Write-Error "Out-UI disabled in MTA mode. Use Show-UI instead. (You must run PowerShell with -STA switch to enable Out-UI)"
-      }
-   } else { # Requires -STA
-      AutoLoad "$($ShowUI.InstallPath)\Deprecated\Out-UI.ps1" -Alias Out-UI -Module ShowUI
-   }
+if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
+    Remove-Item $psScriptRoot\GeneratedAssemblies -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+    Remove-Item $psScriptRoot\GeneratedCode -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+    if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
 
+#region Code Generator Functions
+. $psScriptRoot\CodeGenerator\Add-CodeGenerationRule.ps1
+. $psScriptRoot\CodeGenerator\ConvertFrom-TypeToCmdlet.ps1
+. $psScriptRoot\CodeGenerator\ConvertTo-ParameterMetaData.ps1
+#endregion Code Generator Functions
 
-## Autoload all the functions ....
-if(!(Get-ChildItem "$($ShowUI.InstallPath)\Types_Generated\New-*.ps1" -ErrorAction SilentlyContinue)) {
-   & "$($ShowUI.InstallPath)\Core\Reset-ShowUI.ps1"
+#region WPF functions
+. $psScriptRoot\WPF\Add-ChildControl.ps1
+. $psScriptRoot\WPF\Add-EventHandler.ps1
+. $psScriptRoot\WPF\Add-GridRow.ps1
+. $psScriptRoot\WPF\Add-GridColumn.ps1
+. $psScriptRoot\WPF\ConvertTo-DataTemplate.ps1
+. $psScriptRoot\WPF\ConvertTo-GridLength.ps1
+. $psScriptRoot\WPF\ConvertTo-Xaml.ps1
+. $psScriptRoot\WPF\Copy-DependencyProperty.ps1
+. $psScriptRoot\WPF\Close-Control.ps1
+. $psScriptRoot\WPF\Enable-Multitouch.ps1
+. $psScriptRoot\WPF\Get-ChildControl.ps1
+. $psScriptRoot\WPF\Get-ParentControl.ps1
+. $psScriptRoot\WPF\Get-CommonParentControl.ps1
+. $psScriptRoot\WPF\Get-ControlPosition.ps1
+. $psScriptRoot\WPF\Get-DependencyProperty.ps1   
+. $psScriptRoot\WPF\Get-Resource.ps1
+. $psScriptRoot\WPF\Hide-UIElement.ps1
+. $psScriptRoot\WPF\Initialize-EventHandler.ps1
+. $psScriptRoot\WPF\Move-Control.ps1
+. $psScriptRoot\WPF\Remove-ChildControl.ps1
+. $psScriptRoot\WPF\Set-DependencyProperty.ps1
+. $psScriptRoot\WPF\Set-Property.ps1
+. $psScriptRoot\WPF\Set-Resource.ps1
+. $psScriptRoot\WPF\Show-UIElement.ps1
+. $psScriptRoot\WPF\Show-Window.ps1
+. $psScriptRoot\WPF\Start-Animation.ps1
+. $psScriptRoot\WPF\Test-Ancestor.ps1
+. $psScriptRoot\WPF\Test-Descendent.ps1
+. $psScriptRoot\WPF\Write-WPFError.ps1
+
+#endregion WPF functions
+
+$script:UIStyles = @{}
+
+. $psScriptRoot\Export-Application.ps1
+. $psScriptRoot\Register-PowerShellCommand.ps1
+
+. $psScriptRoot\Get-UIValue.ps1
+. $psScriptRoot\Start-PowerShellCommand.ps1
+. $psScriptRoot\Start-WPFJob.ps1
+. $psScriptRoot\Stop-PowerShellCommand.ps1
+. $psScriptRoot\Unregister-PowerShellCommand.ps1
+. $psScriptRoot\Update-WPFJob.ps1
+. $psScriptRoot\Set-UIValue.ps1
+. $psScriptRoot\Get-PowerShellDataSource.ps1
+
+if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
+
+$types = & $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
+
+
+$importPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
+if (Test-Path $importPath) {
+    $importedModule= Import-Module $importPath -PassThru
+} else {
+    $importedModules = $types | Select-Object -ExpandProperty Assembly -Unique | Import-Module
 }
 
-foreach($script in Get-ChildItem "$($ShowUI.InstallPath)\Types_Generated\New-*.ps1", "$($ShowUI.InstallPath)\Types_StaticOverrides\New-*.ps1" -ErrorAction 0) {
-   $TypeName = $script.Name -replace 'New-(.*).ps1','$1'
-   
-   Set-Alias -Name "$($TypeName.Split('.')[-1])" "New-$TypeName"     -EA "SilentlyContinue" -EV +ErrorList
-   AutoLoad -Name $Script.FullName -Alias "New-$TypeName" -Module ShowUI
-   # Write-Host -fore yellow $(Get-Command "New-$TypeName" | Out-String)
+$importedCommands = $importedModule.ExportedCommands.Values
+$toAlias = $importedCommands | 
+    Where-Object { 
+        $_.Verb -eq 'New'
+    }    
+    
+foreach ($ta in $toAlias) {
+    Set-Alias -Name $ta.Noun -Value "$ta"
 }
 
-## Extra aliases....
-$errorList = @()
-## We don't need this work around for the "Grid" alias anymore
-## but we preserve compatability by still generating GridPanel (which is what the class ought to be anyway?)
-Set-Alias -Name GridPanel  -Value "New-System.Windows.Controls.Grid" -EA "SilentlyContinue" -EV +ErrorList
-if($ErrorList.Count) { Write-Warning """GridPanel"" alias not created, you must use New-System.Windows.Controls.Grid" }
+#region Styles
+. $psScriptRoot\StyleSystem\Get-UIStyle.ps1
+. $psScriptRoot\StyleSystem\Set-UIStyle.ps1
 
-###################
-## Backwards compat aliases ...
-Set-Alias -Name Boots                  -Value "Show-UI"              -EA "SilentlyContinue" -EV +ErrorList
-Set-Alias -Name Write-BootsOutput      -Value "Write-UIOutput"       -EA "SilentlyContinue" -EV +ErrorList
-Set-Alias -Name BootsImage             -Value "Out-BootsImage"       -EA "SilentlyContinue" -EV +ErrorList
+Set-UIStyle -StyleName "Hyperlink" -Style @{
+    Resource = @{
+            AllowedSchemes = 'http','https'
+        }        
+        Foreground = 'DarkBlue'
+        TextDecorations = { 
+             [Windows.TextDecorations]::Underline
+        }
+        On_PreviewMouseDown = {            
+            if ($this.Resources.Url) {                 
+                $realUrl = [Uri]$this.Resources.Url
+                $allowedSchemes = $this.Resources.AllowedSchemes
+                if (-not $allowedSchemes) { $allowedSchemes = 'http', 'https' } 
+                if ($allowSchemes -contains $realUrl.Scheme) {
+                    Start-Process -FilePath $realUrl 
+                }
+                
+            }
+        } 
+}
+
+Set-UIStyle -StyleName Bold -Style @{
+    FontWeight = 'Bold'        
+}
+
+Set-UIStyle -StyleName BoldItalic -Style @{
+    FontWeight = 'Bold'
+    FontStyle = 'Italic'
+}
+
+Set-UIStyle -StyleName SmallText -Style @{
+    FontSize = 9
+}
+
+Set-UIStyle -StyleName MediumText -Style @{
+    FontSize = 14 
+}
+
+Set-UIStyle -StyleName LargeText -Style @{
+    FontSize = 18
+}
+
+Set-UIStyle -StyleName HugeText -Style @{
+    FontSize = 32
+}
+
+Set-UIStyle -StyleName ErrorStyle -Style @{
+    Foreground = 'DarkRed'
+	TextDecorations = { [Windows.TextDecorations]::Underline } 
+}
+
+#endregion Styles
 
 
-$errorList = @()
-Set-Alias -Name Show                   -Value "Show-UI"              -EA "SilentlyContinue" -EV +ErrorList
-if($ErrorList.Count) { Write-Warning "Show alias not created, you must use the full Show-UI function name!" }
+#region Common Controls
+. $psScriptRoot\CommonControls\Select-Date.ps1
+. $psScriptRoot\CommonControls\Edit-StringList.ps1
+#endregion Common Controls
 
-$errorList = @()
-Set-Alias -Name UIOut                  -Value "Write-UIOutput"       -EA "SilentlyContinue" -EV +ErrorList
-if($ErrorList.Count) { Write-Warning "UIOut alias to Show-UI not created!" }
 
-$errorList = @()
-Set-Alias -Name UIImage                -Value "Out-UIImage"          -EA "SilentlyContinue" -EV +ErrorList
-if($ErrorList.Count) { Write-Warning "UIImage alias not created, you must use the full Out-UIImage function name!" }
 
-Set-Alias -Name obi    -Value "Out-UIImage"                          -EA "SilentlyContinue"
-Set-Alias -Name oui    -Value "Out-UIImage"                          -EA "SilentlyContinue"
-Set-Alias -Name sdp    -Value "Set-DependencyProperty"               -EA "SilentlyContinue"
-Set-Alias -Name gbw    -Value "Get-UI"                               -EA "SilentlyContinue"
-Set-Alias -Name gui    -Value "Get-UI"                               -EA "SilentlyContinue"
-Set-Alias -Name rbw    -Value "Remove-UI"                            -EA "SilentlyContinue"
-Set-Alias -Name rui    -Value "Remove-UI"                            -EA "SilentlyContinue"
-                                                    
-$ShowUIFunctions = @("Add-UIFunction", "Set-DependencyProperty", "New-*") +
-                  @("Get-UIModule", "Get-UIAssemblies", "Get-Parameter", "Get-UIParam" ) + 
-                  @("Get-UIContentProperty", "Add-UIContentProperty", "Remove-UIContentProperty") +
-                  @("Get-UIHelp", "Get-UICommand", "Out-UIWindow", "New-UIImage") +
-                  @("Select-UIElement","Select-ChildControl", "Add-ChildControl", "Add-EventHandler" ) +
-                  @("ConvertTo-GridLength", "Enable-MultiTouch", "Export-Application") + 
-                  @("Autoloaded", "Export-NamedElement")
 
-Export-ModuleMember -Function $ShowUIFunctions -Cmdlet (Get-Command -Module PoshWpf) -Alias * -Variable "ShowUI"
+Export-ModuleMember -Cmdlet * -Function * -Alias *  
