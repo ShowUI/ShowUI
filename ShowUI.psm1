@@ -13,8 +13,7 @@ if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
 }
 
 #region Code Generator Functions
-. $psScriptRoot\CodeGenerator\Add-CodeGenerationRule.ps1
-. $psScriptRoot\CodeGenerator\ConvertFrom-TypeToCmdlet.ps1
+. $psScriptRoot\CodeGenerator\Convert-TypeToCmdlet.ps1
 . $psScriptRoot\CodeGenerator\ConvertTo-ParameterMetaData.ps1
 #endregion Code Generator Functions
 
@@ -56,6 +55,7 @@ $script:UIStyles = @{}
 . $psScriptRoot\Export-Application.ps1
 . $psScriptRoot\Register-PowerShellCommand.ps1
 
+. $psScriptRoot\Write-UIOutput.ps1
 . $psScriptRoot\Get-UIValue.ps1
 . $psScriptRoot\Start-PowerShellCommand.ps1
 . $psScriptRoot\Start-WPFJob.ps1

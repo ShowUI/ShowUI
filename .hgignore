@@ -3,3 +3,5 @@ syntax: regexp
 
 Types_Generated
 \.bak$
+glob:GeneratedAssemblies/*
+glob:GeneratedCode/*
