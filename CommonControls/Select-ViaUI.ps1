@@ -60,6 +60,17 @@ function Select-ViaUI {
     # We're going to need the parameters later
     $uiParameters = @{} + $psBoundParameters
 
+    # we need to store the original items ... so we can output them later
+    # But we're going to convert them to strings to display them
+    $global:SelectViaUIStringItems = New-Object System.Collections.ArrayList
+    # So, use a hashtable, with the strings as the keys to the original values 
+    $global:SelectViaUIOriginalItems = @{}
+    ## Convert input to string representations and store ...
+    foreach($item in $Input) {
+        $stringRepresentation = (($item | ft -HideTableHeaders | Out-String )-Split"\n")[-4].trimEnd()
+        $SelectViaUIOriginalItems[$stringRepresentation] = $item
+        $null = $SelectViaUIStringItems.Add($stringRepresentation)
+    }
 
 ## Get the item as it would be displayed by Format-Table
 ## Generate the window
@@ -70,18 +81,6 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
     PSBoundParameters = $PSBoundParameters
     Args = $args
 } -Children {
-
-    # we need to store the original items ... so we can output them later
-    # But we're going to convert them to strings to display them
-    $SelectViaUIStringItems = New-Object System.Collections.ArrayList
-    # So, use a hashtable, with the strings as the keys to the original values 
-    $SelectViaUIOriginalItems = @{}
-    ## Convert input to string representations and store ...
-    foreach($item in $Input) {
-        $stringRepresentation = (($item | ft -HideTableHeaders | Out-String )-Split"\n")[-4].trimEnd()
-        $SelectViaUIOriginalItems[$stringRepresentation] = $item
-        $null = $SelectViaUIStringItems.Add($stringRepresentation)
-    }
     
     ## This is just a label ...
     TextBlock -Margin 5 -Row 0 "Type or click to search. Press Enter or click OK to pass the items down the pipeline." 
