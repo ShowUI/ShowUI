@@ -67,7 +67,7 @@ $script:UIStyles = @{}
 
 if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
-$types = & $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
+$types = . $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
 
 
 $importPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
