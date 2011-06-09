@@ -12,6 +12,12 @@ if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
     if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
 
+
+$Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
+            [Reflection.Assembly]::LoadWithPartialName("PresentationFramework"),
+            [Reflection.Assembly]::LoadWithPartialName("PresentationCore"),
+            [Reflection.Assembly]::Load($WinFormsIntegration)
+
 #region Code Generator Functions
 . $psScriptRoot\CodeGenerator\Add-CodeGenerationRule.ps1
 . $psScriptRoot\CodeGenerator\ConvertFrom-TypeToCmdlet.ps1
