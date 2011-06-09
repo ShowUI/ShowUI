@@ -12,6 +12,7 @@ if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
     if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
 
+$WinFormsIntegration = "WindowsFormsIntegration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 
 $Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
             [Reflection.Assembly]::LoadWithPartialName("PresentationFramework"),
