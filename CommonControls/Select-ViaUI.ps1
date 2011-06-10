@@ -1,10 +1,11 @@
 function Select-ViaUI {
 #.Synopsis
-#  Select objects through a visual interface
+#   Select objects through a visual interface
 #.Description
-# Uses a graphical interface to select (and pass-through) pipeline objects
-# Idea from Lee Holmes (http://www.leeholmes.com/blog)
-
+#   Uses a graphical interface to select (and pass-through) pipeline objects
+#   Idea from Lee Holmes (http://www.leeholmes.com/blog)
+#.Example
+#   Get-ChildItem | Select-ViaUI -show | Remove-Item -WhatIf
     [OutputType([Windows.Controls.Grid])]
     param(
     # The name of the control        
@@ -29,7 +30,7 @@ function Select-ViaUI {
     # in the grid the control will occupy.   Using the -ColumnSpan parameter
     # changes the dependency property [Windows.Controls.Grid]::ColumnSpanProperty
     [Int]$ColumnSpan,
-    # The -Width parameter will be used to set the width of the control                
+    # The -Width parameter will be used to set the width of the control
     [Int]$Width, 
     # The -Height parameter will be used to set the height of the control
     [Int]$Height,
@@ -81,17 +82,23 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
     PSBoundParameters = $PSBoundParameters
     Args = $args
 } -Children {
-    
     ## This is just a label ...
     TextBlock -Margin 5 -Row 0 "Type or click to search. Press Enter or click OK to pass the items down the pipeline." 
     
+    $Global:SelectViaUIUpdateBlock = {
+        $source = $selectedItems.Items
+        if($selectedItems.SelectedItems.Count -gt 0)
+        {
+            $source = $selectedItems.SelectedItems
+        }
+        $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
+    }
+                                    
     ## Put the items in a ListBox, inside a ScrollViewer so it can scroll :)
     ScrollViewer -Margin 5 -Row 1 {
         ListBox -SelectionMode Multiple -ItemsSource $SelectViaUIStringItems -Name SelectedItems `
-                -FontFamily "Consolas, Courier New" -On_MouseDoubleClick {
-                                        $e = $_
-                                        $parent | Set-UIValue -value $SelectViaUIOriginalItems[$e.OriginalSource.DataContext] -passthru | Close-Control
-                                    }
+                -FontFamily "Consolas, Courier New"  -On_SelectionChanged $SelectViaUIUpdateBlock `
+                # -On_MouseDoubleClick { Close-Control $parent }
     }
 
     ## This is the filter box: Notice we update the filter on_KeyUp
@@ -104,24 +111,21 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
             ## Do a regex match
             $item -match $filterText
         }
+        
+        ## Update the output after the filter
+        & $SelectViaUIUpdateBlock.GetNewClosure()
     }
 
     ## Use a GridPanel ... it's a simple, yet effective way to lay out a couple of buttons.
     Grid -Margin 5 -HorizontalAlignment Right -Columns 65, 10, 65 {
-        Button "OK" -IsDefault -Width 65 -On_Click {
-            $source = $selectedItems.Items
-
-            if($selectedItems.SelectedItems.Count -gt 0)
-            {
-                $source = $selectedItems.SelectedItems
-            }
-
-            ## Use Write-UIOutput to send things out from the UI to the pipeline...
-            $parent | Set-UIValue -value $SelectViaUIOriginalItems[$source] -passthru | Close-Control
-        } -Column 0
-        Button "Cancel" -IsCancel -Width 65 -Column 2
+        Button "OK" -IsDefault -Width 65 -On_Click { Close-Control $window } -Column 0
+        Button "Cancel" -IsCancel -Width 65 -On_Click { $SelectFTList | Set-UIValue -value $null } -Column 2
     } -Row 3
     ## Focus on the Search box by default
-} -On_Loaded { $SearchText.Focus() } @uiParameters
+} -On_Loaded { 
+    $SearchText.Focus()
+    ## Default output, in case you close the window without selecting anything
+    $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$selectedItems.Items]
+} @uiParameters
 
 }
