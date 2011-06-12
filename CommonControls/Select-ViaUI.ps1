@@ -63,17 +63,17 @@ function Select-ViaUI {
 
     # we need to store the original items ... so we can output them later
     # But we're going to convert them to strings to display them
-    $global:SelectViaUIStringItems = New-Object System.Collections.ArrayList
+    $SelectViaUIStringItems = New-Object System.Collections.ArrayList
     # So, use a hashtable, with the strings as the keys to the original values 
-    $global:SelectViaUIOriginalItems = @{}
+    $SelectViaUIOriginalItems = @{}
     ## Convert input to string representations and store ...
     foreach($item in $Input) {
+        ## Get the item as it would be displayed by Format-Table
         $stringRepresentation = (($item | ft -HideTableHeaders | Out-String )-Split"\n")[-4].trimEnd()
         $SelectViaUIOriginalItems[$stringRepresentation] = $item
         $null = $SelectViaUIStringItems.Add($stringRepresentation)
     }
 
-## Get the item as it would be displayed by Format-Table
 ## Generate the window
 # Show-UI -Title "Object Filter" -MinWidth 400 -Height 600 {
 Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
@@ -84,20 +84,18 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
 } -Children {
     ## This is just a label ...
     TextBlock -Margin 5 -Row 0 "Type or click to search. Press Enter or click OK to pass the items down the pipeline." 
-    
-    $Global:SelectViaUIUpdateBlock = {
-        $source = $selectedItems.Items
-        if($selectedItems.SelectedItems.Count -gt 0)
-        {
-            $source = $selectedItems.SelectedItems
-        }
-        $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
-    }
-                                    
+
     ## Put the items in a ListBox, inside a ScrollViewer so it can scroll :)
     ScrollViewer -Margin 5 -Row 1 {
-        ListBox -SelectionMode Multiple -ItemsSource $SelectViaUIStringItems -Name SelectedItems `
-                -FontFamily "Consolas, Courier New"  -On_SelectionChanged $SelectViaUIUpdateBlock `
+        ListBox -SelectionMode Multiple -ItemsSource $SelectViaUIStringItems -Name SelectedItems  `
+                -FontFamily "Consolas, Courier New"  -On_SelectionChanged {
+                    $source = $selectedItems.Items
+                    if($selectedItems.SelectedItems.Count -gt 0)
+                    {
+                        $source = $selectedItems.SelectedItems
+                    }
+                    $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
+                }
                 # -On_MouseDoubleClick { Close-Control $parent }
     }
 
@@ -113,7 +111,12 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
         }
         
         ## Update the output after the filter
-        & $SelectViaUIUpdateBlock.GetNewClosure()
+        $source = $selectedItems.Items
+        if($selectedItems.SelectedItems.Count -gt 0)
+        {
+            $source = $selectedItems.SelectedItems
+        }
+        $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
     }
 
     ## Use a GridPanel ... it's a simple, yet effective way to lay out a couple of buttons.
