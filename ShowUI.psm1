@@ -86,10 +86,10 @@ if (Test-Path $importPath) {
 
 $importedCommands = $importedModule.ExportedCommands.Values
 $toAlias = $importedCommands | 
-    Where-Object { 
+    Where-Object {
         $_.Verb -eq 'New'
-    }    
-    
+    }
+
 foreach ($ta in $toAlias) {
     Set-Alias -Name $ta.Noun -Value "$ta"
 }
@@ -101,26 +101,25 @@ foreach ($ta in $toAlias) {
 Set-UIStyle -StyleName "Hyperlink" -Style @{
     Resource = @{
             AllowedSchemes = 'http','https'
-        }        
+        }
         Foreground = 'DarkBlue'
         TextDecorations = { 
              [Windows.TextDecorations]::Underline
         }
-        On_PreviewMouseDown = {            
-            if ($this.Resources.Url) {                 
+        On_PreviewMouseDown = {
+            if ($this.Resources.Url) {
                 $realUrl = [Uri]$this.Resources.Url
                 $allowedSchemes = $this.Resources.AllowedSchemes
-                if (-not $allowedSchemes) { $allowedSchemes = 'http', 'https' } 
+                if (-not $allowedSchemes) { $allowedSchemes = 'http', 'https' }
                 if ($allowSchemes -contains $realUrl.Scheme) {
                     Start-Process -FilePath $realUrl 
                 }
-                
             }
-        } 
+        }
 }
 
 Set-UIStyle -StyleName Bold -Style @{
-    FontWeight = 'Bold'        
+    FontWeight = 'Bold'
 }
 
 Set-UIStyle -StyleName BoldItalic -Style @{
@@ -133,7 +132,7 @@ Set-UIStyle -StyleName SmallText -Style @{
 }
 
 Set-UIStyle -StyleName MediumText -Style @{
-    FontSize = 14 
+    FontSize = 14
 }
 
 Set-UIStyle -StyleName LargeText -Style @{
@@ -146,7 +145,7 @@ Set-UIStyle -StyleName HugeText -Style @{
 
 Set-UIStyle -StyleName ErrorStyle -Style @{
     Foreground = 'DarkRed'
-	TextDecorations = { [Windows.TextDecorations]::Underline } 
+    TextDecorations = { [Windows.TextDecorations]::Underline }
 }
 
 #endregion Styles
@@ -158,7 +157,4 @@ Set-UIStyle -StyleName ErrorStyle -Style @{
 . $psScriptRoot\CommonControls\Edit-StringList.ps1
 #endregion Common Controls
 
-
-
-
-Export-ModuleMember -Cmdlet * -Function * -Alias *  
+Export-ModuleMember -Cmdlet * -Function * -Alias *
