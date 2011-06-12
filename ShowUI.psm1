@@ -154,6 +154,7 @@ Set-UIStyle -StyleName ErrorStyle -Style @{
 
 #region Common Controls
 . $psScriptRoot\CommonControls\Select-Date.ps1
+. $psScriptRoot\CommonControls\Select-ViaUI.ps1
 . $psScriptRoot\CommonControls\Edit-StringList.ps1
 #endregion Common Controls
 
