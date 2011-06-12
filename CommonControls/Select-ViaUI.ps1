@@ -1,4 +1,4 @@
-function Select-ViaUI {
+﻿function Select-ViaUI {
 #.Synopsis
 #   Select objects through a visual interface
 #.Description

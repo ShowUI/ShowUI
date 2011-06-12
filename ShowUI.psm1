@@ -1,4 +1,4 @@
-param(
+﻿param(
 [ValidateSet('Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing')]
 [string]
 $LoadBehavior = 'Normal'

@@ -1,4 +1,4 @@
-function Get-ControlPosition {
+﻿function Get-ControlPosition {
     <#
     .Synopsis
         Gets the screen position of the control

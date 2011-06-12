@@ -1,4 +1,4 @@
-function Set-UIStyle {
+﻿function Set-UIStyle {
     <#
     .Synopsis
         Set-UIStyle

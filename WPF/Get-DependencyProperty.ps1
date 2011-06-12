@@ -1,4 +1,4 @@
-function Get-DependencyProperty {
+﻿function Get-DependencyProperty {
     <#
     .Synopsis
         Gets the Dependency Properties that have been set on a control
