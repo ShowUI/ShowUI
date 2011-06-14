@@ -1,0 +1,354 @@
+Ok, let's be clear: you've seen this "before":/powerboots-tutorial-walkthrough, and this isn't going to be the last you'll see of it, because we've got much more in store in "ShowUI":http://showui.codeplex.com, but for the first release of ShowUI, it's obviously time to update this simple walkthrough of building simple user interfaces in PowerShell!
+
+h2. An introduction to ShowUI
+
+ShowUI is the next generation PowerShell module for building user interfaces in script. It's the merger of my previous PowerShell UI project (called PowerBoots) with one by James Brundage, former Microsoft PowerShell team member and founder of "Start-Automating":http://start-automating.com (called WPK) which shipped in the Windows 7 resource kit.
+
+If you want to follow along, you need to get a copy of the "ShowUI Module":http://showui.codeplex.com/releases/ from CodePlex and install it by putting the "ShowUI" folder in one of your "Modules" folders (list them by typing @$Env:PSMODULEPATH@ in PowerShell v2, and feel free to create the one you want if it doesn't exist). You also need to run PowerShell with the -STA switch.
+
+Did I hear someone ask *what _is_ WPF?* It was introduced as part of .Net 3.0 (and vastly improved in .Net 3.5, and again in 4.0), so you can expect to find it preinstalled on computers from Vista on, and of course you can download and install it on XP if it's not already installed.  The only thing you really need to know about WPF for the purposes of this tutorial is that it is *the* new GUI toolkit for .Net, and that it is container based -- you put elements into other elements to control the layout, rather like HTML and Java Swing... you can *pick up the rest as we go along*.
+
+h2. A simple Boots program
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-01.png!
+
+<code lang="posh">
+New-Button -Content "Hello World" -Show
+</code>
+
+This first example is a little bit more verbose than it needs to be, because the @-Content@ parameter is positional, so the first non-named argument you pass will be used for that. The same is true for the -Children parameter of panels, and in fact, each of the other similar content parameters: Items, Blocks, and Inlines.
+
+Additionally, each control is aliased without the New- verb, so you could just call @Button@ instead of @New-Button@ ... and of course, since our button doesn't do anything, we could just as easily have used a Label, and written:
+
+<code lang="posh">
+Label "Hello World" -Show
+</code>
+
+Note: "Label" is also the name of an executable for labelling drives in Windows, make sure ShowUI is imported before you run that command.
+
+One last point: ShowUI brings a lot of features from WPK to the table, and one you'll use a lot is the ability to skip specifying the window and put the -Show parameter on almost any WPF element. This is partly because we're back to running PowerShell 2.0 with the -STA switch, but in any case, we can now skip the "New-BootsWindow" command, and our examples can be that much simpler.
+
+
+h2. We can put controls in a stack
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-02.png!
+
+<code lang="posh">
+Show-UI {
+    StackPanel {
+        Button "A bed of clams"
+        Button "A coalition of cheetas"
+        Button "A gulp of swallows"
+    }
+}
+</code>
+
+StackPanels are awesome. So are WrapPanels. Try that code with a WrapPanel instead of a StackPanel and see what the difference is (hint: try resizing the window). Actually, try it with a UniformGrid too. WPF has several other panel containers too: Grid, ToolBarPanel, TabPanel, DockPanel, Canvas ... we'll talk about some more of those later.
+
+h2. Ok, lets see some formatting
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-03.png!
+
+To scoot the buttons out from the edge we can use margins or padding: margins go on the outside of containers, padding goes on the inside. We can also specify the FontFamily, FontSize, FontWeight, and FontStyle, as well as Foreground and Background colors ... 
+
+<code lang="posh">
+Show-UI {
+    StackPanel -Margin 5 -Background Pink {
+        Button -Margin 2 "A bed of clams" -FontFamily Consolas -FontSize 24 -FontWeight Bold
+        Button -Margin 2 "A coalition of cheetas" -FontFamily Arial -FontSize 20 -FontStyle Italic
+        Button -Margin 2 "A gulp of swallows" -FontFamily 'Segoe UI' -FontSize 18 -Foreground Crimson
+    }
+}
+</code>
+
+So you see, the pink background is on the StackPanel, which has a (default, white) margin around it.  If you wanted the whole background of the window to be pink, you would need to set the background of the Window instead of the StackPanel.
+
+
+<h3 style="clear: both;">An aside on Typography</h3>
+
+ShowUI doesn't need to create a full set of typography-specific top-level elements the way Shoes does, because we are based on WPF, which has a far more powerful typography system available than any we've used previously. So, with WPF we start by selecting a control based on how much text you want to put in it, and how much formatting you want to apply: Label and TextBox are the simplest, TextBlock supports limited text formattings, and FlowDocumentViewer or RichTextBox support full rich content. And of course, Hyperlink supports clicking ;) 
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-07.png!
+
+For the typography elements, the content model changes a little bit.  There are basically two types of typographical elements: Inline and Block elements (where inline elements can't contain block elements). In fact, he "TextBlock Content Model":http://msdn.microsoft.com/en-us/library/bb613554.aspx is similar to that of an inline element. It is actually a type-restricted "Items" container.  Instead of being able to have _anything_ as content, it can only contain "Inline":http://msdn.microsoft.com/en-us/library/system.windows.documents.inline.aspx flow content elements such as <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.anchoredblock.aspx">AnchoredBlock</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.bold.aspx">Bold</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.hyperlink.aspx">Hyperlink</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.inlineuicontainer.aspx">InlineUIContainer</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.italic.aspx">Italic</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.linebreak.aspx">LineBreak</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.run.aspx">Run</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.span.aspx">Span</a>, and <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.underline.aspx">Underline</a>, and it will create a run automatically if you just put a text string in it. 
+ 
+<code lang="posh">
+Show-UI {
+   StackPanel -Margin 10 -Children {
+      TextBlock "A Question" -FontSize 42 -FontWeight Bold -Foreground "#FF0088" 
+      TextBlock -FontSize 24 -Inlines {
+         Bold "Q. "
+         "Are you starting to dig "
+         Hyperlink "ShowUI?" -NavigateUri http://huddledmasses.org/tag/showui/ `
+                                 -On_RequestNavigate { [Diagnostics.Process]::Start( $this.NavigateUri.ToString() ) }
+      }
+      TextBlock -FontSize 16 -Inlines {
+         Span -FontSize 24 -FontWeight Bold -Inlines "A. "
+         "Leave me alone, I'm hacking here!"
+      }
+}
+}
+</code>
+
+Note: If you want support for the full "document model":http://msdn.microsoft.com/en-us/library/aa970909.aspx (which allows Paragraphs and Lists), you need to use a <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.flowdocumentreader.aspx">FlowDocumentReader</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.flowdocumentpageviewer.aspx">FlowDocumentPageViewer</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.richtextbox.aspx">RichTextBox</a>, or a <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.flowdocumentscrollviewer.aspx">FlowDocumentScrollViewer</a> ... there's lots more information about those "on msdn":http://msdn.microsoft.com/en-us/library/aa970909.aspx.
+
+h2. Time for some artwork
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-04.png!
+
+<code lang="posh">
+Ellipse -Width 60 -Height 80 -Margin "20,10,60,20" -Fill Black -Show
+</code>
+
+In WPF, everything always starts out white, and you must position things based on the container. You can see that the Margin can be specified as a single value as in the previous example, or as separate values for Left, Top, Right, Bottom.  Oddly, to satisfy PowerShell's type-casting, you have to quote them so they're a single comma-separated string, instead of four separate values.
+
+h2. Some more advanced drawing
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-05.png!
+
+<code lang="posh">
+Canvas -Height 100 -Width 100 -Children {
+   Rectangle -Margin "10,10,0,0" -Width 45 -Height 45 -Stroke "#689945" -StrokeThickness 2 -Fill "#336699"
+   Polygon -Stroke Pink -StrokeThickness 2 -Fill DarkRed -Points "10,60", "50,60", "50,50", "65,65",
+                                                               "50,80", "50,70", "10,70", "10,60" 
+} -Show
+</code>
+
+When you want to start getting clever and overlapping things, you need to use a Canvas container. The Canvas can contain multiple items which are all absolutely positioned, but unlike most other containers, it doesn't automatically expand to contain it's children, so you typically have to set it's size.
+
+We also have to set the Stroke and Fill.  These are the two colors that make up every object, and again, if we don't set them, they default to white. Note that you can use named colors, or you can specify a hex value using "#RRGGBB" or "#AARRGGBB" to set the alpha channel. The StrokeThickness controls the line thickness.  
+
+One other thing to notice is that we positioned the Rectangle by using the @Margin@, but we positioned the arrow, which we built using a Polygon, based purely on the x,y coordinates of the points.  The available shapes are Ellipse, Line, Path, Polygon, Polyline, and Rectangle.  You can, of course, make nearly any shape you want with the Polygon.
+
+There are other more advanced shapes available in external libraries, and we can even do 3D, use gradient or image fills...
+
+h3. We can even get images straight off the web
+
+<code lang="posh">
+   Image -Source http://huddledmasses.org/images/PowerBoots/IMG_3298.jpg -MaxWidth 400 -AsJob
+</code>
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-06.png!
+
+WPF loads the image on a background thread, and caches it in memory, so the window will show up and be responsive while you're waiting for the image, and because we've specified @-AsJob@, you can actually continue using PowerShell while the image loads. Note: it will load much faster the second time you run that script. ;)
+
+h3. Events
+
+If you were paying attention to the typography example, you'll have noticed that we introduced event handling without making a big fuss about it. Event handlers in PowerBoots are specified in much the same way that Properties are, except that their parameter names always start with "On_" and they take a script block.  The Hyperlink element in a WPF window doesn't automatically open a browser (because you can use it to change "pages" in a WPF application), so to make simple web links work, you have to handle the "RequestNavigate" event as shown above.
+
+!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots8.png!
+
+In order to update your user interface when an event triggers, you'll need to have a variable that points at the control(s) you want to affect.  You get a @$this@ variable for free which points at the object that caused the event (eg: the Hyperlink in our previous example), and a @$window@ variable which points at the top-level window, and we also create variables for each named control in your window:
+
+<code lang="posh">
+WrapPanel {
+    Button "Push Me" -On_Click {
+        $Window.Tag = $Window.Tag + 1
+        $CountLabel.Content = "You clicked the button $($Window.Tag) times!"
+    }
+    Label "Nothing pushed so far" -Name CountLabel
+} -Show
+</code>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I've made these examples slightly more complicated than they had to be to demonstrate some best practices.  When the Window is closed, the Out-Boots function returns the $BootsOutput variable -- so if you want to *output* something from your gui, you need to set that variable.  You can, of course, access global scope variables using the scope prefix @$global:variableName@, so you can set many different variables which you read later in your script.  The catch is, sometimes the variables _have_ to be explicitly set to script or even global scope in order to refer to the same variable in all of the event handlers...
+
+!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots9.png!
+
+However, if you want to have this block of code actually *output* something into the pipeline, you'll always want to use the @$BootsOutput@ variable.  You can do that directly, the way the example above does, or you can simply use Write-Output! Inside the Out-Boots function, he Write-Output cmdlet just appends to the $BootsOutput variable ... so it works pretty much exactly the way you would expect it to.
+
+<code lang="posh">
+Boots {
+   WrapPanel -On_Load { $Count = 0 } $(
+      Button "Push Me" -On_Click { 
+         Write-Output (++$count)
+         # You have to use array notation ...
+         $block[0].Inlines.Clear(); 
+         $block[0].Inlines.Add("You clicked the button $count times!") 
+      }
+      TextBlock "Nothing pushed so far" -OutVariable script:block -VerticalAlignment Center
+   )
+}
+</code>
+
+The first example outputs *just* the count of how many times you clicked.  The second outputs a series of numbers from 1 to however many times you click.  It's your choice of how to work with it.
+
+h3. We can have fun with colors
+
+!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots10.png!
+
+Boots gives you access to all the capabilities of the Windows Presentation Framework, but in some cases that comes at a cost, because we haven't simplified their composability.  So we have RadialGradientBrush and LinearGradientBrush, but you have to specify the GradientStops etc ...
+
+<code lang="posh">
+Boots -Background (
+   RadialGradientBrush $(
+      GradientStop -Offset 0 -Color "#F00"
+      GradientStop -Offset 1 -Color "#F90"
+   )
+) {
+   Label "Boots" -HorizontalAlignment Center `
+                 -VerticalAlignment Center `
+                 -Foreground White -Margin 80 `
+                 -FontWeight Bold  -FontSize 40
+}
+</code>
+
+We also have
+
+h3. So what does an InputBox look like?
+
+!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots11.png(PowerBoots11.png)!
+
+Well, the simplest possible input box is just a TextBox, with the Width set (if you don't set the Width, a TextBox will adjust to fit it's contents, which can be really distracting).  All you need to do is this:
+
+<code lang="posh">
+Boots {
+   TextBox -Width 220 
+} -Title "Enter your name" -On_Close { 
+   Write-Output $BootsWindow.Content.Text 
+} 
+</code>
+
+!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots12.png(PowerBoots12.png)!
+
+Of course, the problem with that is that it pops up this rather confusing window, when what we really wanted was a prompt, and an "Ok" button, and some event handling to make the thing behave the way we expect it to.  So lets try our first complicated form. 
+
+I'll warn you ahead of time of one thing I'm going to do here. I'm using the "Border" element to apply a colored border to the StackPanel (because it doesn't have it's own border parameters), but then I'm also using the WindowStyle and AllowsTransparency properties to remove the normal window chrome, creating the bare little popup you see in the screenshot. I handle the mouse down event on the main window to allow the user to drag the window around by clicking anywhere on it (except in the TextBox or on the Button, of course). Now it looks slick, and --you know-- it works!
+
+<code lang="posh">
+function Get-BootsInput {
+   Param([string]$Prompt = "Please enter your name:")
+   
+   Remove-Variable textBox -ErrorAction SilentlyContinue
+   Boots {
+      Border -BorderThickness 4 -BorderBrush "#BE8" -Background "#EFC" (
+         StackPanel -Margin 10  $( 
+            Label $Prompt
+            StackPanel -Orientation Horizontal $(
+               TextBox -OutVariable global:textbox -Width 150 -On_KeyDown { 
+                  if($_.Key -eq "Return") { 
+                     Write-Output $textbox[0].Text
+                     $BootsWindow.Close()
+                  }
+               }
+               Button "Ok" -On_Click { 
+                  Write-Output $textbox[0].Text
+                  $BootsWindow.Close()
+               }
+            )
+         )
+      )
+   } -On_Load { $textbox[0].Focus() } `
+   -WindowStyle None -AllowsTransparency $true `
+   -On_PreviewMouseLeftButtonDown { 
+      if($_.Source -notmatch ".*\.(TextBox|Button)") 
+      {
+         $BootsWindow.DragMove() 
+      }
+   }
+}
+</code>   
+
+Hopefully you can follow that, although it's obviously over the top :). We handle the KeyDown event on the TextBox (if the Key is the Return key), and we also handle the click on the Button.  In both cases, we'll write out the text that was entered, and use the special $BootsWindow variable to close the window.  We also handle the Load event for the window, to make sure the focus is on the TextBox, so you can just start typing.
+
+h3. A final example
+
+!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots13.png(PowerBoots13.png)!
+
+I've got quite a few more examples I want to show off in part two of this tutorial, but to get you thinking about ways to integrate this with your routine tasks, and give you some ideas of what you can do with what you know already, let me give you this example of browsing photos, with a visual indication of how big the image file is. Of course, the point is that you could be visualizing, you know ... anything.
+
+<code lang="posh">
+add-type -Assembly System.Windows.Forms  # To get the Double-Click time
+
+function New-GraphLabel {
+[CmdletBinding()]
+   PARAM ( 
+      [Parameter(Position=0)][String]$Label = "Name", 
+      [Parameter(Position=1)][String]$Value = "Length", 
+      [Parameter(Position=2)][ScriptBlock]$DoubleClickAction = $null, 
+      [Parameter()][Int]$max = $null, 
+      [Parameter()][Int]$width = 200, 
+      [Parameter()][double]$margin = 2,
+      [Parameter()][Int]$DoubleClickTime = $([System.Windows.Forms.SystemInformation]::DoubleClickTime),
+      [Parameter(ValueFromPipeline=$true)][Alias("IO")][PSObject[]]$InputObject
+   )
+   BEGIN { $maxx = $max }
+   PROCESS {
+      if(!$maxx){ $maxx=@($InputObject)[0].$Value }
+
+      foreach($io in $InputObject) {
+         ## This is the core part of the script ...
+         ## For each input, generate a grid panel with a label and a rectangle in the background
+      
+         GridPanel -tag @{item=$io; action=$DoubleClickAction} -width $Width -margin $margin $( 
+            Label $io.$Label 
+            Rectangle -HorizontalAlignment Left -Fill "#9F00" `
+                      -Width ($Width * ($io."$Value" / $maxx))
+         ) -On_MouseLeftButtonDown {
+            if($this.Tag.Action) { # They passed in a doubleclick action, so lets handle it
+               if($global:ClickTime -and 
+                  ([DateTime]::Now - $ClickTime).TotalMilliseconds -lt $global:DoubleClickTime) {
+                  # We invoke the scriptblock 
+                  # and pass it the original input object 
+                  # and the grid panel object
+                  &$This.Tag.Action $this.Tag.Item $this
+               } else {
+                  $global:ClickTime = [DateTime]::Now
+               }
+            }
+         }
+      }
+   }
+}
+
+Set-Alias GraphLabel New-GraphLabel
+
+## Example 1: list of processes with most RAM usage
+## DoubleClickAction is `kill`
+Boots {
+   ps | sort PM -Desc | Select -First 20 | 
+      GraphLabel ProcessName PM { 
+         Kill $Args[0].Id
+         $global:panel[0].Children.Remove($Args[1])
+      } | 
+   StackPanel -ov global:panel
+}
+## Example 2: list of images, with file size indicated
+## DoubleClickAction is `open`
+Boots {
+   ls ~/Pictures/ -recurse -Include *.jpg | Sort Length -Desc | % {
+      if(!$Max){$Max=$_.Length}
+
+      StackPanel -Width 200 -Margin 5 $(
+         Image -Source $_.FullName
+         GraphLabel Name Length -Max $Max -IO $_ {
+            [Diagnostics.Process]::Start( $args[0].FullName )
+         }
+      ) 
+   } | WrapPanel 
+} -Width 800
+</code>
+
+Notice that I had to manually handle the concept of a double click, because StackPanels don't have a Click or DoubleClick event, just MouseDown and MouseUp.  I could have stuck the stackpanel into something that does, but there's really no need.  Also, the @[Diagnostics.Process]::Start@ is the equivalent of typing the name into the run dialog.  I'm just _executing_ the jpg, which makes it open in the default editor.  It's just a sample, after all.
+
+h3. End note
+
+The current version of Boots does not add threading support, which means that when you run something through Boots, execution of your script stops until the window is closed.  You can get around this somewhat in "various different ways":http://huddledmasses.org/wpf-from-powershell-updating-windows/, but future releases _will_ support running the WPF window in a separate thread, and even communicating to it ... at the expense of a slightly different syntax. If you need that functionality, feel free to let me know ... I could use some motivation.
+
+I hope you've enjoyed this tour through PowerBoots, and will be able to start applying it for fun and profit.

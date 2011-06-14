@@ -65,7 +65,7 @@
     # But we're going to convert them to strings to display them
     $SelectViaUIStringItems = New-Object System.Collections.ArrayList
     # So, use a hashtable, with the strings as the keys to the original values 
-    $SelectViaUIOriginalItems = @{}
+    $Script:SelectViaUIOriginalItems = @{}
     ## Convert input to string representations and store ...
     foreach($item in $Input) {
         ## Get the item as it would be displayed by Format-Table
