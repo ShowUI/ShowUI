@@ -1,5 +1,3 @@
-# use regexp syntax, as opposed to glob
-syntax: regexp
-
 glob:GeneratedAssemblies/*
 glob:GeneratedCode/*
+glob:*.orig
