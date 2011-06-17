@@ -4,11 +4,15 @@ h2. An introduction to ShowUI
 
 ShowUI is the next generation PowerShell module for building user interfaces in script. It's the merger of my previous PowerShell UI project (called PowerBoots) with one by James Brundage, former Microsoft PowerShell team member and founder of "Start-Automating":http://start-automating.com (called WPK) which shipped in the Windows 7 resource kit.
 
-If you want to follow along, you need to get a copy of the "ShowUI Module":http://showui.codeplex.com/releases/ from CodePlex and install it by putting the "ShowUI" folder in one of your "Modules" folders (list them by typing @$Env:PSMODULEPATH@ in PowerShell v2, and feel free to create the one you want if it doesn't exist). You also need to run PowerShell with the -STA switch.
+h4. If you want to follow along, you need to:
+
+1. Get a copy of the "ShowUI Module":http://showui.codeplex.com/releases/ from CodePlex 
+2. Install it by putting the "ShowUI" folder in one of your "Modules" folders (list them by typing @$Env:PSMODULEPATH@ in PowerShell v2, and feel free to create the one you want if it doesn't exist). You should end up with something like @C:\Users\Jaykul\Documents\WindowsPowerShell\Modules\ShowUI\ShowUI.psm1@
+3. Run PowerShell ISE, or use PowerShell.exe with the -STA switch (the best way to do this is to add it to the shortcut you use to launch PowerShell: open the properties dialog, and on the Shortcut tab, add " -STA" to the Target)<sup class="footnote"><a href="#fn1">1</a></sup>.
 
 Did I hear someone ask *what _is_ WPF?* It was introduced as part of .Net 3.0 (and vastly improved in .Net 3.5, and again in 4.0), so you can expect to find it preinstalled on computers from Vista on, and of course you can download and install it on XP if it's not already installed.  The only thing you really need to know about WPF for the purposes of this tutorial is that it is *the* new GUI toolkit for .Net, and that it is container based -- you put elements into other elements to control the layout, rather like HTML and Java Swing... you can *pick up the rest as we go along*.
 
-h2. A simple Boots program
+h2. A simple ShowUI program
 
 !(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-01.png!
 
@@ -136,219 +140,72 @@ h3. Events
 
 If you were paying attention to the typography example, you'll have noticed that we introduced event handling without making a big fuss about it. Event handlers in PowerBoots are specified in much the same way that Properties are, except that their parameter names always start with "On_" and they take a script block.  The Hyperlink element in a WPF window doesn't automatically open a browser (because you can use it to change "pages" in a WPF application), so to make simple web links work, you have to handle the "RequestNavigate" event as shown above.
 
-!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots8.png!
-
-In order to update your user interface when an event triggers, you'll need to have a variable that points at the control(s) you want to affect.  You get a @$this@ variable for free which points at the object that caused the event (eg: the Hyperlink in our previous example), and a @$window@ variable which points at the top-level window, and we also create variables for each named control in your window:
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-08.png!
 
 <code lang="posh">
-WrapPanel {
+WrapPanel -ControlName 'Click Counter' {
     Button "Push Me" -On_Click {
-        $Window.Tag = $Window.Tag + 1
-        $CountLabel.Content = "You clicked the button $($Window.Tag) times!"
+        ${Click Counter}.Tag = ${Click Counter}.Tag + 1
+        $CountLabel.Content = "You clicked the button $(${Click Counter}.Tag) times!"
     }
     Label "Nothing pushed so far" -Name CountLabel
 } -Show
 </code>
 
+In order to update your user interface when an event triggers, you'll need to have variables that point at the control(s) you want to affect.  In ShowUI event handlers, you get a @$this@ variable which points at the object that caused the event, a @$_@ variable which is the event arguments, and a @$window@ variable for the top-level window ... you also get variables for each named control in your window.  
 
+WPF Elements all have a @Tag@ property which can be used to store any object, so as you can see in the previous example, you can use that to keep track of things ... but more importantly, the value of the @Tag@ on the top-level control will be output. In other words, when the window is closed, this example actually outputs to the PowerShell pipeline how many times you clicked the button.
 
+h3. Working with User Input
 
+There are helper functions in ShowUI for working with that output value: @Set-UIValue@ and @Get-UIValue@, and Get-UIValue is particularly helpful because if the control it's called on has no value, it collects the values of all the child controls, so you can use it to output a whole form at once:
 
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-09.png!
 
-
-
-
-
-
-
-
-
-
-
-
-
-I've made these examples slightly more complicated than they had to be to demonstrate some best practices.  When the Window is closed, the Out-Boots function returns the $BootsOutput variable -- so if you want to *output* something from your gui, you need to set that variable.  You can, of course, access global scope variables using the scope prefix @$global:variableName@, so you can set many different variables which you read later in your script.  The catch is, sometimes the variables _have_ to be explicitly set to script or even global scope in order to refer to the same variable in all of the event handlers...
-
-!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots9.png!
-
-However, if you want to have this block of code actually *output* something into the pipeline, you'll always want to use the @$BootsOutput@ variable.  You can do that directly, the way the example above does, or you can simply use Write-Output! Inside the Out-Boots function, he Write-Output cmdlet just appends to the $BootsOutput variable ... so it works pretty much exactly the way you would expect it to.
+I've made this example more complicated than it needed to be to demonstrate some best practices.  We could have made it much simpler by using a UniformGrid control instead of a GridControl, thus avoiding needing to set the -Row and -Column special parameters, but I wanted to show those to you anyway, and the form looks a lot better when the two columns can have different sizes:
 
 <code lang="posh">
-Boots {
-   WrapPanel -On_Load { $Count = 0 } $(
-      Button "Push Me" -On_Click { 
-         Write-Output (++$count)
-         # You have to use array notation ...
-         $block[0].Inlines.Clear(); 
-         $block[0].Inlines.Add("You clicked the button $count times!") 
-      }
-      TextBlock "Nothing pushed so far" -OutVariable script:block -VerticalAlignment Center
-   )
-}
+Grid -ControlName 'Your Information' -Columns Auto,* -Rows 7 -MinHeight 200 -MinWidth 250 {
+    Label "First Name"
+    New-TextBox -Name First -Column 1
+    
+    Label "Last Name" -Row 1 
+    New-TextBox -Name Last -Row 1 -Column 1
+
+    Label "Address" -Row 2
+    New-TextBox -Name Address -Row 2 -Column 1
+
+    Label "City" -Row 3 
+    New-TextBox -Name City -Row 3 -Column 1
+
+    Label "State" -Row 4
+    New-TextBox -Name State -Row 4 -Column 1
+
+    Label "Zip" -Row 5 
+    New-TextBox -Name Zip -Row 5 -Column 1
+
+    
+    New-Button "OK" -IsDefault -On_Click {
+        Get-ParentControl | Set-UIValue -PassThru | Close-Control
+    } -Row 6 -Column 1
+} -Show -On_Loaded { $First.Focus() }
 </code>
 
-The first example outputs *just* the count of how many times you clicked.  The second outputs a series of numbers from 1 to however many times you click.  It's your choice of how to work with it.
 
-h3. We can have fun with colors
+You'll notice how easily I specified the width of the columns, but the COUNT of the rows in the Grid panel. If you provide an array of values, they're converted to GridLengths, but if you provide just one, it's treated as the count. You can make grid columnds and rows AUTOmatically size to their contents, and you can make them * width to make them take up any extra space.  You can even split the extra space by setting * on more than one column (and specify the proportion by using numbers, like: 1*, 2*).
 
-!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots10.png!
+I should also point out that if you use MinHeight and MinWidth instead of the Height and Width values, your controls will be able to size up to fill space when the window is resized! Try that script with Width and Height instead and resize the window to see the difference.
 
-Boots gives you access to all the capabilities of the Windows Presentation Framework, but in some cases that comes at a cost, because we haven't simplified their composability.  So we have RadialGradientBrush and LinearGradientBrush, but you have to specify the GradientStops etc ...
+We used the Set-UIValue shortcut in this form, which brings up another point: when creating data forms, you only need to name the controls you want output from. Then you'll be able to just call Set-UIValue on the parent to collect all the values from the controls and output them as a hashtable!
 
-<code lang="posh">
-Boots -Background (
-   RadialGradientBrush $(
-      GradientStop -Offset 0 -Color "#F00"
-      GradientStop -Offset 1 -Color "#F90"
-   )
-) {
-   Label "Boots" -HorizontalAlignment Center `
-                 -VerticalAlignment Center `
-                 -Foreground White -Margin 80 `
-                 -FontWeight Bold  -FontSize 40
-}
-</code>
+Finally, remember your defaults: set the focus to something so the user doesn't HAVE to click to get started, and set a button to -IsDefault with a On_Click handler so that when the user hits enter they can submit the form.
 
-We also have
+h3. Further directions
 
-h3. So what does an InputBox look like?
+There's a lot more possible with ShowUI: we can use gradients for colors, create data templates and styles, and even make chromeless windows, but you have the basics for getting started already.
 
-!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots11.png(PowerBoots11.png)!
+This first release of ShowUI is still missing some features from both WPK and PowerBoots, but we'll get to them as we progress.  For now we'd like to invite you to come "download the latest release":http://showui.codeplex.com/releases/, and "write up or vote up the features":http://showui.codeplex.com/workitem/list/basic that you want the most in the next version.  Keep an eye on the release page and on the discussions and we'll be cranking out new releases on a monthly basis for now.
 
-Well, the simplest possible input box is just a TextBox, with the Width set (if you don't set the Width, a TextBox will adjust to fit it's contents, which can be really distracting).  All you need to do is this:
+I hope you've enjoyed this tour through ShowUI, and will be able to start applying it soon for fun and profit.
 
-<code lang="posh">
-Boots {
-   TextBox -Width 220 
-} -Title "Enter your name" -On_Close { 
-   Write-Output $BootsWindow.Content.Text 
-} 
-</code>
-
-!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots12.png(PowerBoots12.png)!
-
-Of course, the problem with that is that it pops up this rather confusing window, when what we really wanted was a prompt, and an "Ok" button, and some event handling to make the thing behave the way we expect it to.  So lets try our first complicated form. 
-
-I'll warn you ahead of time of one thing I'm going to do here. I'm using the "Border" element to apply a colored border to the StackPanel (because it doesn't have it's own border parameters), but then I'm also using the WindowStyle and AllowsTransparency properties to remove the normal window chrome, creating the bare little popup you see in the screenshot. I handle the mouse down event on the main window to allow the user to drag the window around by clicking anywhere on it (except in the TextBox or on the Button, of course). Now it looks slick, and --you know-- it works!
-
-<code lang="posh">
-function Get-BootsInput {
-   Param([string]$Prompt = "Please enter your name:")
-   
-   Remove-Variable textBox -ErrorAction SilentlyContinue
-   Boots {
-      Border -BorderThickness 4 -BorderBrush "#BE8" -Background "#EFC" (
-         StackPanel -Margin 10  $( 
-            Label $Prompt
-            StackPanel -Orientation Horizontal $(
-               TextBox -OutVariable global:textbox -Width 150 -On_KeyDown { 
-                  if($_.Key -eq "Return") { 
-                     Write-Output $textbox[0].Text
-                     $BootsWindow.Close()
-                  }
-               }
-               Button "Ok" -On_Click { 
-                  Write-Output $textbox[0].Text
-                  $BootsWindow.Close()
-               }
-            )
-         )
-      )
-   } -On_Load { $textbox[0].Focus() } `
-   -WindowStyle None -AllowsTransparency $true `
-   -On_PreviewMouseLeftButtonDown { 
-      if($_.Source -notmatch ".*\.(TextBox|Button)") 
-      {
-         $BootsWindow.DragMove() 
-      }
-   }
-}
-</code>   
-
-Hopefully you can follow that, although it's obviously over the top :). We handle the KeyDown event on the TextBox (if the Key is the Return key), and we also handle the click on the Button.  In both cases, we'll write out the text that was entered, and use the special $BootsWindow variable to close the window.  We also handle the Load event for the window, to make sure the focus is on the TextBox, so you can just start typing.
-
-h3. A final example
-
-!(float-right-block)http://huddledmasses.org/images/PowerBoots/PowerBoots13.png(PowerBoots13.png)!
-
-I've got quite a few more examples I want to show off in part two of this tutorial, but to get you thinking about ways to integrate this with your routine tasks, and give you some ideas of what you can do with what you know already, let me give you this example of browsing photos, with a visual indication of how big the image file is. Of course, the point is that you could be visualizing, you know ... anything.
-
-<code lang="posh">
-add-type -Assembly System.Windows.Forms  # To get the Double-Click time
-
-function New-GraphLabel {
-[CmdletBinding()]
-   PARAM ( 
-      [Parameter(Position=0)][String]$Label = "Name", 
-      [Parameter(Position=1)][String]$Value = "Length", 
-      [Parameter(Position=2)][ScriptBlock]$DoubleClickAction = $null, 
-      [Parameter()][Int]$max = $null, 
-      [Parameter()][Int]$width = 200, 
-      [Parameter()][double]$margin = 2,
-      [Parameter()][Int]$DoubleClickTime = $([System.Windows.Forms.SystemInformation]::DoubleClickTime),
-      [Parameter(ValueFromPipeline=$true)][Alias("IO")][PSObject[]]$InputObject
-   )
-   BEGIN { $maxx = $max }
-   PROCESS {
-      if(!$maxx){ $maxx=@($InputObject)[0].$Value }
-
-      foreach($io in $InputObject) {
-         ## This is the core part of the script ...
-         ## For each input, generate a grid panel with a label and a rectangle in the background
-      
-         GridPanel -tag @{item=$io; action=$DoubleClickAction} -width $Width -margin $margin $( 
-            Label $io.$Label 
-            Rectangle -HorizontalAlignment Left -Fill "#9F00" `
-                      -Width ($Width * ($io."$Value" / $maxx))
-         ) -On_MouseLeftButtonDown {
-            if($this.Tag.Action) { # They passed in a doubleclick action, so lets handle it
-               if($global:ClickTime -and 
-                  ([DateTime]::Now - $ClickTime).TotalMilliseconds -lt $global:DoubleClickTime) {
-                  # We invoke the scriptblock 
-                  # and pass it the original input object 
-                  # and the grid panel object
-                  &$This.Tag.Action $this.Tag.Item $this
-               } else {
-                  $global:ClickTime = [DateTime]::Now
-               }
-            }
-         }
-      }
-   }
-}
-
-Set-Alias GraphLabel New-GraphLabel
-
-## Example 1: list of processes with most RAM usage
-## DoubleClickAction is `kill`
-Boots {
-   ps | sort PM -Desc | Select -First 20 | 
-      GraphLabel ProcessName PM { 
-         Kill $Args[0].Id
-         $global:panel[0].Children.Remove($Args[1])
-      } | 
-   StackPanel -ov global:panel
-}
-## Example 2: list of images, with file size indicated
-## DoubleClickAction is `open`
-Boots {
-   ls ~/Pictures/ -recurse -Include *.jpg | Sort Length -Desc | % {
-      if(!$Max){$Max=$_.Length}
-
-      StackPanel -Width 200 -Margin 5 $(
-         Image -Source $_.FullName
-         GraphLabel Name Length -Max $Max -IO $_ {
-            [Diagnostics.Process]::Start( $args[0].FullName )
-         }
-      ) 
-   } | WrapPanel 
-} -Width 800
-</code>
-
-Notice that I had to manually handle the concept of a double click, because StackPanels don't have a Click or DoubleClick event, just MouseDown and MouseUp.  I could have stuck the stackpanel into something that does, but there's really no need.  Also, the @[Diagnostics.Process]::Start@ is the equivalent of typing the name into the run dialog.  I'm just _executing_ the jpg, which makes it open in the default editor.  It's just a sample, after all.
-
-h3. End note
-
-The current version of Boots does not add threading support, which means that when you run something through Boots, execution of your script stops until the window is closed.  You can get around this somewhat in "various different ways":http://huddledmasses.org/wpf-from-powershell-updating-windows/, but future releases _will_ support running the WPF window in a separate thread, and even communicating to it ... at the expense of a slightly different syntax. If you need that functionality, feel free to let me know ... I could use some motivation.
-
-I hope you've enjoyed this tour through PowerBoots, and will be able to start applying it for fun and profit.
+fn1. The -STA switch is necessary because the .Net framework requires the STA(Single Threaded Apartment) threading model in order to do graphical user interfaces. PowerShell ISE doesn't require it because unlike the PowerShell.exe command console (which is a Win32 native "console" application that hosts the .Net framework), PowerShell ISE is a .Net framework "graphical" application, and is therefore running in the STA model already.
