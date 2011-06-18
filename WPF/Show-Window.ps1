@@ -194,10 +194,10 @@
             $Window
         }
         $null = $Window.ShowDialog()            
-        if ($Window.Tag -ne $null) {
-            $Window.Tag
-        } elseif ($Control.Tag -ne $null) {
+        if ($Control.Tag -ne $null) {
             $Control.Tag            
+        } elseif ($Window.Tag -ne $null) {
+            $Window.Tag
         } else {
             if ($Control.SelectedItems) {
                 $Control.SelectedItems
