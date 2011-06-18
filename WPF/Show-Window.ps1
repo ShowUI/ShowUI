@@ -71,11 +71,10 @@
                 $window = New-Window
                 Set-Property -inputObject $window -property $WindowProperty
                 $window.Content = $Control
-				$controlName = $Control.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
-				if ($controlName) {
-					$Window.Title = $controlName
-				}
-				
+                $controlName = $Control.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
+                if ($controlName) {
+                    $Window.Title = $controlName
+                }
             }
             Xaml {
                 if ($AsJob) {
@@ -102,14 +101,14 @@
                     $window.Content = $Control
                 }                
             }
-            ScriptBLock {
+            ScriptBlock {
                 if ($AsJob) {
                     Start-WPFJob -ScriptBlock {
-                        param($scriptBLock, $scriptParameter = @{}, $windowProperty) 
+                        param($ScriptBlock, $scriptParameter = @{}, $windowProperty) 
                         
                         $window = New-Window    
                         $exception = $null
-                        $results = . $scriptBlock @scriptParameter 2>&1
+                        $results = . $ScriptBlock @scriptParameter 2>&1
                         $errors = $results | Where-Object { $_ -is [Management.Automation.ErrorRecord] } 
                         
                         if ($errors) {
@@ -139,15 +138,15 @@
                         Set-Property -inputObject $window -property $WindowProperty
                         Show-Window -Window $window
                     } -Parameter @{
-                        ScriptBLock = $ScriptBLock
-                        ScriptBLockParameter = $ScriptBLockParameter
+                        ScriptBlock = $ScriptBlock
+                        ScriptBlockParameter = $ScriptBlockParameter
                         WindowProperty = $windowProperty
                     } 
                     return 
                 } else {
                 
                     $window = New-Window
-                    $results = & $scriptBlock @scriptParameter
+                    $results = & $ScriptBlock @scriptParameter
                     if ($results -is [Windows.Media.Visual]) {
                         $window.Content = $results
                     } else {
@@ -195,7 +194,9 @@
             $Window
         }
         $null = $Window.ShowDialog()            
-        if ($Control.Tag) {
+        if ($Window.Tag -ne $null) {
+            $Window.Tag
+        } elseif ($Control.Tag -ne $null) {
             $Control.Tag            
         } else {
             if ($Control.SelectedItems) {
@@ -208,7 +209,7 @@
                 $Control.IsChecked
             }
         }
-        return                
+        return
    }
 }
 
