@@ -1,0 +1,5 @@
+Once you get past the basics of WPF and ShowUI, learning to use nested panels or grids to achieve the layouts you want, and start getting a grip on what controls are available by default, the next step to building useful user interfaces is going to be handling user interactions.
+
+In programming, we call those interactions "events." An event in WPF covers all forms of user interactions like clicking a button, type in a textbox, or select items from a treeview or listbox, and even less obvious things like when the right or left mouse button get's pressed down, or let up ... or when the mouse moves, of when the control gets focus or looses it, or "touch" and "stylus" events, drag-and-drop events, etc.  There are also events that aren't caused by users, like events for when databinding is updated, when the control is initialized, hidden, made visible, etc.
+
+In ShowUI, all events are handled by assigning scriptblocks to a parameter who's name starts with "On_" like -On_Click or -On_MouseLeftButtonDown or -On_TextInput ...
