@@ -1,10 +1,19 @@
 ﻿param(
-[ValidateSet('Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing')]
+[ValidateSet('Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing', 'ResetStyles')]
 [string]
 $LoadBehavior = 'Normal'
 )
 
+#region Cleanup Parameter Handling
+ 
 if ($LoadBehavior -eq 'DoNothing') { return } 
+
+# turn off strict mode for the module context
+Set-StrictMode -Off
+
+if ('Clean', 'CleanAndDoNothing', 'ResetStyles') {
+    Remove-Item $psScriptRoot\Styles -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+}
 
 if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
     Remove-Item $psScriptRoot\GeneratedAssemblies -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
@@ -12,12 +21,17 @@ if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
     if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
 
+#endregion
+
+
+#region Rule Loading
 $WinFormsIntegration = "WindowsFormsIntegration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 
 $Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
             [Reflection.Assembly]::LoadWithPartialName("PresentationFramework"),
             [Reflection.Assembly]::LoadWithPartialName("PresentationCore"),
             [Reflection.Assembly]::Load($WinFormsIntegration)
+#endregion
 
 #region Code Generator Functions
 . $psScriptRoot\CodeGenerator\Add-CodeGenerationRule.ps1
@@ -59,7 +73,6 @@ $Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
 #endregion WPF functions
 
 $script:UIStyles = @{}
-
 . $psScriptRoot\Export-Application.ps1
 . $psScriptRoot\Register-PowerShellCommand.ps1
 
@@ -91,62 +104,85 @@ $toAlias = $importedCommands |
     }
 
 foreach ($ta in $toAlias) {
+    if (-not $ta) { continue } 
     Set-Alias -Name $ta.Noun -Value "$ta"
 }
 
 #region Styles
 . $psScriptRoot\StyleSystem\Get-UIStyle.ps1
 . $psScriptRoot\StyleSystem\Set-UIStyle.ps1
+. $psScriptRoot\StyleSystem\Import-UIStyle.ps1
 
-Set-UIStyle -StyleName "Hyperlink" -Style @{
-    Resource = @{
-            AllowedSchemes = 'http','https'
-        }
-        Foreground = 'DarkBlue'
-        TextDecorations = { 
-             [Windows.TextDecorations]::Underline
-        }
-        On_PreviewMouseDown = {
-            if ($this.Resources.Url) {
-                $realUrl = [Uri]$this.Resources.Url
-                $allowedSchemes = $this.Resources.AllowedSchemes
-                if (-not $allowedSchemes) { $allowedSchemes = 'http', 'https' }
-                if ($allowSchemes -contains $realUrl.Scheme) {
-                    Start-Process -FilePath $realUrl 
+if (-not (Test-Path $psScriptRoot\Styles)) {
+    Set-UIStyle -StyleName "Hyperlink" -Style @{
+        Resource = @{
+                AllowedSchemes = 'http','https'
+            }
+            Foreground = 'DarkBlue'
+            TextDecorations = { 
+                 [Windows.TextDecorations]::Underline
+            }
+            On_PreviewMouseDown = {
+                if ($this.Resources.Url) {
+                    $realUrl = [Uri]$this.Resources.Url
+                    $allowedSchemes = $this.Resources.AllowedSchemes
+                    if (-not $allowedSchemes) { $allowedSchemes = 'http', 'https' }
+                    if ($allowSchemes -contains $realUrl.Scheme) {
+                        Start-Process -FilePath $realUrl 
+                    }
                 }
             }
+    }
+
+    Set-UIStyle -StyleName Bold -Style @{
+        FontWeight = 'Bold'
+    }
+
+    Set-UIStyle -StyleName BoldItalic -Style @{
+        FontWeight = 'Bold'
+        FontStyle = 'Italic'
+    }
+
+    Set-UIStyle -StyleName SmallText -Style @{
+        FontSize = 9
+    }
+
+    Set-UIStyle -StyleName MediumText -Style @{
+        FontSize = 14
+    }
+
+    Set-UIStyle -StyleName LargeText -Style @{
+        FontSize = 18
+    }
+
+    Set-UIStyle -StyleName HugeText -Style @{
+        FontSize = 32
+    }
+
+    Set-UIStyle -StyleName ErrorStyle -Style @{
+        Foreground = 'DarkRed'
+        TextDecorations = { [Windows.TextDecorations]::Underline }
+    }
+
+    Set-UIStyle -StyleName "CueText" -Style @{
+        On_Loaded = {
+            $this.Resources.OriginalText =  $this.Text
         }
+        FontStyle = "Italic"
+        On_GotFocus = {
+            if ($this.Text -eq $OriginalText) {
+                $this.Text = ""
+                $this.ClearValue([Windows.Controls.Control]::FontStyleProperty)
+            }
+        }
+    }
+
+
+    
+} else {
+    Use-UiStyle "Current"
 }
 
-Set-UIStyle -StyleName Bold -Style @{
-    FontWeight = 'Bold'
-}
-
-Set-UIStyle -StyleName BoldItalic -Style @{
-    FontWeight = 'Bold'
-    FontStyle = 'Italic'
-}
-
-Set-UIStyle -StyleName SmallText -Style @{
-    FontSize = 9
-}
-
-Set-UIStyle -StyleName MediumText -Style @{
-    FontSize = 14
-}
-
-Set-UIStyle -StyleName LargeText -Style @{
-    FontSize = 18
-}
-
-Set-UIStyle -StyleName HugeText -Style @{
-    FontSize = 32
-}
-
-Set-UIStyle -StyleName ErrorStyle -Style @{
-    Foreground = 'DarkRed'
-    TextDecorations = { [Windows.TextDecorations]::Underline }
-}
 
 #endregion Styles
 
@@ -155,6 +191,7 @@ Set-UIStyle -StyleName ErrorStyle -Style @{
 . $psScriptRoot\CommonControls\Select-Date.ps1
 . $psScriptRoot\CommonControls\Select-ViaUI.ps1
 . $psScriptRoot\CommonControls\Edit-StringList.ps1
+. $psScriptRoot\CommonControls\Get-Input.ps1
 #endregion Common Controls
 
 Export-ModuleMember -Cmdlet * -Function * -Alias *

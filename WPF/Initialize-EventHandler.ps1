@@ -27,7 +27,15 @@
     
     if ($resource) {    
         foreach ($nc in $resource.GetEnumerator()) {
-            if ($nc.Key -and 'Scripts', 'Timers', 'EventHandlers' -notcontains $nc.Key) {
+            if ($nc.Key -and 
+                'Scripts', 'Timers', 'EventHandlers' -notcontains $nc.Key) {
+                if ($nc.Value -is [ScriptBlock]) {
+                    $lines = $nc.Value.ToString().Split([Environment]::NewLine, [StringSplitOptions]'RemoveEmptyEntries')
+                    if ($lines[0,1] -like "*function*") {
+                        $null = New-Module -ScriptBlock $nc.Value
+                        continue
+                    }
+                }                                
                 Set-Variable -Name $nc.Key -Value $nc.Value                         
             }        
         }

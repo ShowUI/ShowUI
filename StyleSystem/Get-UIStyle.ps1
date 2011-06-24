@@ -23,7 +23,12 @@
                 return (@{} + $uiStyles.$name)
             }
         } elseif ($pscmdlet.ParameterSetName -eq 'All') {
+            foreach ($obj in $uiStyles.GetEnumerator()) {
+                New-Object PSOBject -Property @{
+                    Name=$obj.Key
+                    VisualStyle=$obj.Value                    
+                }
+            }            
         }
-
     }    
 }
