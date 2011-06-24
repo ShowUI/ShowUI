@@ -1,0 +1,211 @@
+Ok, let's be clear: you've seen this "before":/powerboots-tutorial-walkthrough, and this isn't going to be the last you'll see of it, because we've got much more in store in "ShowUI":http://showui.codeplex.com, but for the first release of ShowUI, it's obviously time to update this simple walkthrough of building simple user interfaces in PowerShell!
+
+h2. An introduction to ShowUI
+
+ShowUI is the next generation PowerShell module for building user interfaces in script. It's the merger of my previous PowerShell UI project (called PowerBoots) with one by James Brundage, former Microsoft PowerShell team member and founder of "Start-Automating":http://start-automating.com (called WPK) which shipped in the Windows 7 resource kit.
+
+h4. If you want to follow along, you need to:
+
+1. Get a copy of the "ShowUI Module":http://showui.codeplex.com/releases/ from CodePlex 
+2. Install it by putting the "ShowUI" folder in one of your "Modules" folders (list them by typing @$Env:PSMODULEPATH@ in PowerShell v2, and feel free to create the one you want if it doesn't exist). You should end up with something like @C:\Users\Jaykul\Documents\WindowsPowerShell\Modules\ShowUI\ShowUI.psm1@
+3. Run PowerShell ISE, or use PowerShell.exe with the -STA switch (the best way to do this is to add it to the shortcut you use to launch PowerShell: open the properties dialog, and on the Shortcut tab, add " -STA" to the Target)<sup class="footnote"><a href="#fn1">1</a></sup>.
+
+Did I hear someone ask *what _is_ WPF?* It was introduced as part of .Net 3.0 (and vastly improved in .Net 3.5, and again in 4.0), so you can expect to find it preinstalled on computers from Vista on, and of course you can download and install it on XP if it's not already installed.  The only thing you really need to know about WPF for the purposes of this tutorial is that it is *the* new GUI toolkit for .Net, and that it is container based -- you put elements into other elements to control the layout, rather like HTML and Java Swing... you can *pick up the rest as we go along*.
+
+h2. A simple ShowUI program
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-01.png!
+
+<code lang="posh">
+New-Button -Content "Hello World" -Show
+</code>
+
+This first example is a little bit more verbose than it needs to be, because the @-Content@ parameter is positional, so the first non-named argument you pass will be used for that. The same is true for the -Children parameter of panels, and in fact, each of the other similar content parameters: Items, Blocks, and Inlines.
+
+Additionally, each control is aliased without the New- verb, so you could just call @Button@ instead of @New-Button@ ... and of course, since our button doesn't do anything, we could just as easily have used a Label, and written:
+
+<code lang="posh">
+Label "Hello World" -Show
+</code>
+
+Note: "Label" is also the name of an executable for labelling drives in Windows, make sure ShowUI is imported before you run that command.
+
+One last point: ShowUI brings a lot of features from WPK to the table, and one you'll use a lot is the ability to skip specifying the window and put the -Show parameter on almost any WPF element. This is partly because we're back to running PowerShell 2.0 with the -STA switch, but in any case, we can now skip the "New-BootsWindow" command, and our examples can be that much simpler.
+
+
+h2. We can put controls in a stack
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-02.png!
+
+<code lang="posh">
+Show-UI {
+    StackPanel {
+        Button "A bed of clams"
+        Button "A coalition of cheetas"
+        Button "A gulp of swallows"
+    }
+}
+</code>
+
+StackPanels are awesome. So are WrapPanels. Try that code with a WrapPanel instead of a StackPanel and see what the difference is (hint: try resizing the window). Actually, try it with a UniformGrid too. WPF has several other panel containers too: Grid, ToolBarPanel, TabPanel, DockPanel, Canvas ... we'll talk about some more of those later.
+
+h2. Ok, lets see some formatting
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-03.png!
+
+To scoot the buttons out from the edge we can use margins or padding: margins go on the outside of containers, padding goes on the inside. We can also specify the FontFamily, FontSize, FontWeight, and FontStyle, as well as Foreground and Background colors ... 
+
+<code lang="posh">
+Show-UI {
+    StackPanel -Margin 5 -Background Pink {
+        Button -Margin 2 "A bed of clams" -FontFamily Consolas -FontSize 24 -FontWeight Bold
+        Button -Margin 2 "A coalition of cheetas" -FontFamily Arial -FontSize 20 -FontStyle Italic
+        Button -Margin 2 "A gulp of swallows" -FontFamily 'Segoe UI' -FontSize 18 -Foreground Crimson
+    }
+}
+</code>
+
+So you see, the pink background is on the StackPanel, which has a (default, white) margin around it.  If you wanted the whole background of the window to be pink, you would need to set the background of the Window instead of the StackPanel.
+
+
+<h3 style="clear: both;">An aside on Typography</h3>
+
+ShowUI doesn't need to create a full set of typography-specific top-level elements the way Shoes does, because we are based on WPF, which has a far more powerful typography system available than any we've used previously. So, with WPF we start by selecting a control based on how much text you want to put in it, and how much formatting you want to apply: Label and TextBox are the simplest, TextBlock supports limited text formattings, and FlowDocumentViewer or RichTextBox support full rich content. And of course, Hyperlink supports clicking ;) 
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-07.png!
+
+For the typography elements, the content model changes a little bit.  There are basically two types of typographical elements: Inline and Block elements (where inline elements can't contain block elements). In fact, he "TextBlock Content Model":http://msdn.microsoft.com/en-us/library/bb613554.aspx is similar to that of an inline element. It is actually a type-restricted "Items" container.  Instead of being able to have _anything_ as content, it can only contain "Inline":http://msdn.microsoft.com/en-us/library/system.windows.documents.inline.aspx flow content elements such as <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.anchoredblock.aspx">AnchoredBlock</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.bold.aspx">Bold</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.hyperlink.aspx">Hyperlink</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.inlineuicontainer.aspx">InlineUIContainer</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.italic.aspx">Italic</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.linebreak.aspx">LineBreak</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.run.aspx">Run</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.span.aspx">Span</a>, and <a href="http://msdn.microsoft.com/en-us/library/system.windows.documents.underline.aspx">Underline</a>, and it will create a run automatically if you just put a text string in it. 
+ 
+<code lang="posh">
+Show-UI {
+   StackPanel -Margin 10 -Children {
+      TextBlock "A Question" -FontSize 42 -FontWeight Bold -Foreground "#FF0088" 
+      TextBlock -FontSize 24 -Inlines {
+         Bold "Q. "
+         "Are you starting to dig "
+         Hyperlink "ShowUI?" -NavigateUri http://huddledmasses.org/tag/showui/ `
+                                 -On_RequestNavigate { [Diagnostics.Process]::Start( $this.NavigateUri.ToString() ) }
+      }
+      TextBlock -FontSize 16 -Inlines {
+         Span -FontSize 24 -FontWeight Bold -Inlines "A. "
+         "Leave me alone, I'm hacking here!"
+      }
+}
+}
+</code>
+
+Note: If you want support for the full "document model":http://msdn.microsoft.com/en-us/library/aa970909.aspx (which allows Paragraphs and Lists), you need to use a <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.flowdocumentreader.aspx">FlowDocumentReader</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.flowdocumentpageviewer.aspx">FlowDocumentPageViewer</a>, <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.richtextbox.aspx">RichTextBox</a>, or a <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.flowdocumentscrollviewer.aspx">FlowDocumentScrollViewer</a> ... there's lots more information about those "on msdn":http://msdn.microsoft.com/en-us/library/aa970909.aspx.
+
+h2. Time for some artwork
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-04.png!
+
+<code lang="posh">
+Ellipse -Width 60 -Height 80 -Margin "20,10,60,20" -Fill Black -Show
+</code>
+
+In WPF, everything always starts out white, and you must position things based on the container. You can see that the Margin can be specified as a single value as in the previous example, or as separate values for Left, Top, Right, Bottom.  Oddly, to satisfy PowerShell's type-casting, you have to quote them so they're a single comma-separated string, instead of four separate values.
+
+h2. Some more advanced drawing
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-05.png!
+
+<code lang="posh">
+Canvas -Height 100 -Width 100 -Children {
+   Rectangle -Margin "10,10,0,0" -Width 45 -Height 45 -Stroke "#689945" -StrokeThickness 2 -Fill "#336699"
+   Polygon -Stroke Pink -StrokeThickness 2 -Fill DarkRed -Points "10,60", "50,60", "50,50", "65,65",
+                                                               "50,80", "50,70", "10,70", "10,60" 
+} -Show
+</code>
+
+When you want to start getting clever and overlapping things, you need to use a Canvas container. The Canvas can contain multiple items which are all absolutely positioned, but unlike most other containers, it doesn't automatically expand to contain it's children, so you typically have to set it's size.
+
+We also have to set the Stroke and Fill.  These are the two colors that make up every object, and again, if we don't set them, they default to white. Note that you can use named colors, or you can specify a hex value using "#RRGGBB" or "#AARRGGBB" to set the alpha channel. The StrokeThickness controls the line thickness.  
+
+One other thing to notice is that we positioned the Rectangle by using the @Margin@, but we positioned the arrow, which we built using a Polygon, based purely on the x,y coordinates of the points.  The available shapes are Ellipse, Line, Path, Polygon, Polyline, and Rectangle.  You can, of course, make nearly any shape you want with the Polygon.
+
+There are other more advanced shapes available in external libraries, and we can even do 3D, use gradient or image fills...
+
+h3. We can even get images straight off the web
+
+<code lang="posh">
+   Image -Source http://huddledmasses.org/images/PowerBoots/IMG_3298.jpg -MaxWidth 400 -AsJob
+</code>
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-06.png!
+
+WPF loads the image on a background thread, and caches it in memory, so the window will show up and be responsive while you're waiting for the image, and because we've specified @-AsJob@, you can actually continue using PowerShell while the image loads. Note: it will load much faster the second time you run that script. ;)
+
+h3. Events
+
+If you were paying attention to the typography example, you'll have noticed that we introduced event handling without making a big fuss about it. Event handlers in PowerBoots are specified in much the same way that Properties are, except that their parameter names always start with "On_" and they take a script block.  The Hyperlink element in a WPF window doesn't automatically open a browser (because you can use it to change "pages" in a WPF application), so to make simple web links work, you have to handle the "RequestNavigate" event as shown above.
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-08.png!
+
+<code lang="posh">
+WrapPanel -ControlName 'Click Counter' {
+    Button "Push Me" -On_Click {
+        ${Click Counter}.Tag = ${Click Counter}.Tag + 1
+        $CountLabel.Content = "You clicked the button $(${Click Counter}.Tag) times!"
+    }
+    Label "Nothing pushed so far" -Name CountLabel
+} -Show
+</code>
+
+In order to update your user interface when an event triggers, you'll need to have variables that point at the control(s) you want to affect.  In ShowUI event handlers, you get a @$this@ variable which points at the object that caused the event, a @$_@ variable which is the event arguments, and a @$window@ variable for the top-level window ... you also get variables for each named control in your window.  
+
+WPF Elements all have a @Tag@ property which can be used to store any object, so as you can see in the previous example, you can use that to keep track of things ... but more importantly, the value of the @Tag@ on the top-level control will be output. In other words, when the window is closed, this example actually outputs to the PowerShell pipeline how many times you clicked the button.
+
+h3. Working with User Input
+
+There are helper functions in ShowUI for working with that output value: @Set-UIValue@ and @Get-UIValue@, and Get-UIValue is particularly helpful because if the control it's called on has no value, it collects the values of all the child controls, so you can use it to output a whole form at once:
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-09.png!
+
+I've made this example more complicated than it needed to be to demonstrate some best practices.  We could have made it much simpler by using a UniformGrid control instead of a GridControl, thus avoiding needing to set the -Row and -Column special parameters, but I wanted to show those to you anyway, and the form looks a lot better when the two columns can have different sizes:
+
+<code lang="posh">
+Grid -ControlName 'Your Information' -Columns Auto,* -Rows 7 -MinHeight 200 -MinWidth 250 {
+    Label "First Name"
+    New-TextBox -Name First -Column 1
+    
+    Label "Last Name" -Row 1 
+    New-TextBox -Name Last -Row 1 -Column 1
+
+    Label "Address" -Row 2
+    New-TextBox -Name Address -Row 2 -Column 1
+
+    Label "City" -Row 3 
+    New-TextBox -Name City -Row 3 -Column 1
+
+    Label "State" -Row 4
+    New-TextBox -Name State -Row 4 -Column 1
+
+    Label "Zip" -Row 5 
+    New-TextBox -Name Zip -Row 5 -Column 1
+
+    
+    New-Button "OK" -IsDefault -On_Click {
+        Get-ParentControl | Set-UIValue -PassThru | Close-Control
+    } -Row 6 -Column 1
+} -Show -On_Loaded { $First.Focus() }
+</code>
+
+
+You'll notice how easily I specified the width of the columns, but the COUNT of the rows in the Grid panel. If you provide an array of values, they're converted to GridLengths, but if you provide just one, it's treated as the count. You can make grid columnds and rows AUTOmatically size to their contents, and you can make them * width to make them take up any extra space.  You can even split the extra space by setting * on more than one column (and specify the proportion by using numbers, like: 1*, 2*).
+
+I should also point out that if you use MinHeight and MinWidth instead of the Height and Width values, your controls will be able to size up to fill space when the window is resized! Try that script with Width and Height instead and resize the window to see the difference.
+
+We used the Set-UIValue shortcut in this form, which brings up another point: when creating data forms, you only need to name the controls you want output from. Then you'll be able to just call Set-UIValue on the parent to collect all the values from the controls and output them as a hashtable!
+
+Finally, remember your defaults: set the focus to something so the user doesn't HAVE to click to get started, and set a button to -IsDefault with a On_Click handler so that when the user hits enter they can submit the form.
+
+h3. Further directions
+
+There's a lot more possible with ShowUI: we can use gradients for colors, create data templates and styles, and even make chromeless windows, but you have the basics for getting started already.
+
+This first release of ShowUI is still missing some features from both WPK and PowerBoots, but we'll get to them as we progress.  For now we'd like to invite you to come "download the latest release":http://showui.codeplex.com/releases/, and "write up or vote up the features":http://showui.codeplex.com/workitem/list/basic that you want the most in the next version.  Keep an eye on the release page and on the discussions and we'll be cranking out new releases on a monthly basis for now.
+
+I hope you've enjoyed this tour through ShowUI, and will be able to start applying it soon for fun and profit.
+
+fn1. The -STA switch is necessary because the .Net framework requires the STA(Single Threaded Apartment) threading model in order to do graphical user interfaces. PowerShell ISE doesn't require it because unlike the PowerShell.exe command console (which is a Win32 native "console" application that hosts the .Net framework), PowerShell ISE is a .Net framework "graphical" application, and is therefore running in the STA model already.

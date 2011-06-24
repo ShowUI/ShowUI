@@ -1,0 +1,3 @@
+glob:GeneratedAssemblies/*
+glob:GeneratedCode/*
+glob:*.orig
