@@ -75,7 +75,7 @@
                 }
                     
                 $itemName = $realItem.Name
-                if ($realItem.MemberType -eq 'Property') {                    
+                if ($realItem.MemberType -eq 'Property') {
                     if ($realItem.Value -is [Collections.IList]) {                                                                                               
                         $v = $p[$realKey]
                         $collection = $inputObject.$itemName
@@ -108,7 +108,7 @@
                                 $v = . $v
                             }
                         }
-                        
+
                         if ($allowXaml) {
                             $xaml = ConvertTo-Xaml $v
                             if ($xaml) {
@@ -121,8 +121,58 @@
                                 }
                             }
                         }
-                                                
-                        $inputObject.$itemName = $v                        
+
+                        if($Global:Trace) {
+                            Write-Host "Control: $($inputObject.GetType().FullName)" -fore cyan
+                            Write-Host "Type: $(@($v)[0].GetType().FullName)"
+                            Write-Host "Property: $($realItem.TypeNameOfValue)"
+                        }
+
+                        # Two Special cases: Templates and Bindings
+                        # $realItem.TypeNameOfValue -eq "System.Windows.FrameworkElementFactory" 
+                        if([System.Windows.FrameworkTemplate].IsAssignableFrom( $realItem.TypeNameOfValue -as [Type]) -and 
+                           $v -isnot [System.Windows.FrameworkTemplate]) {
+                            if($Global:Trace) {
+                                Write-Host "TEMPLATING: $inputObject" -fore Yellow
+                            }
+                           $inputObject.$itemName = $v | ConvertTo-DataTemplate
+## This code would work to convert the template object if you require syntax like: -ItemTemplate { DataTemplate { ... } }
+## E.G.: If $realItem.TypeNameOfValue -eq "System.Windows.FrameworkElementFactory" 
+#                             # In .Net 3.5 the recommended way to programmatically create a template is to load XAML from a string or a memory stream using the Load (or Parse) method of the XamlReader class.
+#                             [Xml]$Template = [System.Windows.Markup.XamlWriter]::Save( $inputObject )
+#                             [Xml]$Content = [System.Windows.Markup.XamlWriter]::Save( (@($v)[0]) )
+#                             # Merge the XAML
+#                             $null = $Template.DocumentElement.PrependChild( $Template.ImportNode($Content.DocumentElement, $true) )
+#                             Write-Verbose $Template.get_OuterXml()
+#                             $inputObject = [System.Windows.Markup.XamlReader]::Parse( $Template.get_OuterXml() )
+                        } elseif(@($v)[0] -is [System.Windows.Data.Binding] -and 
+                                (($realItem.TypeNameOfValue -eq "System.Object") -or 
+                                !($realItem.TypeNameOfValue -as [Type]).IsAssignableFrom([System.Windows.Data.BindingBase]))
+                        ) {
+                            $Binding = @($v)[0];
+                            if($Global:Trace) {
+                                Write-Host "BINDING: $($inputObject.GetType()::"${realKey}Property")" -fore Green
+                            }
+
+                            if(!$Binding.Source -and !$Binding.ElementName) {
+                                $Binding.Source = $inputObject.DataContext
+                            }
+                            if($inputObject.GetType()::"${realKey}Property" -is [Windows.DependencyProperty]) {
+                                try {
+                                    # $inputObject.Resources.Clear()
+                                    $inputObject.SetBinding( ($inputObject.GetType()::"${realKey}Property"), $Binding ) | Out-Null
+                                } catch {
+                                    Write-Host "Nope, was not able to set it." -fore Red
+                                    Write-Host $_ -fore Red
+                                    Write-Host $this -fore DarkRed
+                                }
+                            } else {
+                                $inputObject.$itemName = $v
+                            }
+                        } else {
+                            if($Global:Trace) { Write-Host "NOT BINDING" }
+                            $inputObject.$itemName = $v
+                        }
                     }                            
                 } elseif ($realItem.MemberType -eq 'Method') {
                     $inputObject."$($itemName)".Invoke(@($p[$realKey]))
