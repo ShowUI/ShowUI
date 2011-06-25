@@ -71,9 +71,17 @@
                 $window = New-Window
                 Set-Property -inputObject $window -property $WindowProperty
                 $window.Content = $Control
-                $controlName = $Control.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
-                if ($controlName) {
-                    $Window.Title = $controlName
+                $instanceName = $control.Name
+                $specificWindowTitle = $Control.GetValue([Windows.Window]::TitleProperty)
+                if ($specificWindowTitle) {
+                    $Window.Title = $specificWindowTitle
+                } elseif ($instanceName) {
+                    $Window.Title = $instanceName
+                } else {
+    				$controlName = $Control.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
+    				if ($controlName) {
+    					$Window.Title = $controlName
+    				}
                 }
             }
             Xaml {

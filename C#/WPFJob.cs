@@ -42,7 +42,7 @@ using System.Collections.ObjectModel;
         delegate Collection<PSObject> RunScriptCallback(string script);
         delegate Collection<PSObject> RunScriptWithParameters(string script, Object parameters);
 
-        public PSObject[] InvokeScriptInJob(string script, object parameters)
+        public PSObject[] InvokeScriptInJob(string script, object parameters, bool async)
         {
             if (this.JobStateInfo.State == JobState.Running)
             {
@@ -98,7 +98,8 @@ using System.Collections.ObjectModel;
                             resultArray[count++] = r;
                         }
                         return resultArray;
-                    }));
+                    }),
+                    async);
             }
             else
             {
@@ -106,7 +107,7 @@ using System.Collections.ObjectModel;
             }
         }
 
-        object RunOnUIThread(DispatcherOperationCallback dispatcherMethod)
+        object RunOnUIThread(DispatcherOperationCallback dispatcherMethod, bool async)
         {
             if (Application.Current != null)
             {
@@ -122,19 +123,37 @@ using System.Collections.ObjectModel;
             object returnValue = null;
             SynchronizationContext sync = new DispatcherSynchronizationContext(JobWindow.Dispatcher);
             if (sync == null) { return null; }
-            sync.Send(
-                new SendOrPostCallback(delegate(object obj)
-                {
-                    try
+            if (async) {
+                sync.Post(
+                    new SendOrPostCallback(delegate(object obj)
                     {
-                        returnValue = dispatcherMethod.Invoke(obj);
-                    }
-                    catch (Exception uiException)
+                        try
+                        {
+                            returnValue = dispatcherMethod.Invoke(obj);
+                        }
+                        catch (Exception uiException)
+                        {
+                            e = uiException;
+                        }
+                    }),
+                    null);
+
+            } else {
+                sync.Send(
+                    new SendOrPostCallback(delegate(object obj)
                     {
-                        e = uiException;
-                    }
-                }),
-                null);
+                        try
+                        {
+                            returnValue = dispatcherMethod.Invoke(obj);
+                        }
+                        catch (Exception uiException)
+                        {
+                            e = uiException;
+                        }
+                    }),
+                    null);
+
+            }
 
             if (e != null)
             {
@@ -479,7 +498,8 @@ using System.Collections.ObjectModel;
                                 " Top: " + JobWindow.Top +
                                 " Width: " + JobWindow.ActualWidth +
                                 " Height: " + JobWindow.ActualHeight;
-                        }));
+                        }),
+                        false);
                 }
                 else
                 {

@@ -44,12 +44,6 @@
                     $params += $param                        
                     break
                 }
-                {($_ -eq [string]) -and $p.CanWrite} {
-                    $param = New-Object Management.Automation.ParameterMetaData $p.Name, ([string])
-                    $script:CachedParameters."$($p.DeclaringType).$($p.Name)" = $param
-                    $params += $param
-                    break                
-                }
                 {($_ -eq [Double]) -and $p.CanWrite} {
                     $param = New-Object Management.Automation.ParameterMetaData $p.Name, ([Double])
                     $script:CachedParameters."$($p.DeclaringType).$($p.Name)" = $param

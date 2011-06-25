@@ -77,7 +77,7 @@ Add-CodeGenerationRule -Filter {
         $script:SetPropertyScriptBlock = {
         Set-Property -property $psBoundParameters -inputObject $Object}
     }
-    $null = $ProcessBlocks.AddLast(($script:SetPropertyScriptBlock))
+    $null = $ProcessBLocks.AddLast(($script:SetPropertyScriptBlock))
     
     # The last thing the command should do is output the object
     $null = $ProcessBlocks.AddLast(([ScriptBlock]::Create("
@@ -128,13 +128,35 @@ $ResourceChange = {
     
     if (-not $script:ResourceBlock) {
         $Script:ResourceBlock = {
-        if ($psBoundParameters.ContainsKey("Resource")) {
-            foreach ($kv in $resource.GetEnumerator())
-            {
-                $null = $object.Resources.Add($kv.Key, $kv.Value)
-            }            
-            $null=$psBoundParameters.Remove("Resource")
-        }}
+            $parentFunctionParameters = 
+                try { 
+                    Get-Variable -Name psboundparameters -ValueOnly -Scope 1 -ErrorAction SilentlyContinue 
+                } catch { 
+                } 
+            
+            if ($parentFunctionParameters) {
+                if ($psBoundParameters.ContainsKey("Resource")) {
+                    foreach ($kv in $parentFunctionParameters.GetEnumerator()) {                        
+                        if (-not $psBoundParameters.Resource.ContainsKey($kv.Key)) {
+                            $psBoundParameters.Resource[$kv.Key] = $kv.Value
+                        }
+                    }
+                } else {
+                    $null = $psBoundParameters.Add("Resource", (@{} + $parentFunctionParameters))
+                }            
+            }   
+       
+            if ($psBoundParameters.ContainsKey("Resource")) {                
+                foreach ($kv in $psBoundParameters['Resource'].GetEnumerator())
+                {
+                    $null = $object.Resources.Add($kv.Key, $kv.Value)
+                    if ('Object', 'psBoundParameters' -notcontains $kv.Key -and
+                        $psBoundParameters.Keys -notcontains $kv.Key) {
+                        Set-Variable -Name $kv.Key -Value $kv.Value
+                    }
+                }            
+            } 
+        }
     }
     
     $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $Script:ResourceBlock)        
@@ -685,7 +707,25 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
             if (-not $Command) {
                 $Command = "Start-WPFJob"
             }
+            $parentFunctionParameters = 
+                try { 
+                    Get-Variable -Name psboundparameters -ValueOnly -Scope 1 -ErrorAction SilentlyContinue 
+                } catch { 
+                } 
+            
+            if ($parentFunctionParameters) {
+                if ($psBoundParameters.ContainsKey('Resource')) {
+                    foreach ($kv in $parentFunctionParameters.GetEnumerator()) {
+                        if (-not $psBoundParameters.Resource.ContainsKey($kv.Key)) {
+                            $psBoundParameters.Resource[$kv.Key] = $kv.Value
+                        }
+                    }
+                } else {
+                    $psBoundParameters.Resource = $parentFunctionParameters
+                }            
+            }         
             $Parameters = $PSBoundParameters
+            
             
             $AdditionalContext = @(Get-PSCallstack)[1].InvocationInfo.MyCommand.Definition
             

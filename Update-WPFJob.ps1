@@ -30,23 +30,24 @@
     
     [Parameter(ParameterSetName='IList', Position=1)]
     [Collections.IList]
-    $List
+    $List,
+    
+    [switch]$Asynchronously
     )
     
     process {
         if ($job.InvokeScriptInJob) {
             switch ($psCmdlet.ParameterSetName) {
                 NoParameters {
-                    $job.InvokeScriptInJob($Command, $null)
+                    $job.InvokeScriptInJob($Command, $null, $Asynchronously)
                 }
                 List {
-                    $job.InvokeScriptInJob($command, $List)
+                    $job.InvokeScriptInJob($command, $List, $Asynchronously)
                 }
                 Dictionary {
-                    $job.InvokeScriptInJob($Command, $Dictionary)
+                    $job.InvokeScriptInJob($Command, $Dictionary, $Asynchronously)
                 }
-            }
+            }                        
         }
-    }
-    
+    }    
 }

@@ -1,6 +1,6 @@
 ﻿$outputPathBase = "$psScriptRoot\GeneratedAssemblies\"
 $outputPath = "$outputPathBase\ShowUI.CLR$($psVersionTable.clrVersion).dll"
-
+    
 . $psScriptRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1
 
 if (
@@ -20,7 +20,9 @@ if (
         New-Item $psScriptRoot\GeneratedCode -ItemType "Directory" -Force | Out-Null
     }
 
-    Write-Progress "Filtering Types" " " -Id $progressId 
+   
+    $childId = Get-Random    
+    Write-Progress "Filtering Types" " " -ParentId $progressId -Id $childId
     $WinFormsIntegration = "WindowsFormsIntegration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 
     try {
@@ -31,6 +33,7 @@ if (
     } catch {
         throw $_
     }
+    
 
     $specificTypeNameBlackList = 
         'System.Windows.Threading.DispatcherFrame', 
@@ -44,7 +47,7 @@ if (
     $allTypes = foreach ($assembly in $assemblies) {
         $Name = $assembly.GetName().Name
         
-        Write-Progress "Filtering Types from Assembly" $Name -Id $progressId
+        Write-Progress "Filtering Types from Assembly" $Name -Id $ChildId -ParentId $progressId
         $Assembly.GetTypes() | 
             Where-Object {
                 $_.IsPublic -and 
@@ -64,7 +67,6 @@ if (
                 (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
                 (-not $_.IsSubclassOf([Windows.Input.InputGesture])) -and
                 (-not $_.IsSubclassOf([Windows.Input.InputBinding])) -and
-#               (-not $_.IsSubclassOf([Windows.FrameworkTemplate])) -and
                 (-not $_.IsSubclassOf([Windows.TemplateKey])) -and                
                 (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and                
                 ($_.BaseType -ne [Object]) -and
@@ -78,12 +80,13 @@ if (
     $typeCounter =0
     $count= @($allTypes).Count
 
+
     foreach ($type in $allTypes) 
     {
         if (-not $type) { continue }
         $typeCounter++
         $perc = $typeCounter * 100/ $count 
-        Write-Progress "Generating Code" $type.Fullname -PercentComplete $perc -Id $progressId    
+        Write-Progress "Generating Code" $type.Fullname -PercentComplete $perc -ParentId $progressID -Id $childId     
         $typeCode = ConvertFrom-TypeToScriptCmdlet -Type $type -ErrorAction SilentlyContinue -AsCSharp    
         $ofs = [Environment]::NewLine
         $null = $resultList.Add("$typeCode")
@@ -91,7 +94,7 @@ if (
 
     $resultList = $resultList | Where-Object { $_ } 
     
-    Write-Progress "Code Generation Complete" " " -PercentComplete 100 -Id $ProgressId
+    Write-Progress "Code Generation Complete" " " -PercentComplete 100 -ParentId $progressID -Id $childId     
     $controlNameDependencyObject = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUIDependencyObjects.cs")
     $attributeCode = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUIAttribute.cs")
     $ValueConverter = [IO.File]::ReadAllText("$psScriptRoot\C#\LanguagePrimitivesValueConverter.cs")
