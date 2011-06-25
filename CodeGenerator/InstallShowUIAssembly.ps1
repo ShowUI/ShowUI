@@ -35,22 +35,8 @@ if (
     $specificTypeNameBlackList = 
         'System.Windows.Threading.DispatcherFrame', 
         'System.Windows.DispatcherObject',
-        'System.Windows.DependencyObject',
-        'System.Windows.Controls.Control',
-        'System.Windows.Controls.UserControl',
         'System.Windows.Interop.DocObjHost',
         'System.Windows.Ink.GestureRecognizer',
-        'System.Windows.Controls.ContentPresenter',
-        'System.Windows.Controls.ItemsPresenter',
-        'System.Windows.Controls.InkPresenter',
-        'System.Windows.Controls.ScrollContentPresenter',
-        'System.Windows.Controls.GridViewHeaderRowPresenter',
-        'System.Windows.Controls.GridViewRowPresenter',
-        'System.Windows.Controls.HeaderedContentControl',
-        'System.Windows.Controls.HeaderedItemsControl',
-        'System.Windows.Controls.ItemsControl',
-        'System.Windows.FrameworkContentElement',
-        'System.Windows.FrameworkElement',
         'System.Windows.Data.XmlNamespaceMappingCollection',
         'System.Windows.Annotations.ContentLocator',
         'System.Windows.Annotations.ContentLocatorGroup'
@@ -78,7 +64,7 @@ if (
                 (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
                 (-not $_.IsSubclassOf([Windows.Input.InputGesture])) -and
                 (-not $_.IsSubclassOf([Windows.Input.InputBinding])) -and
-                (-not $_.IsSubclassOf([Windows.FrameworkTemplate])) -and
+#               (-not $_.IsSubclassOf([Windows.FrameworkTemplate])) -and
                 (-not $_.IsSubclassOf([Windows.TemplateKey])) -and                
                 (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and                
                 ($_.BaseType -ne [Object]) -and
@@ -110,12 +96,13 @@ if (
     $attributeCode = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUIAttribute.cs")
     $ValueConverter = [IO.File]::ReadAllText("$psScriptRoot\C#\LanguagePrimitivesValueConverter.cs")
     $wpfJob = [IO.File]::ReadAllText("$psScriptRoot\C#\WPFJob.cs")
-    $wpfJob = [IO.File]::ReadAllText("$psScriptRoot\C#\PowerShellDataSource.cs")
+    $PowerShellDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\PowerShellDataSource.cs")
     $generatedCode = "
     $controlNameDependencyObject
     $attributeCode
     $ValueConverter
     $wpfJob 
+    $PowerShellDataSource
     $resultList
     
     
@@ -158,4 +145,4 @@ if (
     
     Add-Type @addTypeParameters
 }
- 
+
