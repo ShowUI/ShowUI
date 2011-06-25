@@ -31,6 +31,7 @@
     $control,
     
     [Parameter(Position=0)]
+    [Alias("DataBinding")]
     [Hashtable]$binding,
     
     [switch]$outputXaml,
