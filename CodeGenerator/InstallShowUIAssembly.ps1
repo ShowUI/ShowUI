@@ -34,8 +34,15 @@ if (
         throw $_
     }
     
+    $specificTypeNameWhiteList =
+        'System.Windows.Input.ApplicationCommands',
+        'System.Windows.Input.ComponentCommands',
+        'System.Windows.Input.NavigationCommands',
+        'System.Windows.Input.MediaCommands',
+        'System.Windows.Documents.EditingCommands',
+        'System.Windows.Input.CommandBinding'
 
-    $specificTypeNameBlackList = 
+    $specificTypeNameBlackList =
         'System.Windows.Threading.DispatcherFrame', 
         'System.Windows.DispatcherObject',
         'System.Windows.Interop.DocObjHost',
@@ -48,8 +55,9 @@ if (
         $Name = $assembly.GetName().Name
         
         Write-Progress "Filtering Types from Assembly" $Name -Id $ChildId -ParentId $progressId
-        $Assembly.GetTypes() | 
-            Where-Object {
+        $Assembly.GetTypes() | Where-Object {
+            $specificTypeNameWhiteList -contains $_.FullName -or
+            (
                 $_.IsPublic -and 
                 (-not $_.IsGenericType) -and 
                 (-not $_.IsAbstract) -and
@@ -61,20 +69,21 @@ if (
                 (-not $_.IsSubclassOf([Windows.Markup.ValueSerializer])) -and
                 (-not $_.IsSubclassOf([MulticastDelegate])) -and
                 (-not $_.IsSubclassOf([ComponentModel.TypeConverter])) -and
-                (-not $_.GetInterface([Collections.ICollection])) -and  
+                (-not $_.GetInterface([Collections.ICollection])) -and
                 (-not $_.IsSubClassOf([Windows.SetterBase])) -and
-                (-not $_.IsSubclassOf([Security.CodeAccessPermission])) -and                
+                (-not $_.IsSubclassOf([Security.CodeAccessPermission])) -and
                 (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
-                (-not $_.IsSubclassOf([Windows.Input.InputGesture])) -and
-                (-not $_.IsSubclassOf([Windows.Input.InputBinding])) -and
-                (-not $_.IsSubclassOf([Windows.TemplateKey])) -and                
-                (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and                
+#               (-not $_.IsSubclassOf([Windows.Input.InputGesture])) -and
+#               (-not $_.IsSubclassOf([Windows.Input.InputBinding])) -and
+                (-not $_.IsSubclassOf([Windows.TemplateKey])) -and
+                (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and
                 ($_.BaseType -ne [Object]) -and
                 ($_.BaseType -ne [ValueType]) -and
-                $_.Name -notlike '*KeyFrame' -and                
+                $_.Name -notlike '*KeyFrame' -and
                 $specificTypeNameBlackList -notcontains $_.FullName
-            }                            
-    }       
+            )
+        }
+    }
     
     $resultList = New-Object Collections.arraylist 
     $typeCounter =0

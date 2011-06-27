@@ -223,7 +223,7 @@ Add-CodeGenerationRule -Type ([Windows.FrameworkElement]) -Change ([ScriptBlock]
 }))
 
 Add-CodeGenerationRule -Filter {
-    $_.GetInterface("ICommandSource") 
+    $_.GetInterface("ICommandSource") -or $_.FullName -eq "System.Windows.Input.CommandBinding"
 } -Change {
     if (-not $script:CommandShortScriptBlock) {
         $script:CommandShortscriptBlock ={
