@@ -26,17 +26,20 @@
             If set, will output the Xaml for the data template rather than the object
     #>
     param(
-    [Parameter(ValueFromPipeline=$true)]
-    [Windows.UIElement]
-    $control,
-    
-    [Parameter(Position=0)]
-    [Alias("DataBinding")]
-    [Hashtable]$binding,
-    
-    [switch]$outputXaml,
-    
-    [switch]$AsItemTemplate)
+        [Parameter(ValueFromPipeline=$true)]
+        [Windows.UIElement]
+        $control,
+        
+        [Parameter(Position=0)]
+        [Alias("DataBinding")]
+        [Hashtable]$binding,
+        
+        [switch]$outputXaml,
+        
+        [switch]$AsItemTemplate,
+        
+        [Type]$TemplateType
+    )
         
     process
     {    
@@ -76,7 +79,12 @@
                 }
             }
         }
-        if ($AsItemTemplate) {
+        
+        if ($TemplateType) {
+            [Xml]$Template = [System.Windows.Markup.XamlWriter]::Save( (New-Object $TemplateType) )
+            $Template.DocumentElement.PrependChild( $Template.ImportNode($xml.DocumentElement, $true) ) | Out-Null
+            $xaml = $Template.OuterXml
+        } elseif ($AsItemTemplate) {
             $xaml = "
             <ItemTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
                 $($xml.OuterXml)
@@ -88,6 +96,9 @@
                 $($xml.OuterXml)
             </DataTemplate>
             "
+        }
+        if($Global:Trace) {
+            Write-Host $xaml -fore Green
         }
         if ($outputXaml) {
             $strWrite = New-Object IO.StringWriter

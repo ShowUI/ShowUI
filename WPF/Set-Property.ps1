@@ -129,22 +129,17 @@
                         }
 
                         # Two Special cases: Templates and Bindings
-                        # $realItem.TypeNameOfValue -eq "System.Windows.FrameworkElementFactory" 
                         if([System.Windows.FrameworkTemplate].IsAssignableFrom( $realItem.TypeNameOfValue -as [Type]) -and 
                            $v -isnot [System.Windows.FrameworkTemplate]) {
                             if($Global:Trace) {
                                 Write-Host "TEMPLATING: $inputObject" -fore Yellow
                             }
-                           $inputObject.$itemName = $v | ConvertTo-DataTemplate
-## This code would work to convert the template object if you require syntax like: -ItemTemplate { DataTemplate { ... } }
-## E.G.: If $realItem.TypeNameOfValue -eq "System.Windows.FrameworkElementFactory" 
-#                             # In .Net 3.5 the recommended way to programmatically create a template is to load XAML from a string or a memory stream using the Load (or Parse) method of the XamlReader class.
-#                             [Xml]$Template = [System.Windows.Markup.XamlWriter]::Save( $inputObject )
-#                             [Xml]$Content = [System.Windows.Markup.XamlWriter]::Save( (@($v)[0]) )
-#                             # Merge the XAML
-#                             $null = $Template.DocumentElement.PrependChild( $Template.ImportNode($Content.DocumentElement, $true) )
-#                             Write-Verbose $Template.get_OuterXml()
-#                             $inputObject = [System.Windows.Markup.XamlReader]::Parse( $Template.get_OuterXml() )
+                            $Template = $v | ConvertTo-DataTemplate -TemplateType ( $realItem.TypeNameOfValue -as [Type])
+                            if($Global:Trace) {
+                                Write-Host "TEMPLATING: $([System.Windows.Markup.XamlWriter]::Save( $Template ))" -fore Yellow
+                            }
+                            $inputObject.$itemName = $Template
+
                         } elseif(@($v)[0] -is [System.Windows.Data.Binding] -and 
                                 (($realItem.TypeNameOfValue -eq "System.Object") -or 
                                 !($realItem.TypeNameOfValue -as [Type]).IsAssignableFrom([System.Windows.Data.BindingBase]))
