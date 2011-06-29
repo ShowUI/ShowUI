@@ -109,6 +109,7 @@ if (
     $ValueConverter = [IO.File]::ReadAllText("$psScriptRoot\C#\LanguagePrimitivesValueConverter.cs")
     $wpfJob = [IO.File]::ReadAllText("$psScriptRoot\C#\WPFJob.cs")
     $PowerShellDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\PowerShellDataSource.cs")
+    $OutXamlCmdlet = [IO.File]::ReadAllText("$psScriptRoot\C#\OutXaml.cs")
     $generatedCode = "
     $controlNameDependencyObject
     $attributeCode
@@ -116,8 +117,7 @@ if (
     $wpfJob 
     $PowerShellDataSource
     $resultList
-    
-    
+    $OutXamlCmdlet
     "
     $generatedCodePath  = "$psScriptRoot\GeneratedCode\ShowUICommands.cs"
     try {
