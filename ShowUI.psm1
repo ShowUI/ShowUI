@@ -88,7 +88,8 @@ $script:UIStyles = @{}
 if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
 $types = . $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
-
+## Fix xaml Serialization 
+[ShowUI.XamlTricks]::FixSerialization()
 
 $importPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
 if (Test-Path $importPath) {

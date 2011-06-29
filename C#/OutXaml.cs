@@ -60,22 +60,13 @@ using System.Windows.Markup;
       }
    }
 
-   [Cmdlet(VerbsData.Out, "Xaml", SupportsShouldProcess = false, ConfirmImpact = ConfirmImpact.None, DefaultParameterSetName = "DataTemplate")]
-   public class OutXaml : Cmdlet
+   public static class XamlTricks
    {
-      static OutXaml()
+      public static void FixSerialization()
       {
          // this is absolutely vital:
          TypeDescriptor.AddProvider(new BindingTypeDescriptionProvider(), typeof(Binding));
          TypeDescriptor.AddAttributes(typeof(BindingExpression), new Attribute[] { new TypeConverterAttribute(typeof(BindingConverter)) });
       }
-
-      [Parameter(Mandatory = true, Position = 0, ValueFromPipeline = true)]
-      public PSObject InputObject { get; set; }
-
-      protected override void ProcessRecord() {
-         WriteObject(XamlWriter.Save(InputObject.BaseObject));
-      }
-
    }
 }
