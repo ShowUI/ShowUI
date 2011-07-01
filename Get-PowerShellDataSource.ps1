@@ -26,10 +26,40 @@
     param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
     [ScriptBlock]$Script,
+        
+    ${Parent} = $this,
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_PropertyChanged},
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_OutputChanged},
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_ErrorChanged},
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_WarningChanged},
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_DebugChanged},
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_VerboseChanged},
+
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_ProgressChanged},
     
     [System.Management.Automation.ScriptBlock[]]
-    ${On_PropertyChanged}    
+    ${On_IsRunningChanged},
+    
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_IsFinishedChanged},
+    
+    [System.Management.Automation.ScriptBlock[]]
+    ${On_TimeStampedOutputChanged}
     )
+    
     
     process {
         try {
@@ -37,6 +67,10 @@
         } catch {
             throw $_
             return
+        }
+        if ($parent) {
+            $Object.Parent = $parent
+            $null = $psBoundParameters.Remove('Parent')
         }
         $psBoundParameters.Script = $psBoundParameters.Script -as [string] 
         Set-Property -property $psBoundParameters -inputObject $Object

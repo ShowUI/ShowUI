@@ -1,5 +1,5 @@
 ﻿New-ListView -Width 350 -Height 350 -DataBinding @{
-    ItemsSource = New-Binding -IsAsync -UpdateSourceTrigger PropertyChanged -Path Output
+    ItemsSource = New-Binding -Path Output -IsAsync -UpdateSourceTrigger PropertyChanged 
 } -View {
     New-GridView -AllowsColumnReorder -Columns {
         New-GridViewColumn "Name" 

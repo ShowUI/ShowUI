@@ -180,7 +180,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using ShowUI;
+// using ShowUI;
 
 ")                
                 $propertyBlock = New-Object Text.StringBuilder

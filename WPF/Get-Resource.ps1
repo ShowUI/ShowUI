@@ -26,31 +26,29 @@
     [String]
     $Name,
     
-    $Visual    
+    $Visual = $this    
     )
     
     process {
         if ($name) {
             $item = $Visual
-            if (-not $item) { $item = $this } 
             while ($item) {
                 foreach ($k in $item.Resources.Keys) {
                     if ($k -ieq $Name) {
                         return $item.Resources.$k
                     }
                 }
-                $item = $item.Parent
+                $item = [Windows.Media.VisualTreeHelper]::GetParent($item)                
             }
         } else {
             $outputObject = @{}
             $item = $Visual
-            if (-not $item) { $item = $this } 
             while ($item) {
                 foreach ($k in $item.Resources.Keys) {
                     if (-not $k) { continue }
                     if (-not $outputObject.$k) { $outputObject.$k = $item.Resources.$k }                     
                 }
-                $item = $item.Parent
+                $item = [Windows.Media.VisualTreeHelper]::GetParent($item)                
             }
             $outputObject
         }        

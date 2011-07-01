@@ -75,7 +75,7 @@
                 }
                     
                 $itemName = $realItem.Name
-                if ($realItem.MemberType -eq 'Property') {                    
+                if ($realItem.MemberType -eq 'Property') {
                     if ($realItem.Value -is [Collections.IList]) {                                                                                               
                         $v = $p[$realKey]
                         $collection = $inputObject.$itemName
@@ -108,7 +108,7 @@
                                 $v = . $v
                             }
                         }
-                        
+
                         if ($allowXaml) {
                             $xaml = ConvertTo-Xaml $v
                             if ($xaml) {
@@ -121,8 +121,53 @@
                                 }
                             }
                         }
-                                                
-                        $inputObject.$itemName = $v                        
+
+                        if($debugPreference -ne 'SilentlyContinue') {
+                            Write-Debug "Control: $($inputObject.GetType().FullName)"
+                            Write-Debug "Type: $(@($v)[0].GetType().FullName)"
+                            Write-debug "Property: $($realItem.TypeNameOfValue)"
+                        }
+
+                        # Two Special cases: Templates and Bindings
+                        if([System.Windows.FrameworkTemplate].IsAssignableFrom( $realItem.TypeNameOfValue -as [Type]) -and 
+                           $v -isnot [System.Windows.FrameworkTemplate]) {
+                            if($debugPreference -ne 'SilentlyContinue') {
+                                Write-Debug "TEMPLATING: $inputObject" -fore Yellow
+                            }
+                            $Template = $v | ConvertTo-DataTemplate -TemplateType ( $realItem.TypeNameOfValue -as [Type])
+                            if($debugPreference -ne 'SilentlyContinue') {
+                                Write-Debug "TEMPLATING: $([System.Windows.Markup.XamlWriter]::Save( $Template ))" -fore Yellow
+                            }
+                            $inputObject.$itemName = $Template
+
+                        } elseif(@($v)[0] -is [System.Windows.Data.Binding] -and 
+                                (($realItem.TypeNameOfValue -eq "System.Object") -or 
+                                !($realItem.TypeNameOfValue -as [Type]).IsAssignableFrom([System.Windows.Data.BindingBase]))
+                        ) {
+                            $Binding = @($v)[0];
+                            if($debugPreference -ne 'SilentlyContinue') {
+                                Write-Debug "BINDING: $($inputObject.GetType()::"${realKey}Property")" -fore Green
+                            }
+
+                            if(!$Binding.Source -and !$Binding.ElementName) {
+                                $Binding.Source = $inputObject.DataContext
+                            }
+                            if($inputObject.GetType()::"${realKey}Property" -is [Windows.DependencyProperty]) {
+                                try {
+                                    # $inputObject.Resources.Clear()
+                                    $null = $inputObject.SetBinding( ($inputObject.GetType()::"${realKey}Property"), $Binding )
+                                } catch {
+                                    Write-Debug "Nope, was not able to set it." -fore Red
+                                    Write-Debug $_ -fore Red
+                                    Write-Debug $this -fore DarkRed
+                                }
+                            } else {
+                                $inputObject.$itemName = $v
+                            }
+                        } else {
+                            if($Global:Trace) { Write-Host "NOT BINDING" }
+                            $inputObject.$itemName = $v
+                        }
                     }                            
                 } elseif ($realItem.MemberType -eq 'Method') {
                     $inputObject."$($itemName)".Invoke(@($p[$realKey]))

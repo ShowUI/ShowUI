@@ -86,6 +86,6 @@
             - Fixing code generator to include missing New-CommandBinding and other primitives
             - Fixing scope of generated rules so ConvertFrom-TypeToScriptCmdlet works
     1.0.24 - June 24 2011
-	   - Using callstack peeking to create automatic variables for parent function parameters
+	   	   - Using callstack peeking to create automatic variables for parent function parameters
            - Making UI Styles persistent
            - Initial checkin of Get-Input           

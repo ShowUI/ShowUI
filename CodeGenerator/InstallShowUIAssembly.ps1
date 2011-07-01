@@ -34,8 +34,15 @@ if (
         throw $_
     }
     
+    $specificTypeNameWhiteList =
+        'System.Windows.Input.ApplicationCommands',
+        'System.Windows.Input.ComponentCommands',
+        'System.Windows.Input.NavigationCommands',
+        'System.Windows.Input.MediaCommands',
+        'System.Windows.Documents.EditingCommands',
+        'System.Windows.Input.CommandBinding'
 
-    $specificTypeNameBlackList = 
+    $specificTypeNameBlackList =
         'System.Windows.Threading.DispatcherFrame', 
         'System.Windows.DispatcherObject',
         'System.Windows.Interop.DocObjHost',
@@ -48,8 +55,9 @@ if (
         $Name = $assembly.GetName().Name
         
         Write-Progress "Filtering Types from Assembly" $Name -Id $ChildId -ParentId $progressId
-        $Assembly.GetTypes() | 
-            Where-Object {
+        $Assembly.GetTypes() | Where-Object {
+            $specificTypeNameWhiteList -contains $_.FullName -or
+            (
                 $_.IsPublic -and 
                 (-not $_.IsGenericType) -and 
                 (-not $_.IsAbstract) -and
@@ -61,21 +69,21 @@ if (
                 (-not $_.IsSubclassOf([Windows.Markup.ValueSerializer])) -and
                 (-not $_.IsSubclassOf([MulticastDelegate])) -and
                 (-not $_.IsSubclassOf([ComponentModel.TypeConverter])) -and
-                (-not $_.GetInterface([Collections.ICollection])) -and  
+                (-not $_.GetInterface([Collections.ICollection])) -and
                 (-not $_.IsSubClassOf([Windows.SetterBase])) -and
-                (-not $_.IsSubclassOf([Security.CodeAccessPermission])) -and                
+                (-not $_.IsSubclassOf([Security.CodeAccessPermission])) -and
                 (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
-                (-not $_.IsSubclassOf([Windows.Input.InputGesture])) -and
-                (-not $_.IsSubclassOf([Windows.Input.InputBinding])) -and
-                (-not $_.IsSubclassOf([Windows.FrameworkTemplate])) -and
-                (-not $_.IsSubclassOf([Windows.TemplateKey])) -and                
-                (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and                
+#               (-not $_.IsSubclassOf([Windows.Input.InputGesture])) -and
+#               (-not $_.IsSubclassOf([Windows.Input.InputBinding])) -and
+                (-not $_.IsSubclassOf([Windows.TemplateKey])) -and
+                (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and
                 ($_.BaseType -ne [Object]) -and
                 ($_.BaseType -ne [ValueType]) -and
-                $_.Name -notlike '*KeyFrame' -and                
+                $_.Name -notlike '*KeyFrame' -and
                 $specificTypeNameBlackList -notcontains $_.FullName
-            }                            
-    }       
+            )
+        }
+    }
     
     $resultList = New-Object Collections.arraylist 
     $typeCounter =0
@@ -89,27 +97,28 @@ if (
         $perc = $typeCounter * 100/ $count 
         Write-Progress "Generating Code" $type.Fullname -PercentComplete $perc -ParentId $progressID -Id $childId     
         $typeCode = ConvertFrom-TypeToScriptCmdlet -Type $type -ErrorAction SilentlyContinue -AsCSharp    
-        $ofs = [Environment]::NewLine
         $null = $resultList.Add("$typeCode")
     }
+
+    $ofs = [Environment]::NewLine
 
     $resultList = $resultList | Where-Object { $_ } 
     
     Write-Progress "Code Generation Complete" " " -PercentComplete 100 -ParentId $progressID -Id $childId     
     $controlNameDependencyObject = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUIDependencyObjects.cs")
-    $attributeCode = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUIAttribute.cs")
+    $cmdCode = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUICommand.cs")
     $ValueConverter = [IO.File]::ReadAllText("$psScriptRoot\C#\LanguagePrimitivesValueConverter.cs")
     $wpfJob = [IO.File]::ReadAllText("$psScriptRoot\C#\WPFJob.cs")
     $PowerShellDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\PowerShellDataSource.cs")
+    $OutXamlCmdlet = [IO.File]::ReadAllText("$psScriptRoot\C#\OutXaml.cs")
     $generatedCode = "
     $controlNameDependencyObject
-    $attributeCode
+    $cmdCode
     $ValueConverter
     $wpfJob 
     $PowerShellDataSource
     $resultList
-    
-    
+    $OutXamlCmdlet
     "
     $generatedCodePath  = "$psScriptRoot\GeneratedCode\ShowUICommands.cs"
     try {
@@ -149,3 +158,4 @@ if (
     
     Add-Type @addTypeParameters
 }
+

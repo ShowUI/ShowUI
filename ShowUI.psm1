@@ -83,7 +83,11 @@ $script:UIStyles = @{}
 . $psScriptRoot\Unregister-PowerShellCommand.ps1
 . $psScriptRoot\Update-WPFJob.ps1
 . $psScriptRoot\Set-UIValue.ps1
+
 . $psScriptRoot\Get-PowerShellDataSource.ps1
+. $psScriptRoot\Get-PowerShellOutput.ps1
+. $psScriptRoot\Get-PowerShellCommand.ps1
+. $psScriptRoot\Invoke-Background.ps1
 
 if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
@@ -96,6 +100,8 @@ if (Test-Path $importPath) {
 } else {
     $importedModules = $types | Select-Object -ExpandProperty Assembly -Unique | Import-Module
 }
+## Fix xaml Serialization 
+[ShowUI.XamlTricks]::FixSerialization()
 
 $importedCommands = $importedModule.ExportedCommands.Values
 $toAlias = $importedCommands | 
