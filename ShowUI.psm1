@@ -93,7 +93,6 @@ if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
 $types = . $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
 
-
 $importPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
 if (Test-Path $importPath) {
     $importedModule= Import-Module $importPath -PassThru

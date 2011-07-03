@@ -1,0 +1,127 @@
+Once you get past the basics of WPF and "ShowUI":http://showui.codeplex.com/, learning to use nested panels or grids to achieve the layouts you want, and start getting a grip on what controls are available by default, the next step to building useful user interfaces is going to be handling user interactions.
+
+In programming, we call those interactions "events." An event in WPF covers all forms of user interactions like clicking a button, type in a textbox, or select items from a treeview or listbox, and even less obvious things like when the right or left mouse button get's pressed down, or let up ... or when the mouse moves, of when the control gets focus or looses it, or "touch" and "stylus" events, drag-and-drop events, etc.  There are also events that aren't caused by users, like events for when databinding is updated, when the control is initialized, hidden, made visible, etc.
+
+In ShowUI, all events are handled by assigning scriptblocks to a parameter who's name starts with "On_" like -On_Click or -On_GotFocus or -On_MouseLeftButtonDown or -On_TextInput ... and so on.
+
+Let's say that you want a quick dialog like this:
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-10.png!
+
+You're going to need to handle the OK button click, of course, but in that scriptblock, you're going to want to get the text from the textbox, and make sure that it gets returned when the window is closed ... and you're going to want to close the Window! 
+
+We're here to help! Within the event handler script blocks, ShowUI defines a bunch of variables for you to help you handle the event: @$this@ is the source of the event, @$_@ is the event arguments, and @$window@ is the top-level window that contains your UI. Any named controls in your script are also exposed as variables, so if you started with this script:
+
+<code lang="posh">
+StackPanel -ControlName "Prompt" -Margin "8,0,8,8" { 
+    Label "Please Enter Your Full Name:"
+    StackPanel -Orientation Horizontal {
+        TextBox -Name FullName -Width 100
+        Button "OK" -IsDefault -Width 50 -Margin "8,0,0,0" -On_Click { 
+            # Do something to output the name!
+        }
+    }
+} -Show
+</code>
+
+You're going to be able to get the text from the TextBox using @$FullName.Text@ because you know the TextBox has a property named "Text" (since it's exposed as a parameter for you in the TextBox command), and because now you know that ShowUI creates a variable for all the named controls.
+
+In order to write output from a script like that one, you have to set the @Tag@ property on the top level control (in this case, the StackPanel, which is obviously named "Prompt"). You can do that easily by hand, or you can use the Set-UIValue function.
+
+In order to close the window, you're going to have to do one of two things: first, you can use the handy @Close-Control@ function, or you can call the Close method on the window. The Close-Control function will look at the "parent" (and it's parent) to try and find the window that needs to be closed -- but if it can't find one, it will just *hide* the parent, so if your button were several layers deep (unlike ours), you'd have to specify the top level control as a parameter.
+
+Here's two versions of what it could have looked like when I was finished:
+
+<code lang="posh">
+StackPanel -ControlName "Prompt" -Margin "8,0,8,8" { 
+    Label "Please Enter Your Full Name:"
+    StackPanel -Orientation Horizontal {
+        TextBox -Name FullName -Width 100
+        Button "OK" -IsDefault -Width 50 -Margin "8,0,0,0" -On_Click { 
+            $Prompt.Tag = $FullName.Text
+            $Window.Close()
+        }
+    }
+} -On_Loaded { $FullName.Focus() } -Show
+</code>
+
+<code lang="posh">
+StackPanel -ControlName "Prompt" -Margin "8,0,8,8" { 
+    Label "Please Enter Your Full Name:"
+    StackPanel -Orientation Horizontal {
+        TextBox -Name FullName -Width 100
+        Button "OK" -IsDefault -Width 50 -Margin "8,0,0,0" -On_Click { 
+            Set-UIValue $Prompt -Passthru | Close-Control
+        }
+    }
+} -On_Loaded { $FullName.Focus() } -Show
+</code>
+
+One thing you'll notice right away is that I cheated and actually added another event handler too: For the "Loaded" event on the StackPanel.  This event handler is called during the initialization of the user interface, and gives you a chance to do things like what I did here: set the initial keyboard focus where you want it (so the user can start typing as soon as the window pops up).
+
+However, if you run them both, you'll notice another thing: the output is different.  In the second example I took advantage of the fact that Set-UIValue will actually call Get-UIValue if you don't pass it a parameter!  The cool thing about Get-UIValue is that if it doesn't find a "Tag" on the specified control, it will look through the children to find one, and create a hashtable out of the values it finds. So in this case, rather than write the code to get the value from the right textbox and set it myself, I just let the built-in features of ShowUI do their thing.
+
+h3. A bigger example
+
+Of course, in neither example did I need to do anything with the button or with the actual parameters that are passed in to the button's "Click" event ... so perhaps one last (more complicated) example would be useful:
+
+!(float-right-block)http://huddledmasses.org/images/ShowUI/ShowUI-11.png!
+
+<code lang="posh">
+New-Grid -ControlName SelectUserGroups -Columns Auto,* -Rows 4 {
+    $GetGroups = { 
+        $user = Get-QADUuser $this.Text -SizeLimit 1
+        if($User.LogonName -eq $this.Text -or $User.Email -eq $this.Text) {
+            $this.Foreground = "Black" 
+            $Group.ItemsSource = Get-QADGroup -ContainsMember $user
+            $UserName.Text = $user.LogonName
+            $EmailAddress.Text = $user.Email
+        } else {
+            $this.Foreground = "Red" 
+            $Group.ItemsSource = @()         
+        }
+    }
+    
+    New-Label "Name"
+    New-Textbox -name UserName -minwidth 100 -Column 1 -On_LostFocus $GetGroups
+    
+    New-Label "Email" -Row 1
+    New-Textbox -name EmailAddress -minwidth 100  -Column 1 -Row 1  -On_LostFocus $GetGroups
+    
+    New-Label "Group" -Row 2
+    New-Listbox -name Group -Column 1 -Row 2
+    
+    New-Button "OK" -Row 3 -Column 1 -On_Click { Get-ParentControl | Set-UIValue -Passthru | Close-Control }
+} -Show
+</code>
+
+Hopefully, by now this doesn't need a whole lot of explanation, but let's walk through it anyway.  First of all, if you're not familiar with them, this script uses the excellent "PowerShell Commands for Active Directory":http://www.quest.com/powershell/activeroles-server.aspx from Quest software.  This doesn't represent a full, complete, useful user interface -- it's more of an example that you can hopefully work from (and please, contribute ammendments "on PoshCode":http://poshcode.org/2737).
+
+You can see that I used a Grid with four rows and two Columns: with one column "Auto"sized, and one using up all the rest of the UI (you can resize the window to make the fields bigger).  The first thing in the grid is the definition of a scripblock which I assigned to a variable @$GetGroups@.  The reason I did that is because I wanted to reuse the scriptblock as the event handler for both the UserName and EmailAddress fields.
+
+Without dwelling a whole lot on it, you can see the last line is the "OK" button which get's the parent grid and calls Set-UIValue to invoke, as before, the hashtable collection of all the textbox values.
+
+The interesting stuff is in that GetGroup event handler:
+
+<code lang="posh">
+    $user = Get-QADUuser $this.Text -SizeLimit 1
+    if($User.LogonName -eq $this.Text -or $User.Email -eq $this.Text) {
+        $this.Foreground = "Black" 
+        $Group.ItemsSource = Get-QADGroup -ContainsMember $user
+        $UserName.Text = $user.LogonName
+        $EmailAddress.Text = $user.Email
+    } else {
+        $this.Foreground = "Red" 
+        $Group.ItemsSource = @()         
+    }
+</code>
+
+You can see that first we call @Get-QADUser@ with the Text of @$this@ field.  By using @$this@, we make it so the event handler will work on both Textboxes, since it will get the text of whatever triggered the event handler.  Get-QADUser doesn't return anything unless it finds a user, and setting the SizeLimit ensures that we won't end up waiting for it to retrieve "all" the users just because the Textbox was left empty.  In fact, the point of that line is to make sure that we matched a user.
+
+On the next line, I'm making sure that either the LogonName or Email of the user that we found matches fully the text that the user typed. This makes sure that the user that we matched is a full match, so we know we've gotten the person typing into the form to type a full, complete username or email address.
+
+When it does match, we set the color to Black (in case it was an error and set to Red before), and we call Get-QADGroup to get all the groups that the user is a member of.  We set those groups as the source for the @$Group@ listbox, and they'll immediately show up for the user.  And finally, we update the few fields we're showing from the user object we retrieved earlier. 
+
+Of course, when it doesn't match, we set the text red to indicate an error, and then we zero out the data on the group listbox.
+
+I hope this has helped some of you figure out event handlers in ShowUI -- please feel free to ask questions in the comments below or on the "ShowUI discussion boards":http://showui.codeplex.com/discussions.
