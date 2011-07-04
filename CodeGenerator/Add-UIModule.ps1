@@ -22,10 +22,6 @@ function Add-UIModule
     [string]
     $Name,
     
-    # If set, copy the File or Assembly source to the module folder.
-    [switch]
-    $CopySourceToModuleFolder,
-    
     [switch]
     $AsScript,
     
