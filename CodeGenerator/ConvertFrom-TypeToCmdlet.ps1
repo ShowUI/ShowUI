@@ -16,17 +16,21 @@
        
     [Switch]$AsScript,
         
-    [Switch]$AsCSharp
+    [Switch]$AsCSharp,
+    
+    [ref]$ConstructorCmdletNames
     )        
     
     begin {
         $LinkedListType = "Collections.Generic.LinkedList"
         Set-StrictMode -Off
+        # Default as Script
+        if(!$AsScript) {
+            $AsCSharp = $true
+        }
     }
     
     process {
-        
-        
         foreach ($t in $type) {
             $Parameters = 
                 New-Object "$LinkedListType[Management.Automation.ParameterMetaData]"
@@ -72,6 +76,12 @@
             if ((-not $Noun) -or (-not $Verb)) {
                 continue
             }
+            
+            ## A hack to get a list of constructor cmdlets
+            if($Verb -eq "New" -and (Test-Path Variable:ConstructorCmdletNames)) {
+               $ConstructorCmdletNames.Value += $Noun
+            }
+            
             $cmd = New-Object Management.Automation.CommandMetaData ([PSObject])
             foreach ($p in $parameters) {
                 $null = $cmd.Parameters.Add($p.Name, $p)
