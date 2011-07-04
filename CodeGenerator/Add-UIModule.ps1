@@ -232,7 +232,7 @@ Export-ModuleMember -Cmdlet * -Function * -Alias *
                    ReferencedAssemblies = $types | 
                        Select-Object -ExpandProperty Assembly -Unique | 
                        ForEach-Object { @($_) + @($_.GetReferencedAssemblies()) | Select-Object -Unique } |
-                       Where-Object { $_.Name -ne 'MSCorLib' -and $_.Name -ne "System" } | 
+                       Where-Object { "MSCorLib","System","System.Core" -notcontains $_.Name } | 
                        ForEach-Object { if ($_.Location) { $_.Location } else { $_.Fullname } }                      
                }
                
