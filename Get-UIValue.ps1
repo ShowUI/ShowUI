@@ -57,7 +57,9 @@ process {
         . MaybeAddUIProperty $ui
         return $newValue
     # If this has a Text property, return that
-    } elseif ($ui.Text) {
+    } elseif ($ui.Text -and (
+        -not $ui.Resources.OriginalText -or
+        ($ui.Text -ne $ui.Resources.OriginalText))) {
         $newValue = $UI.Text
         . MaybeAddUIProperty $ui
         return $newValue

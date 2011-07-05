@@ -35,6 +35,7 @@ $Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
 
 #region Code Generator Functions
 . $psScriptRoot\CodeGenerator\Add-CodeGenerationRule.ps1
+. $psScriptRoot\CodeGenerator\Add-UiModule.ps1
 . $psScriptRoot\CodeGenerator\ConvertFrom-TypeToCmdlet.ps1
 . $psScriptRoot\CodeGenerator\ConvertTo-ParameterMetaData.ps1
 #endregion Code Generator Functions
@@ -69,6 +70,7 @@ $Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
 . $psScriptRoot\WPF\Test-Ancestor.ps1
 . $psScriptRoot\WPF\Test-Descendent.ps1
 . $psScriptRoot\WPF\Write-WPFError.ps1
+. $psScriptRoot\WPF\Out-Xaml.ps1
 
 #endregion WPF functions
 
@@ -83,6 +85,7 @@ $script:UIStyles = @{}
 . $psScriptRoot\Unregister-PowerShellCommand.ps1
 . $psScriptRoot\Update-WPFJob.ps1
 . $psScriptRoot\Set-UIValue.ps1
+. $psScriptRoot\Write-Program.ps1
 
 . $psScriptRoot\Get-PowerShellDataSource.ps1
 . $psScriptRoot\Get-PowerShellOutput.ps1
@@ -93,6 +96,7 @@ if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
 $types = . $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
 
+	
 $importPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
 if (Test-Path $importPath) {
     $importedModule= Import-Module $importPath -PassThru

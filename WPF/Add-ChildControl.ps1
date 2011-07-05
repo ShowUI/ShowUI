@@ -47,7 +47,8 @@
     
     process {        
         $itemsToAdd = @()
-        if ($scriptBlock) {
+        if ($psBoundParameters.ScriptBlock) {
+            $scriptBlock = $psBoundParameters.ScriptBlock
             if ($parameters) {
                 $itemsToAdd = & $scriptBlock @parameters
             } else {
@@ -57,7 +58,7 @@
             $itemsToAdd+= $control
         }
         
-        if ($clear) {
+        if ($psBoundParameters.ScriptBlock.Clear) {
             if ($parent.GetType().GetProperty('Children')) {
                 $parent.Children.Clear()
             } elseif ($parent.GetType().GetProperty('Items')) {
