@@ -1,0 +1,11 @@
+# Getting Started With ShowUI
+#.Video http://www.youtube.com/watch?v=cR2koin9QNA
+$null
+
+# ShowUI, Splatting, & PowerShell
+#.Video http://www.youtube.com/watch?v=HM2vc5KBKqk
+$null
+
+# ShowUI Error Handling
+#.Video http://www.youtube.com/watch?v=3HhEIWIzqe4
+$null

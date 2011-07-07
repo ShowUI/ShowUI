@@ -1,4 +1,4 @@
-﻿function Get-CommonParentControl {
+function Get-CommonParentControl {
     <#
     .Synopsis
         Gets the common parent control between two controls

@@ -1,4 +1,4 @@
-﻿function Remove-ChildControl
+function Remove-ChildControl
 {
     <#
     .Synopsis
@@ -18,7 +18,7 @@
     [Windows.Controls.Panel]$Parent    
     )
     
-    process {                
+    process {
         if ($control.Parent -eq $parent) {
             $null = $parent.Children.Remove($control)
         }

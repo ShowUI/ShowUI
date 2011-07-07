@@ -1,4 +1,4 @@
-﻿function Export-Application
+function Export-Application
 {
     <#
     .Synopsis

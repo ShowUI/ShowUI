@@ -1,4 +1,4 @@
-﻿<Configuration>
+<Configuration>
   <ViewDefinitions>
         <View>
             <Name>System.Windows.Controls.ContentControl</Name>

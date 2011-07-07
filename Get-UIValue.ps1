@@ -1,4 +1,4 @@
-﻿function Get-UIValue {
+function Get-UIValue {
 #.Synopsis
 #   Get the UIValue from a control
 #.Description

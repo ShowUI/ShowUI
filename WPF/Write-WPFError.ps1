@@ -1,4 +1,4 @@
-﻿function Write-WPFError
+function Write-WPFError
 {
     param($err)
     $thisTypeNAme = $this.GetType().Name

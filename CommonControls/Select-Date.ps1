@@ -1,4 +1,4 @@
-﻿function Select-Date
+function Select-Date
 {
     [OutputType([Windows.Controls.Border], [DateTime])]
     param(

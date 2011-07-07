@@ -1,0 +1,3 @@
+ShowUI is a module that lets you write UI quickly and easily in PowerShell.
+
+ShowUI lets you make WPF gadgets, controls, and applications in a fraction of the time and code as C#.

@@ -1,4 +1,4 @@
-﻿$outputPathBase = "$psScriptRoot\GeneratedAssemblies\"
+$outputPathBase = "$psScriptRoot\GeneratedAssemblies\"
 $outputPath = "$outputPathBase\ShowUI.CLR$($psVersionTable.clrVersion).dll"
     
 . $psScriptRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1

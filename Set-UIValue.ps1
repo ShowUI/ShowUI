@@ -1,4 +1,4 @@
-﻿function Set-UIValue
+function Set-UIValue
 {    
     param(
     [Parameter(ValueFromPipeline=$true)]

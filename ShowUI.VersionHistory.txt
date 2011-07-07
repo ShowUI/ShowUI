@@ -1,4 +1,4 @@
-﻿
+
     Version History: 
         0.1 - 
             Initial Checkin - switched to compiled code generator
@@ -85,7 +85,9 @@
                 New-Grid -Children { $x =5; New-StackPanel { NEw-Label "$x" } } -show
             - Fixing code generator to include missing New-CommandBinding and other primitives
             - Fixing scope of generated rules so ConvertFrom-TypeToScriptCmdlet works
-    1.0.24 - June 24 2011
-	   	   - Using callstack peeking to create automatic variables for parent function parameters
+    1.1    - Using callstack peeking to create automatic variables for parent function parameters
+           - Creates automatic functions for resources containing functions
            - Making UI Styles persistent
            - Initial checkin of Get-Input           
+           - Improvements in background data sources (can now handle events on UI thread, easier to launch and manage)
+           

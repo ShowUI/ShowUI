@@ -1,4 +1,4 @@
-﻿function Move-Control {
+function Move-Control {
     <#
     .Synopsis
         Moves a control to a location, and animates the transition

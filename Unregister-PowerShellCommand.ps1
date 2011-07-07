@@ -1,4 +1,4 @@
-﻿function Unregister-PowerShellCommand
+function Unregister-PowerShellCommand
 {
     <#
     .Synopsis

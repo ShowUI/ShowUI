@@ -1,4 +1,4 @@
-﻿function ConvertTo-GridLength
+function ConvertTo-GridLength
 {
     <#
     .Synopsis

@@ -1,4 +1,4 @@
-﻿function Copy-DependencyProperty
+function Copy-DependencyProperty
 {
     <#
     .Synopsis

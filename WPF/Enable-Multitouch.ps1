@@ -1,4 +1,4 @@
-﻿function Enable-MultiTouch
+function Enable-MultiTouch
 {
     <#
     .Synopsis

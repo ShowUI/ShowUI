@@ -1,4 +1,4 @@
-﻿function Register-PowerShellCommand {
+function Register-PowerShellCommand {
     <#
     .Synopsis
         Registers a PowerShell scriptblock command for use within a window

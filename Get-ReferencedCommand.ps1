@@ -1,4 +1,4 @@
-﻿function Get-ReferencedCommand { 
+function Get-ReferencedCommand { 
     <#
     .Synopsis
         Gets the commands referred to from within a function or external script

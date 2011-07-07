@@ -1,4 +1,4 @@
-﻿function Hide-UIElement
+function Hide-UIElement
 {
     <#
     .Synopsis
@@ -24,7 +24,7 @@
         [Parameter(ParameterSetName='Name', Mandatory=$true,Position=0)]
         [string[]]
         $name
-    )        
+    )
     
     process {
         switch ($psCmdlet.ParameterSetName) {

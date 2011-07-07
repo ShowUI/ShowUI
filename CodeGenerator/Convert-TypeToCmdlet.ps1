@@ -1,4 +1,4 @@
-﻿function Convert-TypeToCmdlet
+function ConvertFrom-TypeToScriptCmdlet
 {
     <#
     .Synopsis
@@ -15,22 +15,22 @@
     [Type[]]$Type,
        
     [Switch]$AsScript,
+        
+    [Switch]$AsCSharp,
     
-    [Hashtable[]]$CodeRules = $(&"$psScriptRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1")
+    [ref]$ConstructorCmdletNames
     )        
     
     begin {
         $LinkedListType = "Collections.Generic.LinkedList"
         Set-StrictMode -Off
-        
-        $CodeGenerationRuleOrder = $CodeRules | ForEach-Object { $_.Keys }
-        $codeGenerationCustomizations = @{}
-        $CodeRules | ForEach-Object { $_.GetEnumerator() | ForEach-Object { $codeGenerationCustomizations.($_.Key) = $_.Value } }
+        # Default as Script
+        if(!$AsScript) {
+            $AsCSharp = $true
+        }
     }
     
     process {
-        
-        
         foreach ($t in $type) {
             $Parameters = 
                 New-Object "$LinkedListType[Management.Automation.ParameterMetaData]"
@@ -40,6 +40,11 @@
                 New-Object "$LinkedListType[ScriptBlock]"
             $EndBlocks = 
                 New-Object "$LinkedListType[ScriptBlock]"
+            if ($PSVersionTable.BuildVersion.Build -lt 7100) {
+                $CmdletBinding = "[CmdletBinding()]"
+            } else {
+                $CmdletBinding = ""
+            }
             try {
                 $Help = @{
                     Parameter = @{}
@@ -71,6 +76,12 @@
             if ((-not $Noun) -or (-not $Verb)) {
                 continue
             }
+            
+            ## A hack to get a list of constructor cmdlets
+            if($Verb -eq "New" -and (Test-Path Variable:ConstructorCmdletNames)) {
+               $ConstructorCmdletNames.Value += $Noun
+            }
+            
             $cmd = New-Object Management.Automation.CommandMetaData ([PSObject])
             foreach ($p in $parameters) {
                 $null = $cmd.Parameters.Add($p.Name, $p)
@@ -153,7 +164,7 @@
     function $Verb-$Noun {
         $HelpBlock
         
-        [CmdletBinding()]
+        $CmdletBinding
         param(
             $parameterBlock
         )
@@ -169,9 +180,7 @@
     }
 "@            
                 #endregion 
-            } 
-            else
-            {
+            } elseif ($AsCSharp) {
                 
                 #region Generate the C# Parameter Block
                 $usingBlock = New-Object Text.StringBuilder
@@ -181,7 +190,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using ShowUI;
+// using ShowUI;
 
 ")                
                 $propertyBlock = New-Object Text.StringBuilder
@@ -329,13 +338,41 @@ $endBlocks".Replace('"','""')
 
                     $ofs =','
                 
-                    $EndProcessingCode = @"
+                    $EndProcessingCode = New-Object Text.StringBuilder
+                    $null = $EndProcessingCode.Append(@"
 System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
-this.InvokeCommand.InvokeScript(@"
+                    
+                    pipeline.Commands.AddScript(@"
 $fullEndBlock
-", new Object[] { $pNames } );
-"@                
+", true);
 
+                    foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
+                        pipeline.Commands[0].Parameters.Add(param.Key, param.Value);                    
+                    }
+                    
+                    try {
+                        this.WriteObject(
+                            pipeline.Invoke(),
+                            true);
+
+                    } catch (Exception ex) {
+                        ErrorRecord errorRec; 
+                        if (ex is ActionPreferenceStopException) {
+                            ActionPreferenceStopException aex = ex as ActionPreferenceStopException;
+                            errorRec = aex.ErrorRecord;
+                        } else {
+                            errorRec = new ErrorRecord(ex, "EmbeddedProcessRecordError", ErrorCategory.NotSpecified, null);                        
+                        }                       
+                        if (errorRec != null) {
+                            this.WriteError(errorRec);                                                
+                        }
+                    }
+"@)                    
+                    foreach ($param in $parameterNames) {
+                        $null = $EndProcessingCode.Append(@"
+this.SessionState..PSVariable.Remove("$param");
+"@)                     
+                    }
                 }
                 
                 $ProcessRecordCode=""
@@ -352,7 +389,7 @@ $processBlocks".Replace('"','""')
                     
                     pipeline.Commands.AddScript(@"
 $fullProcessBlock
-");
+", true);
 
                     foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
                         pipeline.Commands[0].Parameters.Add(param.Key, param.Value);                    
@@ -421,5 +458,3 @@ namespace AutoGenerateCmdlets$namespaceID
         }        
     }
 }
-
-Set-Alias -Name Add-UIFunction -Value Convert-TypeToCmdlet

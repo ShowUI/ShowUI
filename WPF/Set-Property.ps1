@@ -1,4 +1,4 @@
-﻿function Set-Property
+function Set-Property
 {
     <#
     .Synopsis
@@ -73,7 +73,7 @@
                 if (-not $realItem) { 
                     continue 
                 }
-                    
+
                 $itemName = $realItem.Name
                 if ($realItem.MemberType -eq 'Property') {
                     if ($realItem.Value -is [Collections.IList]) {                                                                                               

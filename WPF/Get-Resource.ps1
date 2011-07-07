@@ -1,4 +1,4 @@
-﻿function Get-Resource
+function Get-Resource
 {
     <#
     .Synopsis
@@ -26,7 +26,7 @@
     [String]
     $Name,
     
-    $Visual = $this    
+    $Visual = $this
     )
     
     process {

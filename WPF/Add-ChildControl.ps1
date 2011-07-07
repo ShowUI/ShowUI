@@ -1,4 +1,4 @@
-﻿function Add-ChildControl
+function Add-ChildControl
 {
     <#
     .Synopsis

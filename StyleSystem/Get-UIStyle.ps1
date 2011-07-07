@@ -1,4 +1,4 @@
-﻿function Get-UIStyle {
+function Get-UIStyle {
     <#
     .Synopsis
         Get-UIStyle

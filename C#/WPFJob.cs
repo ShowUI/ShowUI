@@ -1,4 +1,4 @@
-﻿namespace ShowUI
+namespace ShowUI
 {
 using System;
 using System.Windows;

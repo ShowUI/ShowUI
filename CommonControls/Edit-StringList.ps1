@@ -1,4 +1,4 @@
-﻿function Edit-StringList
+function Edit-StringList
 {
     <#
     .Synopsis

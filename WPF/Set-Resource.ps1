@@ -1,4 +1,4 @@
-﻿function Set-Resource
+function Set-Resource
 {
     <#
     .Synopsis
@@ -43,7 +43,7 @@
                 # to it
                 $list = Get-Resource "List"
                 $list.ItemsSource += @(Get-Random)
-            } 
+            }
         } -Show
     #>
     param(

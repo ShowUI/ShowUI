@@ -1,4 +1,4 @@
-﻿function Start-WPFJob
+function Start-WPFJob
 {
     <#
     .Synopsis

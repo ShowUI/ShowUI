@@ -1,4 +1,4 @@
-﻿function Get-ParentControl
+function Get-ParentControl
 {
     param(
     [Parameter(ValueFromPipeline=$true, Mandatory=$false)]

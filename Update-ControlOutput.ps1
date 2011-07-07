@@ -1,4 +1,4 @@
-﻿function Update-ControlOutput
+function Update-ControlOutput
 {    
     param(
     [Parameter(ValueFromPipeline=$true)]

@@ -1,4 +1,4 @@
-﻿function Start-PowerShellCommand
+function Start-PowerShellCommand
 {
     <#
     .Synopsis

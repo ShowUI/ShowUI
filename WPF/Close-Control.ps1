@@ -1,4 +1,4 @@
-﻿function Close-Control
+function Close-Control
 {
     param(
     [Parameter(ValueFromPipeline=$true)]

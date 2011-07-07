@@ -1,4 +1,4 @@
-﻿function Get-UICommand {
+function Get-UICommand {
     
     [CmdletBinding(DefaultParameterSetName='CmdletSet')]
     param(

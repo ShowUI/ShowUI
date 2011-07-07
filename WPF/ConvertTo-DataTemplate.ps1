@@ -1,4 +1,4 @@
-﻿function ConvertTo-DataTemplate
+function ConvertTo-DataTemplate
 {
     <#
         .Synopsis

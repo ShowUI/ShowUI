@@ -1,4 +1,4 @@
-﻿#  # ShowUI is a Module to help you create user interfaces in PowerShell
+#  # ShowUI is a Module to help you create user interfaces in PowerShell
 
 # Using ShowUI, you can create user interaces quickly, cheerly, and nicely, 
 # in an amazingly short amount of code.

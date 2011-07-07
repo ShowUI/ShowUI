@@ -1,4 +1,4 @@
-﻿namespace ShowUI
+namespace ShowUI
 {
     using System;
     using System.Collections.Generic;
@@ -113,9 +113,8 @@
                 return returnValue;
             }
         }
-
-
-
+ 
+ 
         PSObject lastOutput;
         public PSObject LastOutput
         {
@@ -134,7 +133,7 @@
                 return returnValue;
             }
         }
-
+ 
         ErrorRecord lastError;
         public ErrorRecord LastError
         {
@@ -153,9 +152,9 @@
                 return returnValue;
             }
         }
-
+ 
         WarningRecord lastWarning;
-
+ 
         public WarningRecord LastWarning
         {
             get
@@ -173,7 +172,7 @@
                 return returnValue;
             }
         }
-
+ 
         VerboseRecord lastVerbose;
         public VerboseRecord LastVerbose
         {
@@ -193,7 +192,7 @@
                 return returnValue;
             }
         }
-
+ 
         DebugRecord lastDebug;
         public DebugRecord LastDebug
         {
@@ -236,7 +235,7 @@
 
 
         ProgressRecord lastProgress;
-
+ 
         public ProgressRecord LastProgress
         {
             get
@@ -244,11 +243,10 @@
                 return lastProgress;
             }
         }
-
+        
         public PowerShell Command
         {
-            get
-            {
+            get {
                 return powerShellCommand;
             }
         }
@@ -303,7 +301,7 @@
                 }
                 catch
                 {
-
+ 
                 }
             }
         }
@@ -339,7 +337,7 @@
         PSDataCollection<PSObject> outputCollection;
         public PowerShellDataSource()
         {
-            powerShellCommand = PowerShell.Create();
+            powerShellCommand =  PowerShell.Create();
             Runspace runspace = RunspaceFactory.CreateRunspace();
             runspace.Open();
             powerShellCommand.Runspace = runspace;
@@ -575,7 +573,7 @@
             }
 
         }
-
+ 
         void Debug_DataAdded(object sender, DataAddedEventArgs e)
         {
             PSDataCollection<DebugRecord> collection = sender as PSDataCollection<DebugRecord>;
@@ -603,7 +601,7 @@
             }
 
         }
-
+ 
         void Error_DataAdded(object sender, DataAddedEventArgs e)
         {
             PSDataCollection<ErrorRecord> collection = sender as PSDataCollection<ErrorRecord>;
@@ -631,7 +629,7 @@
             }
 
         }
-
+ 
         void Warning_DataAdded(object sender, DataAddedEventArgs e)
         {
             PSDataCollection<WarningRecord> collection = sender as PSDataCollection<WarningRecord>;
@@ -685,7 +683,7 @@
                 NotifyVerboseChanged();
             }
         }
-
+ 
         void Progress_DataAdded(object sender, DataAddedEventArgs e)
         {
             PSDataCollection<ProgressRecord> collection = sender as PSDataCollection<ProgressRecord>;
@@ -711,11 +709,7 @@
                 NotifyProgressChanged();
             }
         }
-
-
-
-
-
+ 
         void outputCollection_DataAdded(object sender, DataAddedEventArgs e)
         {
             PSDataCollection<PSObject> collection = sender as PSDataCollection<PSObject>;

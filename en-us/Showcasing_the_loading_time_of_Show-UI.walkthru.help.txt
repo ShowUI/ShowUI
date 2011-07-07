@@ -1,4 +1,4 @@
-﻿# Show-UI is the merger of two projects: WPK and PowerBoots.
+# Show-UI is the merger of two projects: WPK and PowerBoots.
 # At various times, both projects have had user feedback either 
 # because they too long to load, or because they did not load completely
 # Show-UI fixes this by switching the backbone of the project 

@@ -1,4 +1,4 @@
-﻿# Editing this file is not recommended.
+# Editing this file is not recommended.
 
 # This file contains a series of rules which will help convert the types WPF
 # interacts with the most to Script Cmdlets in PowerShell.  The rules are processed 

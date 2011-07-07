@@ -1,4 +1,4 @@
-﻿function ConvertFrom-TypeToScriptCmdlet
+function ConvertFrom-TypeToScriptCmdlet
 {
     <#
     .Synopsis

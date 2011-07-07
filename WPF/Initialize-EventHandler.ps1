@@ -1,4 +1,4 @@
-﻿function Initialize-EventHandler
+function Initialize-EventHandler
 {
     param()
     try {
@@ -35,7 +35,7 @@
                         $null = New-Module -ScriptBlock $nc.Value
                         continue
                     }
-                }                                
+                }
                 Set-Variable -Name $nc.Key -Value $nc.Value                         
             }        
         }

@@ -1,4 +1,4 @@
-﻿function Update-WPFJob
+function Update-WPFJob
 {
     <#
     .Synopsis

@@ -1,4 +1,4 @@
-﻿function Test-Descendent {
+function Test-Descendent {
     param(
     [Parameter(Mandatory=$true)]
     [Windows.UIElement]

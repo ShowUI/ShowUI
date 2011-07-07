@@ -1,0 +1,8 @@
+# Building a quick Twitter client in ShowUI
+#.Video http://player.vimeo.com/video/25626751
+$null
+
+# Writing a Drag and Drop Video Player in 12 lines of script
+#.Video http://www.youtube.com/watch?v=JcLVbNnAm9A
+$null
+

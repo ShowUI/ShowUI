@@ -1,4 +1,4 @@
-﻿function ConvertTo-ParameterMetaData {
+function ConvertTo-ParameterMetaData {
     <#
     .Synopsis
         Turns reflection information on a type into parameter metadata

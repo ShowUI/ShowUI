@@ -1,4 +1,4 @@
-﻿function Stop-PowerShellCommand
+function Stop-PowerShellCommand
 {
     <#
     .Synopsis

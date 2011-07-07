@@ -1,4 +1,4 @@
-﻿function ConvertTo-Xaml 
+function ConvertTo-Xaml 
 {
     <#
         .Synopsis

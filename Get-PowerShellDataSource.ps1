@@ -1,4 +1,4 @@
-﻿function Get-PowerShellDataSource {
+function Get-PowerShellDataSource {
     <#
     .Synopsis
         Gets a new PowerShell data source
