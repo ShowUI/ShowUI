@@ -167,6 +167,9 @@ function Add-UIModule
         {
             $filteredTypes = $type
         } else {
+            for($p=0;$p -lt $Path.Count;$p++){
+                $Path[$p] = $ExecutionContext.SessionState.Path.GetResolvedPSPathFromPSPath(($Path[$p]))
+            }
             $requiredAssemblies += @($Path) + @($AssemblyName)
             $filteredTypes = Select-UIType -Path @($Path) -AssemblyName @($AssemblyName) -TypeNameWhiteList @($TypeNameWhiteList) -TypeNameBlackList @($TypeNameBlackList)
         }
@@ -283,11 +286,11 @@ Export-ModuleMember -Cmdlet * -Function * -Alias *
                 IgnoreWarnings       = $true
                 Language             = 'CSharpVersion3'
                 OutputAssembly       = $dllPath
-                ReferencedAssemblies = $filteredTypes | 
+                ReferencedAssemblies = @($Path) + @($filteredTypes | 
                     Select-Object -ExpandProperty Assembly -Unique | 
                     ForEach-Object { @($_) + @($_.GetReferencedAssemblies()) | Select-Object -Unique } |
                     Where-Object { "MSCorLib","System","System.Core" -notcontains $_.Name } | 
-                    ForEach-Object { if ($_.Location) { $_.Location } else { $_.Fullname } }                      
+                    ForEach-Object { if ($_.Location) { $_.Location } else { $_.Fullname } })                      
             }
             
             if($PSVersionTable.CLRVersion -ge "4.0") {
