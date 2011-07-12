@@ -1,3 +1,112 @@
+function Select-UIType {
+[CmdletBinding()]
+param(
+    [Parameter(Position=0, ValueFromPipelineByPropertyName=$true)]
+    [Alias('PSPath')]
+    [string[]]
+    $Path,        
+    
+    [Parameter()]
+    [Alias('AN')]
+    [string[]]
+    $AssemblyName,    
+    
+    [Parameter()]
+    [Type[]]
+    $Type,
+
+    [Parameter()]
+    [String[]]
+    $TypeNameWhiteList,
+
+    [Parameter()]
+    [String[]]
+    $TypeNameBlackList
+)
+begin {
+    $TypeNameWhiteList = $TypeNameWhiteList + @(
+        'System.Windows.Input.ApplicationCommands',
+        'System.Windows.Input.ComponentCommands',
+        'System.Windows.Input.NavigationCommands',
+        'System.Windows.Input.MediaCommands',
+        'System.Windows.Documents.EditingCommands',
+        'System.Windows.Input.CommandBinding' ) | Select -Unique
+
+    $TypeNameBlackList = $TypeNameBlackList + @(
+        'System.Windows.Threading.DispatcherFrame', 
+        'System.Windows.DispatcherObject',
+        'System.Windows.Interop.DocObjHost',
+        'System.Windows.Ink.GestureRecognizer',
+        'System.Windows.Data.XmlNamespaceMappingCollection',
+        'System.Windows.Annotations.ContentLocator',
+        'System.Windows.Annotations.ContentLocatorGroup' ) | Select -Unique
+}
+process {
+    if(!(Test-Path Variable:Type) -or ($Type -eq $null)) {
+        $Type = New-Object Type[] 0
+    }
+    if ($Path) 
+    {
+        foreach($p in $path) {
+            Write-Verbose "$($ExecutionContext.SessionState.Path.GetResolvedPSPathFromPSPath($p))"
+            $asm = [Reflection.Assembly]::LoadFrom($ExecutionContext.SessionState.Path.GetResolvedPSPathFromPSPath($p))
+            if ($asm) {
+                $Type += $asm.GetTypes()
+            }
+        }
+    } 
+    if ($AssemblyName) {
+        foreach($a in $AssemblyName) {
+            try {
+                $asm = [Reflection.Assembly]::Load($a)
+                if ($asm) {
+                    $Type += $asm.GetTypes()
+                }
+            } catch {
+                $err = $_
+                try {
+                    $asm = [Reflection.Assembly]::LoadWithPartialName($a)
+                    if ($asm) {
+                        $Type += $asm.GetTypes()
+                    }
+                } catch {
+                    Write-Error $err                                     
+                    Write-Error $_
+                }
+            }
+        }
+    }
+}
+end {
+    $Type | Where-Object {
+        $TypeNameWhiteList -contains $_.FullName -or
+        (
+            $_.IsPublic -and 
+            (-not $_.IsGenericType) -and 
+            (-not $_.IsAbstract) -and
+            (-not $_.IsEnum) -and
+            ($_.FullName -notlike "*Internal*") -and
+            (-not $_.IsSubclassOf([EventArgs])) -and
+            (-not $_.IsSubclassOf([Exception])) -and
+            (-not $_.IsSubclassOf([Attribute])) -and
+            (-not $_.IsSubclassOf([Windows.Markup.ValueSerializer])) -and
+            (-not $_.IsSubclassOf([MulticastDelegate])) -and
+            (-not $_.IsSubclassOf([ComponentModel.TypeConverter])) -and
+            (-not $_.GetInterface([Collections.ICollection])) -and
+            (-not $_.IsSubClassOf([Windows.SetterBase])) -and
+            (-not $_.IsSubclassOf([Security.CodeAccessPermission])) -and
+            (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
+            (-not $_.IsSubclassOf([Windows.TemplateKey])) -and
+            (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and
+            ($_.BaseType -ne [Object]) -and
+            ($_.BaseType -ne [ValueType]) -and
+            $_.Name -notlike '*KeyFrame' -and
+            $TypeNameBlackList -notcontains $_.FullName
+        )
+    }
+}
+}
+
 
 function Add-UIModule
 {
@@ -5,12 +114,12 @@ function Add-UIModule
     param(
     [Parameter(ParameterSetName='Path', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
     [Alias('PSPath')]
-    [string]
+    [string[]]
     $Path,        
     
     [Parameter(ParameterSetName='Assembly', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
     [Alias('AN')]
-    [string]
+    [string[]]
     $AssemblyName,    
     
     [Parameter(ParameterSetName='Type', Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
@@ -20,6 +129,9 @@ function Add-UIModule
     # The name of the module to create (either a simple name, or a full path to the psd1)
     [string]
     $Name,
+    
+    [string[]]
+    $RequiredAssemblies,
     
     [switch]
     $AsCmdlet,
@@ -45,106 +157,40 @@ function Add-UIModule
     [ScriptBlock]
     $On_RemoveModule
     )
-    
     begin {
-        $specificTypeNameWhiteList =
-            'System.Windows.Input.ApplicationCommands',
-            'System.Windows.Input.ComponentCommands',
-            'System.Windows.Input.NavigationCommands',
-            'System.Windows.Input.MediaCommands',
-            'System.Windows.Documents.EditingCommands',
-            'System.Windows.Input.CommandBinding'
-
-        $specificTypeNameBlackList =
-            'System.Windows.Threading.DispatcherFrame', 
-            'System.Windows.DispatcherObject',
-            'System.Windows.Interop.DocObjHost',
-            'System.Windows.Ink.GestureRecognizer',
-            'System.Windows.Data.XmlNamespaceMappingCollection',
-            'System.Windows.Annotations.ContentLocator',
-            'System.Windows.Annotations.ContentLocatorGroup'
+        $childId = Get-Random
+        $typeCounter = 0
+        $ConstructorCmdletNames = New-Object Collections.Generic.List[String]
+        $resultList = New-Object Collections.Generic.List[String]
     }
-    
     process {
-        $filteredTypes = @()
         if ($psCmdlet.ParameterSetName -eq 'Type') 
         {
-           $filteredTypes = $type
+            $filteredTypes = $type
         } else {
-            $types = @()
-        
-            if ($psCmdlet.ParameterSetName -eq 'Path') 
-            {            
-                $asm = [Reflection.Assembly]::LoadFrom($ExecutionContext.SessionState.Path.GetResolvedPSPathFromPSPath($Path))
-                if ($asm) {
-                    $types += $asm.GetTypes()
-                }
-            } elseif ($psCmdlet.ParameterSetName -eq 'Assembly') {
-                try {
-                    $types += [Reflection.Assembly]::Load($AssemblyName)
-                } catch {
-                    $err = $_
-                    try {
-                        [Reflection.Assembly]::LoadWithPartialName($AssemblyName)
-                    } catch {
-                        Write-Error $err                                     
-                        Write-Error $_
-                    }
-                }
-            }
-           
-            $childId = Get-Random
-            if ($types) {                    
-                $resultList = New-Object Collections.arraylist 
-                $typeCounter =0
-                $count= @($types).Count
-
-                $filteredTypes = $types | Where-Object {
-                    $specificTypeNameWhiteList -contains $_.FullName -or
-                    (
-                       $_.IsPublic -and 
-                       (-not $_.IsGenericType) -and 
-                       (-not $_.IsAbstract) -and
-                       (-not $_.IsEnum) -and
-                       ($_.FullName -notlike "*Internal*") -and
-                       (-not $_.IsSubclassOf([EventArgs])) -and
-                       (-not $_.IsSubclassOf([Exception])) -and
-                       (-not $_.IsSubclassOf([Attribute])) -and
-                       (-not $_.IsSubclassOf([Windows.Markup.ValueSerializer])) -and
-                       (-not $_.IsSubclassOf([MulticastDelegate])) -and
-                       (-not $_.IsSubclassOf([ComponentModel.TypeConverter])) -and
-                       (-not $_.GetInterface([Collections.ICollection])) -and
-                       (-not $_.IsSubClassOf([Windows.SetterBase])) -and
-                       (-not $_.IsSubclassOf([Security.CodeAccessPermission])) -and
-                       (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
-                       (-not $_.IsSubclassOf([Windows.TemplateKey])) -and
-                       (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and
-                       ($_.BaseType -ne [Object]) -and
-                       ($_.BaseType -ne [ValueType]) -and
-                       $_.Name -notlike '*KeyFrame' -and
-                       $specificTypeNameBlackList -notcontains $_.FullName
-                    )
-                }
-            }
+            $requiredAssemblies += @($Path) + @($AssemblyName)
+            $filteredTypes = Select-UIType -Path @($Path) -AssemblyName @($AssemblyName)
         }
-
         $ofs = [Environment]::NewLine
-        $count = $filteredTypes.Count
-        $ConstructorCmdletNames = @()
+        $count = @($filteredTypes).Count
         foreach ($type in $filteredTypes) 
         {
             if (-not $type) { continue }
             $typeCounter++
-            $perc = $typeCounter * 100/ $count 
-            Write-Progress "Generating Code" $type.Fullname -PercentComplete $perc -Id $childId     
+            if($count -gt 1) {
+                $perc = $typeCounter * 100/ $count 
+                Write-Progress "Generating Code" $type.Fullname -PercentComplete $perc -Id $childId 
+            } else {
+                Write-Progress "Generating Code" $type.Fullname -Id $childId
+            }
             $typeCode = ConvertFrom-TypeToScriptCmdlet -Type $type -AsScript:(!$AsCmdlet) `
                         -ConstructorCmdletNames ([ref]$ConstructorCmdletNames)  -ErrorAction SilentlyContinue
             $null = $resultList.Add("$typeCode")
         }
-        
+    }
+    end {
         $resultList = $resultList | Where-Object { $_ }
         $ConstructorCmdletNames = $ConstructorCmdletNames | Where-Object { $_ }
-    
         $code = "$resultList"                   
         if ($PassthruCode) {
             $Code
@@ -184,6 +230,7 @@ function Add-UIModule
         $psm1Path = $moduleMetadataPath.Replace(".psd1", ".psm1")
            
         if ($AsCmdlet) {
+            Set-Content -LiteralPath $moduleMetadataPath.Replace(".psd1","Commands.cs") -Value $Code
             $modulePath = $moduleMetadataPath.Replace(".psd1","Commands.dll")
         } else {
             $modulePath = $moduleMetadataPath.Replace(".psd1", ".psm1")
@@ -194,7 +241,7 @@ function Add-UIModule
 @{
     ModuleVersion = '1.0'
     RequiredModules = 'ShowUI'
-    RequiredAssemblies = $(if($Path){"'$Path'"}if($AssemblyName){"'$AssemblyName'"})
+    RequiredAssemblies = '$(if($Path){$Path -Join "','"}elseif($AssemblyName){$AssemblyName -Join "','"})'
     ModuleToProcess = '$psm1Path'
     GUID = '$([GUID]::NewGuid())' 
     $( if($AsCmdlet) { 
@@ -241,7 +288,7 @@ Export-ModuleMember -Cmdlet * -Function * -Alias *
                 Language             = 'CSharpVersion3'
                 OutputAssembly       = $dllPath
                 PassThru             = $PassthruTypes
-                ReferencedAssemblies = $types | 
+                ReferencedAssemblies = $filteredTypes | 
                     Select-Object -ExpandProperty Assembly -Unique | 
                     ForEach-Object { @($_) + @($_.GetReferencedAssemblies()) | Select-Object -Unique } |
                     Where-Object { "MSCorLib","System","System.Core" -notcontains $_.Name } | 

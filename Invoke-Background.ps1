@@ -4,11 +4,11 @@ function Invoke-Background
     param(
     # A Script block to run in the background.
     # To pass parameters to this script block, add a param() statement
-    [Parameter(Mandatory=$true,ParameterSetName='ScriptBlock')]
+    [Parameter(Mandatory=$true,ParameterSetName='ScriptBlock',Position=0)]
     [ScriptBlock]$ScriptBlock,
     
-    # Invoke a in the background
-    [Parameter(Mandatory=$true,ParameterSetName='Command')]
+    # Invoke a command in the background
+    [Parameter(Mandatory=$true,ParameterSetName='Command',Position=0)]
     [string]
     $Command,    
     
@@ -136,7 +136,6 @@ function Invoke-Background
             return
         }        
         
-        $realCommand = $target.DataContext.Command.Runspace.SessionStateProxy.InvokeCommand.GetCommand($command, "All") 
         if ($parameter) {
             $target.DataContext.Command.Runspace.SessionStateProxy.PSVariable.Set('CommandParameters', $parameter)
             if ($debugPreference -ne 'SilentlyContinue') {
@@ -145,6 +144,7 @@ function Invoke-Background
             if ($psCmdlet.ParameterSetName -eq 'scriptBlock') {
                 $target.DataContext.Script = ". { $ScriptBlock} @commandParameters"
             } else {
+                $realCommand = $target.DataContext.Command.Runspace.SessionStateProxy.InvokeCommand.GetCommand($command, "All") 
                 $target.DataContext.Script = "$($realCommand.Name) @commandParameters"
             }
             $target.DataContext.Resources.Parameter = $parameter

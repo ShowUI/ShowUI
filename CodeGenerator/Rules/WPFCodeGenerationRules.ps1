@@ -81,7 +81,7 @@ Add-CodeGenerationRule -Filter {
     
     # The last thing the command should do is output the object
     $null = $ProcessBlocks.AddLast(([ScriptBlock]::Create("
-        `$Object")))
+        Write-Output (,`$Object)")))
     
     
     # Collect all of the parameters for the type and add them to the parameters to the command    
