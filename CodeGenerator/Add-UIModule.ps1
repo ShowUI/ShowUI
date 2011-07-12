@@ -125,6 +125,14 @@ function Add-UIModule
     [Parameter(ParameterSetName='Type', Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
     [Type[]]
     $Type,
+
+    [Parameter()]
+    [String[]]
+    $TypeNameWhiteList,
+
+    [Parameter()]
+    [String[]]
+    $TypeNameBlackList,
     
     # The name of the module to create (either a simple name, or a full path to the psd1)
     [string]
@@ -140,16 +148,7 @@ function Add-UIModule
     $Import,
     
     [switch]
-    $PassthruCode,
-    
-    [switch]
-    $PassthruTypes,
-    
-    [switch]
-    $PassthruAssembly,
-    
-    [switch]
-    $PassthruModule,
+    $Passthru,
     
     [ScriptBlock]
     $On_ImportModule,
@@ -169,7 +168,7 @@ function Add-UIModule
             $filteredTypes = $type
         } else {
             $requiredAssemblies += @($Path) + @($AssemblyName)
-            $filteredTypes = Select-UIType -Path @($Path) -AssemblyName @($AssemblyName)
+            $filteredTypes = Select-UIType -Path @($Path) -AssemblyName @($AssemblyName) -TypeNameWhiteList @($TypeNameWhiteList) -TypeNameBlackList @($TypeNameBlackList)
         }
         $ofs = [Environment]::NewLine
         $count = @($filteredTypes).Count
@@ -191,10 +190,7 @@ function Add-UIModule
     end {
         $resultList = $resultList | Where-Object { $_ }
         $ConstructorCmdletNames = $ConstructorCmdletNames | Where-Object { $_ }
-        $code = "$resultList"                   
-        if ($PassthruCode) {
-            $Code
-        }
+        $code = "$resultList"
         
         if ($name.Contains("\")) {
             # It's definitely a path
@@ -287,7 +283,6 @@ Export-ModuleMember -Cmdlet * -Function * -Alias *
                 IgnoreWarnings       = $true
                 Language             = 'CSharpVersion3'
                 OutputAssembly       = $dllPath
-                PassThru             = $PassthruTypes
                 ReferencedAssemblies = $filteredTypes | 
                     Select-Object -ExpandProperty Assembly -Unique | 
                     ForEach-Object { @($_) + @($_.GetReferencedAssemblies()) | Select-Object -Unique } |
@@ -300,14 +295,11 @@ Export-ModuleMember -Cmdlet * -Function * -Alias *
             }
             
             Add-Type @addTypeParameters
-            if($PassthruAssembly){
-                Get-Item $dllPath
-            }
         }
 
         if($Import) {
-            Import-Module $moduleMetadataPath -Passthru:$PassthruModule
-        } elseif($PassthruModule) {
+            Import-Module $moduleMetadataPath -Passthru:$Passthru
+        } elseif($Passthru) {
             Get-Module $Name -ListAvailable
         }
     }    
