@@ -1,36 +1,44 @@
 param(
-[ValidateSet('Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing', 'ResetStyles')]
+[ValidateSet('CleanCore','Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing', 'ResetStyles')]
 [string]
 $LoadBehavior = 'Normal'
 )
-
+$CommandsPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
+$CoreOutputPath = "$psScriptRoot\GeneratedAssemblies\ShowUICore.CLR$($psVersionTable.clrVersion).dll"
 #region Cleanup Parameter Handling
- 
+
 if ($LoadBehavior -eq 'DoNothing') { return } 
 
 # turn off strict mode for the module context
 Set-StrictMode -Off
-
-if ('Clean', 'CleanAndDoNothing', 'ResetStyles') {
-    Remove-Item $psScriptRoot\Styles -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+if ('Clean', 'CleanCore', 'CleanAndDoNothing', 'ResetStyles' -contains $LoadBehavior) {
+    Remove-Item $psScriptRoot\Styles -Recurse -Force -ErrorAction SilentlyContinue
 }
-
-if ('Clean', 'CleanAndDoNothing' -contains $LoadBehavior) {
-    Remove-Item $psScriptRoot\GeneratedAssemblies -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
-    Remove-Item $psScriptRoot\GeneratedCode -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+# If they said CleanCore not CleanAll, then leave the Commands in place
+if('CleanCore' -eq $LoadBehavior) {
+    $exclude = "ShowUI.CLR$($psVersionTable.clrVersion)*"
+}
+if ('Clean', 'CleanCore', 'CleanAndDoNothing' -contains $LoadBehavior) {
+    Get-ChildItem $psScriptRoot\GeneratedAssemblies -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+    Get-ChildItem $psScriptRoot\GeneratedCode  -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
     if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
 
 #endregion
 
 
-#region Rule Loading
-$WinFormsIntegration = "WindowsFormsIntegration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+#region Assembly Loading
+$Assemblies = 
+[Reflection.Assembly]::Load("WindowsBase, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"),
+[Reflection.Assembly]::Load("PresentationFramework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"),
+[Reflection.Assembly]::Load("PresentationCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"),
+[Reflection.Assembly]::Load("WindowsFormsIntegration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35")
 
-$Assemblies = [Reflection.Assembly]::LoadWithPartialName("WindowsBase"),
-            [Reflection.Assembly]::LoadWithPartialName("PresentationFramework"),
-            [Reflection.Assembly]::LoadWithPartialName("PresentationCore"),
-            [Reflection.Assembly]::Load($WinFormsIntegration)
+if ($PSVersionTable.ClrVersion.Major -ge 4) {
+    $Assemblies += [Reflection.Assembly]::Load("System.Xaml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
+}
 #endregion
 
 #region Code Generator Functions
@@ -94,27 +102,28 @@ $script:UIStyles = @{}
 
 if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
-$types = . $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1
-
-
-$importPath = "$psScriptRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
-if (Test-Path $importPath) {
-    $importedModule= Import-Module $importPath -PassThru
+if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
+    $importedModule  = Import-Module $CommandsPath, $CoreOutputPath -PassThru
 } else {
-    $importedModules = $types | Select-Object -ExpandProperty Assembly -Unique | Import-Module
+    # Pass Parameters so we don't have to calculate them twice
+    . $psScriptRoot\CodeGenerator\InstallShowUIAssembly.ps1 `
+        -OutputPathBase "$psScriptRoot\GeneratedAssemblies\" `
+        -CommandPath $CommandsPath `
+        -CoreOutputPath $CoreOutputPath `
+        -Assemblies $Assemblies `
+        -Force:$($LoadBehavior -eq 'CleanAll')
+
+    $importedModule  = Import-Module $CommandsPath, $CoreOutputPath -PassThru
 }
 ## Fix xaml Serialization 
 [ShowUI.XamlTricks]::FixSerialization()
-
-$importedCommands = $importedModule.ExportedCommands.Values
-$toAlias = $importedCommands | 
-    Where-Object {
-        $_.Verb -eq 'New'
+## Generate aliases for all the New-* cmdlets
+$importedCommands = @()
+foreach($m in @($importedModule)) {
+    $importedCommands += $m.ExportedCommands.Values
+    foreach($ta in $importedCommands | Where-Object { $_.Verb -eq 'New' }) {
+        Set-Alias -Name $ta.Noun -Value "$ta"
     }
-
-foreach ($ta in $toAlias) {
-    if (-not $ta) { continue } 
-    Set-Alias -Name $ta.Noun -Value "$ta"
 }
 
 #region Styles
@@ -185,9 +194,6 @@ if (-not (Test-Path $psScriptRoot\Styles)) {
             }
         }
     }
-
-
-    
 } else {
     Use-UiStyle "Current"
 }
