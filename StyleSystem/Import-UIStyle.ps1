@@ -2,7 +2,7 @@ function Import-UIStyle
 {
     [CmdletBinding(DefaultParameterSetName='EasyName')]
     param(
-    [Parameter(ParameterSetName='Fullname',
+    [Parameter(ParameterSetName='FileName',
         Mandatory=$true,
         ValueFromPipelineByPropertyName=$true)]
     [Alias('Fullname')]
@@ -18,7 +18,7 @@ function Import-UIStyle
     )
     
     process {
-        if ($psCmdlet.ParameterSetName -eq 'Filename') {
+        if ($psCmdlet.ParameterSetName -eq 'FileName') {
             try {
                 $imported = Import-Clixml $FileName
                 if ($imported.psobject.typenames[0] -ne 'Deserialized.System.Collections.Hashtable') {
@@ -32,7 +32,8 @@ function Import-UIStyle
             $found = $false
             foreach ($style in (Get-ChildItem -Filter *.style -Path $psScriptRoot\Styles)) {
                 if ($Name -eq $style.Name.Replace(".style","")) {
-                    Import-UIStyle -FileName $style.Fullname
+                    Import-UIStyle -FileName $style.Fullname -ErrorVariable failed
+                    $found = $failed.Count -eq 0
                 }
             }
             if (-not $found) {
