@@ -32,7 +32,9 @@ begin {
         'System.Windows.Input.NavigationCommands',
         'System.Windows.Input.MediaCommands',
         'System.Windows.Documents.EditingCommands',
-        'System.Windows.Input.CommandBinding' ) | Select -Unique
+        'System.Windows.Input.CommandBinding',
+        'System.Windows.ResourceDictionary',
+        'Windows.Threading.DispatcherTimer' ) | Select -Unique
 
     $TypeNameBlackList = $TypeNameBlackList + @(
         'System.Windows.Threading.DispatcherFrame', 
@@ -72,7 +74,7 @@ process {
                         $Type += $asm.GetTypes()
                     }
                 } catch {
-                    Write-Error $err                                     
+                    Write-Error $err
                     Write-Error $_
                 }
             }
@@ -216,7 +218,7 @@ function Add-UIModule {
                 $Path[$p] = $ExecutionContext.SessionState.Path.GetResolvedPSPathFromPSPath(($Path[$p]))
             }
             $RequiredAssemblies += @($Path) + @($AssemblyName)
-            Write-Progress "Filtering Types" " " -ParentId $progressId -Id $childId
+            Write-Progress "Filtering Types" " " -ParentId $ProgressParentId -Id $ProgressId
             $filteredTypes = Select-UIType -Path @($Path) -AssemblyName @($AssemblyName) -TypeNameWhiteList @($TypeNameWhiteList) -TypeNameBlackList @($TypeNameBlackList)
         }
         $ofs = [Environment]::NewLine

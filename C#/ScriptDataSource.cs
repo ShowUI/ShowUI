@@ -14,8 +14,8 @@ namespace PoshWpf.Data {
       public ScriptBlock Script { get; set; }
 
       [Parameter(Mandatory = false, Position = 1, ParameterSetName = "Interval", HelpMessage = "Delay between re-running the script")]
-      [Alias("TimeSpan")]
-      public TimeSpan Each { get; set; }
+      [Alias("TimeSpan","Every","Each")]
+      public TimeSpan Interval { get; set; }
 
       [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays"),
        Parameter(Mandatory = false, Position = 10, HelpMessage = "Input parameters to the ScriptBlock", ValueFromRemainingArguments = true, ValueFromPipeline = true)]
@@ -42,7 +42,7 @@ namespace PoshWpf.Data {
 
       [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
       protected override void EndProcessing() {
-         WriteObject(new ScriptDataSource(Script, _input, Each, AccumulateOutput.ToBool(), LongRunning.ToBool()));
+         WriteObject(new ScriptDataSource(Script, _input, Interval, AccumulateOutput.ToBool(), LongRunning.ToBool()));
 
          base.EndProcessing();
       }
@@ -127,7 +127,7 @@ namespace PoshWpf.Data {
 
       public IAsyncResult Invoke(IList<PSObject> input) {
          using (var inputCollection = (input != null && input.Count > 0) ? new PSDataCollection<PSObject>(input) : new PSDataCollection<PSObject>()) {
-            Console.WriteLine( "There were " + this.Count );
+            Console.WriteLine("There were " + this.Count);
 
             if (!AccumulateOutput) {
                Clear();
@@ -135,8 +135,8 @@ namespace PoshWpf.Data {
 
             return _powerShellCommand.BeginInvoke<PSObject, PSObject>(inputCollection, this, new PSInvocationSettings(), (e) => {
                if (CollectionChanged != null) {
-                  Console.WriteLine( "There are " + this.Count );
-                  CollectionChanged.Invoke( this,  new NotifyCollectionChangedEventArgs( AccumulateOutput ? NotifyCollectionChangedAction.Add : NotifyCollectionChangedAction.Reset ));
+                  Console.WriteLine("There are " + this.Count);
+                  CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
                }
             }, null);
          }

@@ -11,11 +11,10 @@ function Register-PowerShellCommand {
         The name of the PowerShell command
     .Parameter ScriptBlock
         The script block to run
-    .Parameter In
+    .Parameter Interval
         The repeat interval of the command.
     .Parameter Run
-        If set, will start running the command as 
-        soon as it is registered
+        If set, will start running the command as soon as it is registered
     .Parameter Once
         If set, will only run the command once
     .Example
@@ -30,16 +29,19 @@ New-Label "$($d = Get-Date ;$d.ToLongDateString() + ' ' + $d.ToLongTimeString())
     } -AsJob
     #>
     param(
-    [Parameter(ValueFromPipelineByPropertyName=$true)]
-    $Name,
-    [Parameter(Mandatory=$true,
-        ValueFromPipelineByPropertyName=$true)]
+    [Parameter(Position=0, Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
     [Alias('Definition')]
     [ScriptBlock]
     $ScriptBlock,
+    
+    [Parameter(Position=1, Mandatory=$false, ValueFromPipelineByPropertyName=$true)]
+    [Timespan]$Interval = ([Timespan]0),
+    
     [Parameter(ValueFromPipelineByPropertyName=$true)]
-    [Timespan]$In = ([Timespan]0),
+    $Name,
+    
     [switch]$Run,
+    
     [switch]$Once    
     )
     process {        
@@ -56,7 +58,7 @@ New-Label "$($d = Get-Date ;$d.ToLongDateString() + ' ' + $d.ToLongTimeString())
                 $window.Resources.Scripts.$name = $scriptBlock                
             }
             if ($run) {                
-                Start-PowerShellCommand $name -interval $in
+                Start-PowerShellCommand $name -interval $interval
             }
         }
     }
