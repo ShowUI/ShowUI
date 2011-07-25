@@ -117,12 +117,16 @@ if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
 }
 ## Fix xaml Serialization 
 [ShowUI.XamlTricks]::FixSerialization()
+
 ## Generate aliases for all the New-* cmdlets
+## Ideally, with the module name on it: ShowUI\New-Whatever
+[String]$ModulePath = $ExecutionContext.SessionState.Module.Name + "\"
+if($ModulePath.Length -le 1) { $ModulePath = "" }
 $importedCommands = @()
 foreach($m in @($importedModule)) {
     $importedCommands += $m.ExportedCommands.Values
     foreach($ta in $importedCommands | Where-Object { $_.Verb -eq 'New' }) {
-        Set-Alias -Name $ta.Noun -Value "$ta"
+        Set-Alias -Name $ta.Noun -Value "$ModulePath$ta"
     }
 }
 
@@ -207,6 +211,7 @@ if (-not (Test-Path $psScriptRoot\Styles)) {
 . $psScriptRoot\CommonControls\Select-ViaUI.ps1
 . $psScriptRoot\CommonControls\Edit-StringList.ps1
 . $psScriptRoot\CommonControls\Get-Input.ps1
+. $psScriptRoot\CommonControls\New-UIWidget.ps1
 #endregion Common Controls
 
 Export-ModuleMember -Cmdlet * -Function * -Alias *
