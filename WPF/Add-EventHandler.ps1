@@ -16,40 +16,55 @@ function Add-EventHandler {
         The name of the event (i.e. Loaded)
     .Parameter Handler
         The script block that will handle the event
-    .Parameter Extra
-        An extra script block that will be appended to 
-        the initial script block.  By default, extra adds 
-        a trap that turns terminating errors into non-terminating 
-        errors, which can result in more stable user interfaces.
+    .Parameter SourceType
+        For RoutedEvents, the type that originates the event
     .Parameter PassThru 
         If this is set, the delegate that is added to the object will
         be returned from the function.
     #>
     param(
-    [Parameter(ValueFromPipeline=$true,
-        Mandatory=$true)]
+    [Parameter(ValueFromPipeline=$true, Mandatory=$true, Position = 0, ParameterSetName="SimpleEvents")]
     [ValidateNotNull()]
-    $Object,
+    [Alias("Object")]
+    $InputObject,
     
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, Position=1)]
     [String]
     $EventName,
     
+    [Parameter(Mandatory=$true, Position=2)]
     [ScriptBlock]
-    $Handler,        
+    $Handler,
+    
+    [Parameter(Mandatory=$false)]
+    [String]
+    $SourceType,
     
     [Switch]
     $PassThru  
     )
     
     process {
+        if($SourceType) {
+            $Type = $SourceType -as [Type]
+            if(!$Type) {
+                $Type = (Get-Command $SourceType).OutputType[0].Type
+            }
+            if(!$Type) {
+                Write-Error "Can't determine type from '$SourceType', you should pass either a Type or the name of a ShowUI command that outputs a UI Element. We will try the InputObject(s)"
+                $Type = $InputObject.GetType()
+            }
+        } else {
+            $Type = $InputObject.GetType()
+        }
+        
         if ($eventName.StartsWith("On_")) {
             $eventName = $eventName.Substring(3)
         }
-        $Event = $object.GetType().GetEvent($EventName, 
-            [Reflection.BindingFlags]"IgnoreCase, Public, Instance")
+        
+        $Event = $Type.GetEvent($EventName, [Reflection.BindingFlags]"IgnoreCase, Public, Instance")
         if (-not $Event) {
-            Write-Error "Handler $EventName does not exist on $Object"
+            Write-Error "Handler $EventName does not exist on $InputObject"
             return
         }       
                 
@@ -65,15 +80,22 @@ trap {
     continue
 }
 "@)) -as $event.EventHandlerType
-        if ($Object.Resources) {
-            if (-not $Object.Resources.EventHandlers) {
-                $Object.Resources.EventHandlers = @{}
+
+        if($realHandler -is [System.Windows.RoutedEventHandler] -and $Type::"${EventName}Event" ) {
+            $InputObject.AddHandler( $Type::"${EventName}Event", $realHandler )
+        } else {
+
+            if ($InputObject.Resources) {
+                
+                if (-not $InputObject.Resources.EventHandlers) {
+                    $InputObject.Resources.EventHandlers = @{}
+                }
+                $InputObject.Resources.EventHandlers."On_$EventName" = $realHandler
             }
-            $Object.Resources.EventHandlers."On_$EventName" = $realHandler
+            #$InputObject."add_$($Event.Name)".Invoke(@($realHandler))
+            #$event.GetAddMethod().Invoke($InputObject, @($realHandler))
+            $event.AddEventHandler($InputObject, $realHandler)
         }
-        #$event.GetAddMethod().Invoke($object, @($realHandler))
-        $object."add_$($Event.Name)".Invoke(@($realHandler))
-        
         if ($passThru) {
             $RealHandler
         }
