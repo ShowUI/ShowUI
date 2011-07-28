@@ -24,15 +24,16 @@ function Set-UIValue
     }
     
     process {
-        if ($psBoundParameters.ContainsKey('Value')) {
-            $ui.Tag = $value
-            $Ui.DataContext = $value            
-        } else {
-            $uiValue = Get-UIValue -Ui $ui
-            $ui.Tag = $uiValue
-            $ui.DataContext = $uiValue
-        }    
-        
+        if($ui) {
+            if ($psBoundParameters.ContainsKey('Value')) {
+                $ui.Tag = $value
+                $Ui.DataContext = $value            
+            } else {
+                $uiValue = Get-UIValue -Ui $ui
+                $ui.Tag = $uiValue
+                $ui.DataContext = $uiValue
+            }    
+        }
         if ($passThru) {
             $ui
         }    
