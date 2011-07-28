@@ -107,7 +107,6 @@ end {
                     Select-Object width, alignment, @{n="label";e={if($_.label){$_.label}else{$_.propertyName}}} | 
                     Where-Object { $_.label -ne "OriginalItem" } 
     } else {
-        Write-Warning $psBoundParameters.Keys
         ## Convert input to string representations and store ...
         $Strings = $Items | Format-Table | Tee-Object -variable formattedData | Out-String -Width 10000 -Stream
         $tableColumnInfo = $formattedData[0].shapeInfo.tableColumnInfoList | Select-Object width, alignment, @{n="label";e={if($_.label){$_.label}else{$_.propertyName}}}
@@ -169,7 +168,7 @@ Grid -Margin 5 -Name Grid -ControlName SelectFTList -Rows Auto, *, Auto, Auto -C
     ScrollViewer -Margin 5 -Row 1 {
         ListView -SelectionMode Extended -ItemsSource $SelectViaUIStringItems -Name SelectedItems `
                 -FontFamily "Consolas, Courier New" -View {
-                    GridView {
+                    GridView -Columns {
                         foreach($h in $tableColumnInfo) {
                             GridViewColumn -Header $h.label -DisplayMember { Binding $h.Label }
                         }

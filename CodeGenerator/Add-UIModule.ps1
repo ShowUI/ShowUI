@@ -334,8 +334,10 @@ Export-ModuleMember -Cmdlet * -Function * -Alias *
         
         if ($AsCmdlet) {
             if($PSVersionTable.CLRVersion -ge "4.0") {
-                $RequiredAssemblies += "System.Xaml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                $RequiredAssemblies += @("System.Xaml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", 
+                                         "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
             }
+
             
             $AddTypeParameters = @{
                 TypeDefinition       = $code

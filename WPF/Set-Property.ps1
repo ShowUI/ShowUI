@@ -32,8 +32,7 @@ function Set-Property
     [Switch]$PassThru
     )
        
-    process {    
-                                
+    process {
         $inAsJob  = $host.Name -eq 'Default Host'
         if ($inputObject.GetValue -and 
             ($inputObject.GetValue([ShowUI.ShowUISetting]::StyleNameProperty))) {
@@ -53,13 +52,13 @@ function Set-Property
         }
             
         if ($property) {
+            # Write-Verbose "Setting $($property.Keys -join ',') on $InputObject"
             $p = $property
             foreach ($k in $p.Keys) {
-
                 $realKey = $k
                 if ($k.StartsWith("On_")) {
                     $realKey = $k.Substring(3)
-                }                
+                }
 
                 if ($inputObject.GetType().GetEvent($realKey)) {
                     # It's an Event!
@@ -69,40 +68,41 @@ function Set-Property
                     continue
                 }
                 
-                $realItem  = $inputObject.psObject.Members[$realKey]                 
+                $realItem  = $inputObject.psObject.Members[$realKey]
                 if (-not $realItem) { 
                     continue 
                 }
 
                 $itemName = $realItem.Name
                 if ($realItem.MemberType -eq 'Property') {
-                    if ($realItem.Value -is [Collections.IList]) {                                                                                               
+                    if ($realItem.Value -is [Collections.IList]) {
                         $v = $p[$realKey]
+                        # Write-Host "$itemName is collection on $inputObject " -fore cyan -nonewline
                         $collection = $inputObject.$itemName
                         if (-not $v) { continue } 
                         if ($v -is [ScriptBlock]) { 
-                            if ($inAsJob) {                            
+                            if ($inAsJob) {
                                 $v = . ([ScriptBlock]::Create($v))
                             } else {
                                 $v = . $v
                             }
-                        }                         
+                        }
                         if (-not $v) { continue } 
 
-                        foreach ($ri in $v) {                                                                
+                        foreach ($ri in $v) {
+                            # Write-Host "`n`tAdding $ri to $inputObject.$itemName" -fore cyan -nonewline
                             $null = $collection.Add($ri)
                             trap [Management.Automation.PSInvalidCastException] {
                                 $label = New-Label $ri
                                 $null = $collection.Add($label)
                                 continue
-                            }                        
+                            }
                         }
-                    } else {                                                                                                        
-                        
-                        $v = $p[$realKey]                            
-                                                    
+                        # Write-Host
+                    } else {
+                        $v = $p[$realKey]
                         if ($v -is [ScriptBlock]) {
-                            if ($inAsJob) {                            
+                            if ($inAsJob) {
                                 $v = . ([ScriptBlock]::Create($v))
                             } else {
                                 $v = . $v
@@ -112,7 +112,7 @@ function Set-Property
                         if ($allowXaml) {
                             $xaml = ConvertTo-Xaml $v
                             if ($xaml) {
-                                try {                                            
+                                try {
                                     $rv = [Windows.Markup.XamlReader]::Parse($xaml)
                                     if ($rv) { $v = $rv } 
                                 }
@@ -165,7 +165,6 @@ function Set-Property
                                 $inputObject.$itemName = $v
                             }
                         } else {
-                            if($Global:Trace) { Write-Host "NOT BINDING" }
                             $inputObject.$itemName = $v
                         }
                     }                            

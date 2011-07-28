@@ -122,6 +122,7 @@ $ValueConverter = [IO.File]::ReadAllText("$psScriptRoot\C#\LanguagePrimitivesVal
 $wpfJob = [IO.File]::ReadAllText("$psScriptRoot\C#\WPFJob.cs")
 $PowerShellDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\PowerShellDataSource.cs")
 $OutXamlCmdlet = [IO.File]::ReadAllText("$psScriptRoot\C#\OutXaml.cs")
+$ScriptDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\ScriptDataSource.cs")
 
 $generatedCode = "
 $controlNameDependencyObject
@@ -131,6 +132,7 @@ $wpfJob
 $PowerShellDataSource
 $generatedCode
 $OutXamlCmdlet
+$ScriptDataSource
 "
 
 $CoreSourceCodePath  =   "$SourcePathBase\ShowUICore.CLR$($psVersionTable.clrVersion).cs"
@@ -143,10 +145,13 @@ try {
     $_ | Out-String | Write-Debug
 }
 
-$RequiredAssemblies = $Assemblies + @("System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", 
-                                      "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
+$RequiredAssemblies = $Assemblies + @("System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
+                                      
+if ($PSVersionTable.ClrVersion.Major -ge 4) {
+    $RequiredAssemblies += "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+}
 
-$addTypeParameters = @{
+$global:addTypeParameters = @{
     TypeDefinition=$generatedCode
     IgnoreWarnings=$true
     ReferencedAssemblies=Get-AssemblyNames -RequiredAssemblies $RequiredAssemblies -ExcludedAssemblies "MSCorLib","System"

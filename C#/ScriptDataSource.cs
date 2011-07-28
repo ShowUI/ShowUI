@@ -126,7 +126,9 @@ namespace PoshWpf.Data {
       }
 
       public IAsyncResult Invoke(IList<PSObject> input) {
-         using (var inputCollection = (input != null && input.Count > 0) ? new PSDataCollection<PSObject>(input) : new PSDataCollection<PSObject>()) {
+         using (var inputCollection = (input != null && input.Count > 0) 
+                    ? new PSDataCollection<PSObject>(input)
+                    : new PSDataCollection<PSObject>()) {
             Console.WriteLine("There were " + this.Count);
 
             if (!AccumulateOutput) {

@@ -86,6 +86,7 @@ $script:UIStyles = @{}
 . $psScriptRoot\Export-Application.ps1
 . $psScriptRoot\Register-PowerShellCommand.ps1
 
+. $psScriptRoot\New-UIWidget.ps1
 . $psScriptRoot\Get-UIValue.ps1
 . $psScriptRoot\Start-PowerShellCommand.ps1
 . $psScriptRoot\Start-WPFJob.ps1
@@ -211,7 +212,6 @@ if (-not (Test-Path $psScriptRoot\Styles)) {
 . $psScriptRoot\CommonControls\Select-ViaUI.ps1
 . $psScriptRoot\CommonControls\Edit-StringList.ps1
 . $psScriptRoot\CommonControls\Get-Input.ps1
-. $psScriptRoot\CommonControls\New-UIWidget.ps1
 #endregion Common Controls
 
 Export-ModuleMember -Cmdlet * -Function * -Alias *
