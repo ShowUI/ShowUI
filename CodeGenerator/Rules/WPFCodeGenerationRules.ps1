@@ -22,15 +22,16 @@ Add-CodeGenerationRule -Filter {
         $null = $parameters.AddLast($param)
     }
     
-    $null = $processBlocks.AddFirst(
+    $AutoConstructor = $false;
+    
+    $null = $OutputBlocks.AddFirst(
         ([ScriptBlock]::Create("
         `$Type = '$($BaseType.FullName)' -as [Type]
         if (-not `$Type) { return }             
         "))
     )
     
-    $null = $processBlocks.AddAfter($processBlocks.First, {
-        
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, {
         foreach ($k in $psBoundParameters.Keys) {
             if (-not $k) {                 
                 continue 
@@ -41,9 +42,7 @@ Add-CodeGenerationRule -Filter {
 
 
 Add-CodeGenerationRule -Filter {
-    if ($_.IsAbstract) {
-        throw "Cannot create New- Script Cmdlets for Abstract Types"
-    }
+    if ($_.IsAbstract) { return $false }
     # This rule applies when there are no constructors for the given object
     $constructors = $_.GetConstructors()
     foreach ($c in $constructors) {
@@ -52,6 +51,10 @@ Add-CodeGenerationRule -Filter {
     }
     
 } -Change {
+    trap {
+        Write-Warning "Code Generation Failed: `n$($_|Out-String)"
+    }
+
     # Start with the basics, name the command
     $Verb = "New"
     $Noun = $BaseType.Name
@@ -61,29 +64,37 @@ Add-CodeGenerationRule -Filter {
     $help.Description = "Creates a new $($BaseType.FullName)"
     $help.Example = @()
     $help.Example += "New-$Noun"
-
     
-    # The first thing the command will need to do is construct the object
-    $null = $ProcessBlocks.AddFirst(([ScriptBlock]::Create("
-        try {
-        `$Object = New-Object $($BaseType.FullName)
-        } catch {
-            throw `$_
-            return
-        } ")))
+    $ContentProperties = 'Content','Child','Children','Frames','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
+    foreach($prop in $BaseType.GetProperties()) {
+        if($ContentProperties -contains $prop.Name) {
+            $BaseType.UIContentProperty = $prop.Name
+        }
+    }
+
+    # Each time through the process block, it needs to set the content property
+    $script:SetContentPropertyScriptBlock = if($BaseType.IsUIContentCollector) {
+         [ScriptBlock]::Create(@"
+        `$content = @{$($BaseType.UIContentProperty)=`$psBoundParameters.$($BaseType.UIContentProperty)}
+        Set-Property -property `$content -inputObject `$OutputObject
+"@)
+    } else { {} }
+    
     
     # Before it outputs the object, it needs to set the properties
-    if (-not $script:SetPropertyScriptBlock) {
-        $script:SetPropertyScriptBlock = {
-        Set-Property -property $psBoundParameters -inputObject $Object}
-    }
-    $null = $ProcessBLocks.AddLast(($script:SetPropertyScriptBlock))
-    
-    # The last thing the command should do is output the object
-    $null = $ProcessBlocks.AddLast(([ScriptBlock]::Create("
-        Write-Output (,`$Object)")))
-    
-    
+    $script:SetPropertyScriptBlock = 
+        [ScriptBlock]::Create(@"
+        $( if($BaseType.IsUIContentCollector) {
+        "`$null = `$psBoundParameters.Remove( `"$($BaseType.UIContentProperty)`" )"
+        } )
+        # Keep a record of the current ShowUI parameter (for later)
+        `$ShowUI = `$psBoundParameters.Show -or `$psBoundParameters.ShowUI
+        `$null = `$psBoundParameters.Remove("Show")
+        `$null = `$psBoundParameters.Remove("OutputObject")
+        `$null = `$psBoundParameters.Remove("BoundParameters")
+        Set-Property -property `$psBoundParameters -inputObject `$OutputObject
+"@)
+
     # Collect all of the parameters for the type and add them to the parameters to the command    
     $params = @(ConvertTo-ParameterMetaData -type $BaseType)
     foreach ($p in $params) {
@@ -102,11 +113,19 @@ Add-CodeGenerationRule -Filter {
         $script:OutputXamlScriptBlock = {
         if ($outputXaml) {                
             $strWrite = New-Object IO.StringWriter
-            ([xml]([Windows.Markup.XamlWriter]::Save($Object))).Save($strWrite)
+            ([xml]([Windows.Markup.XamlWriter]::Save($OutputObject))).Save($strWrite)
             return "$strWrite"
         }}
-    }    
-    $null = $processBlocks.AddBefore($processBlocks.Last, $script:OutputXamlScriptBlock)
+    }
+    
+    if($BaseType.IsUIContentCollector) {
+        # Each time through the process block, it needs to set the content property
+        $null = $ProcessBlocks.AddLast(($script:SetContentPropertyScriptBlock))
+    }
+    # Before it outputs the object, it needs to set all the properties
+    $null = $OutputBlocks.AddLast(($script:SetPropertyScriptBlock))
+    # The last thing the command should do is output the object
+    $null = $OutputBlocks.AddLast($script:OutputXamlScriptBlock)
 }
 
 $ResourceChange = {
@@ -149,7 +168,7 @@ $ResourceChange = {
             if ($psBoundParameters.ContainsKey("Resource")) {                
                 foreach ($kv in $psBoundParameters['Resource'].GetEnumerator())
                 {
-                    $null = $object.Resources.Add($kv.Key, $kv.Value)
+                    $null = $OutputObject.Resources.Add($kv.Key, $kv.Value)
                     if ('Object', 'psBoundParameters' -notcontains $kv.Key -and
                         $psBoundParameters.Keys -notcontains $kv.Key) {
                         Set-Variable -Name $kv.Key -Value $kv.Value
@@ -158,8 +177,7 @@ $ResourceChange = {
             } 
         }
     }
-    
-    $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $Script:ResourceBlock)        
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, $Script:ResourceBlock)
 }
 
 Add-CodeGenerationRule -Type ([Windows.FrameworkTemplate]) -Change $ResourceChange
@@ -181,12 +199,12 @@ Add-CodeGenerationRule -Type ([Windows.FrameworkElement]) -Change ([ScriptBlock]
             $null = $psBoundParameters.Remove("DataBinding")
             foreach ($db in $DataBinding.GetEnumerator()) {
                 if ($db.Key -is [Windows.DependencyProperty]) {
-                    $Null = $Object.SetBinding($db.Key, $db.Value)
+                    $Null = $OutputObject.SetBinding($db.Key, $db.Value)
                 } else {
-                    $Prop = $Object.GetType()::"$($db.Key)Property"
+                    $Prop = $OutputObject.GetType()::"$($db.Key)Property"
                     if ($Prop) {
                         Write-Debug (
-                        $Object.SetBinding(
+                        $OutputObject.SetBinding(
                             $Prop,
                             $db.Value) | Out-String
                         ) 
@@ -196,28 +214,28 @@ Add-CodeGenerationRule -Type ([Windows.FrameworkElement]) -Change ([ScriptBlock]
         }}
     }
     
-    $null = $processBlocks.AddAfter($processBlocks.First,  
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First,  
         $script:CachedDataBindingHandler)
         
     if (-not $script:CachedUidGenerationHandler) {
         $script:CachedUidGenerationHandler = {
-            $Object.Uid = [GUID]::NewGuid()
+            $OutputObject.Uid = [GUID]::NewGuid()
         }
     }
 
-    $null = $processBlocks.AddAfter($processBlocks.First,  
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First,  
         $script:CachedUidGenerationHandler)
 
     if (-not $script:CachedBuiltinResources) {
         $script:CachedBuiltinResources = {
-    $Object.Resources.Timers = 
+    $OutputObject.Resources.Timers = 
         New-Object Collections.Generic.Dictionary["string,Windows.Threading.DispatcherTimer"]
-    $Object.Resources.TemporaryControls = @{}
-    $Object.Resources.Scripts =
+    $OutputObject.Resources.TemporaryControls = @{}
+    $OutputObject.Resources.Scripts =
         New-Object Collections.Generic.Dictionary["string,ScriptBlock"]
     }}
 
-    $null = $processBlocks.AddAfter($processBlocks.First,
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First,
         $script:CachedBuiltInResources)
 
 }))
@@ -239,7 +257,7 @@ Add-CodeGenerationRule -Filter {
         }}
     }
     
-    $null = $processBlocks.AddAfter($processBlocks.First, 
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
         $script:CommandShortscriptBlock)
 }
 
@@ -257,11 +275,11 @@ Add-CodeGenerationRule -Type ([Windows.UIElement]) -Change {
             $null = $PsBoundParameters.Remove("RoutedEvent")
             foreach ($re in $RoutedEvent.GetEnumerator()) {
                 if ($re.Key -is [Windows.RoutedEvent]) {
-                    $Null = $Object.AddHandler($re.Key, $re.Value -as $re.Key.HandlerType)
+                    $Null = $OutputObject.AddHandler($re.Key, $re.Value -as $re.Key.HandlerType)
                 } else {
-                    $Event = $object.GetType()::"$($re.Key)Event"
+                    $Event = $OutputObject.GetType()::"$($re.Key)Event"
                     if ($Event) {
-                        $null = $Object.AddHandler(
+                        $null = $OutputObject.AddHandler(
                             $Event,
                             $re.Value -as $Event.HandlerType
                         ) 
@@ -270,7 +288,7 @@ Add-CodeGenerationRule -Type ([Windows.UIElement]) -Change {
             }
         }}
     }
-    $null = $processBlocks.AddAfter($ProcessBlocks.First, 
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
         $script:CachedRoutedEventBlock)
 }
 
@@ -327,7 +345,7 @@ New-Grid -Rows 'Auto', 'Auto', 'Auto', '1*', 'Auto' `
         if ($psBoundParameters.ContainsKey("Columns")) {
             $realColumns = ConvertTo-GridLength $columns
             foreach ($rc in $realColumns) {        
-                $null = $Object.ColumnDefinitions.Add((
+                $null = $OutputObject.ColumnDefinitions.Add((
                     New-Object Windows.Controls.ColumnDefinition -Property @{
                         Width = $rc
                     }))       
@@ -337,7 +355,7 @@ New-Grid -Rows 'Auto', 'Auto', 'Auto', '1*', 'Auto' `
         if ($psBoundParameters.ContainsKey("Rows")) {
             $realRows = ConvertTo-GridLength $rows
             foreach ($rr in $realRows) {        
-                $null = $Object.RowDefinitions.Add((
+                $null = $OutputObject.RowDefinitions.Add((
                     New-Object Windows.Controls.RowDefinition -Property @{
                         Height = $rr
                     }))       
@@ -346,7 +364,7 @@ New-Grid -Rows 'Auto', 'Auto', 'Auto', '1*', 'Auto' `
         }}
     }
     
-    $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $Script:CachedGridHandlerBlock)
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, $Script:CachedGridHandlerBlock)
 }
 
 Add-CodeGenerationRule -Type ([Windows.DependencyObject]) -Change {
@@ -362,11 +380,11 @@ Add-CodeGenerationRule -Type ([Windows.DependencyObject]) -Change {
             $null = $PsBoundParameters.Remove("DependencyProperty")
             foreach ($dp in $dependencyProperty.GetEnumerator()) {
                 if ($dp.Key -is [Windows.DependencyProperty]) {
-                    $Null = $Object.SetValue($dp.Key, $dp.Value)
+                    $Null = $OutputObject.SetValue($dp.Key, $dp.Value)
                 } else {
-                    $Prop = $Object.GetType()::"$($dp.Key)Property"
+                    $Prop = $OutputObject.GetType()::"$($dp.Key)Property"
                     if ($Prop) {
-                        $null = $Object.SetValue(
+                        $null = $OutputObject.SetValue(
                             $Prop,
                             $dp.Value -as $Prop.PropertyType
                         ) 
@@ -375,84 +393,122 @@ Add-CodeGenerationRule -Type ([Windows.DependencyObject]) -Change {
             }
         }}
     }
-    $null = $processBlocks.AddAfter($ProcessBlocks.First, 
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
         $script:CachedDependencyPropertyBlock)   
 }
 
-Add-CodeGenerationRule -Type ([Windows.Controls.ItemsControl]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Items' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
-} 
 
-Add-CodeGenerationRule -Type ([Windows.Controls.Panel]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Children' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
+Add-CodeGenerationRule -Type ([Windows.Controls.Primitives.TextBoxBase]) -Change {
+    if($param = $parameters | Where-Object { $_.Name -eq 'Text' }) {
+        $null = $parameters.Remove($param)
+        if($param.Attributes.Count) {
+            foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+                $attribute.Position = 0;
+            }
+        } else {
+            $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 0}) )
+        }
+        $null = $parameters.AddFirst($param)
+    }
 }
 
-
-Add-CodeGenerationRule -Type ([Windows.Controls.ContentControl]) -Change {   
-        $param = $parameters | Where-Object { $_.Name -eq 'Content' }
+Add-CodeGenerationRule -Type ([Windows.Data.BindingBase]) -Change {
+    if($param = $parameters | Where-Object { $_.Name -eq 'Path' }) {
         $null = $parameters.Remove($param)
+        if($param.Attributes.Count) {
+            foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+                $attribute.Position = 0;
+            }
+        } else {
+            $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 0}) )
+        }
         $null = $parameters.AddFirst($param)
+    }
+}
+
+Add-CodeGenerationRule -Filter { 
+    $ContentProperties = 'Content','Child','Children','Frames','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
+    foreach($prop in $_.GetProperties()) {
+        if($ContentProperties -contains $prop.Name) { 
+            return $true
+        }
+    }
+} -Change {
+    $ContentProperties = 'Content','Child','Children','Frames','Items','Pages','Blocks','Inlines','GradientStops','Source','DataPoints', 'Series', 'VisualTree'
+    if($param = @( $parameters | Where-Object { $ContentProperties -contains $_.Name } )[0]) {
+        $null = $parameters.Remove($param)
+        if($param.Attributes.Count) {
+            foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+                $attribute.Position = 5;
+                $attribute.ValueFromPipeline = $True;
+            }
+        } else {
+            $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{ValueFromPipeline = $True; Position = 5}) )
+        }
+        $null = $parameters.AddFirst($param)
+    }
 }
 
 Add-CodeGenerationRule -Type ([Windows.Controls.HeaderedContentControl]) -Change {
     $param = $parameters | Where-Object { $_.Name -eq 'Header' }
     $null = $parameters.Remove($param)
+    if($param.Attributes.Count) {
+        foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+            $attribute.Position = 0;
+        }
+    } else {
+        $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 0}) )
+    }
     $null = $parameters.AddFirst($param)
 }
 
 Add-CodeGenerationRule -Type ([Windows.Controls.HeaderedItemsControl]) -Change {
     $param = $parameters | Where-Object { $_.Name -eq 'Header' }
     $null = $parameters.Remove($param)
+    if($param.Attributes.Count) {
+        foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+            $attribute.Position = 0;
+        }
+    } else {
+        $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 0}) )
+    }
     $null = $parameters.AddFirst($param)
 }
 
-Add-CodeGenerationRule -Type ([Windows.Documents.Paragraph]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Inlines' }
+Add-CodeGenerationRule -Type ([Windows.Controls.GridView]) -Change {
+    $param = $parameters | Where-Object { $_.Name -eq 'Columns' }
     $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
-}
-
-Add-CodeGenerationRule -Type ([Windows.Documents.Span]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Inlines' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
-}
-
-Add-CodeGenerationRule -Type ([Windows.Documents.FlowDocument]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Blocks' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
-}
-
-Add-CodeGenerationRule -Type ([Windows.Controls.Primitives.TextBoxBase]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Text' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
-}
-
-Add-CodeGenerationRule -Type ([Windows.Controls.Border]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Child' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
-}
-
-
-Add-CodeGenerationRule -Type ([Windows.Media.GradientBrush]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'GradientStops' }
-    $null = $parameters.Remove($param)
+    if($param.Attributes.Count) {
+        foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+            $attribute.Position = 0;
+            $attribute.ValueFromPipeline = $True;
+        }
+    } else {
+        $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 0; ValueFromPipeline = $True }) )
+    }
     $null = $parameters.AddFirst($param)
 }
 
 Add-CodeGenerationRule -Type ([Windows.Controls.GridViewColumn]) -Change {
     $param = $parameters | Where-Object { $_.Name -eq 'Header' }
     $null = $parameters.Remove($param)
+    if($param.Attributes.Count) {
+        foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+            $attribute.Position = 0;
+        }
+    } else {
+        $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 0}) )
+    }
     $null = $parameters.AddFirst($param)
     $param = $parameters | Where-Object { $_.Name -eq 'DisplayMemberBinding' }
     $null = $parameters.Remove($param)
+    if($param.Attributes.Count) {
+        foreach($attribute in $param.Attributes | where {$_ -is [System.Management.Automation.ParameterAttribute] }) {
+            $attribute.Position = 1;
+        }
+    } else {
+        $param.Attributes.Add( (New-Object System.Management.Automation.ParameterAttribute -Property @{Position = 1}) )
+    }
     $null = $parameters.AddAfter($parameters.First, $param)
     
     if (-not $script:CachedGridViewColumnScriptBlock) {
@@ -468,21 +524,15 @@ Add-CodeGenerationRule -Type ([Windows.Controls.GridViewColumn]) -Change {
         }}
     }
     
-    $null = $processBlocks.AddAfter($processBlocks.First, 
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
         $script:CachedGridViewColumnScriptBlock)
-}
-
-Add-CodeGenerationRule -Type ([Windows.Data.BindingBase]) -Change {
-    $param = $parameters | Where-Object { $_.Name -eq 'Path' }
-    $null = $parameters.Remove($param)
-    $null = $parameters.AddFirst($param)
 }
 
 <#
 Add-CodeGenerationRule -Filter {
     $_.GetProperty("Source")    
 } -Change {    
-    $ProcessBlocks.AddFirst({
+    $OutputBlocks.AddFirst({
         Write-Debug "Trying to Set Source: $($psBoundParameters.Source)"
         if ($psBoundParameters.Source) {
             Write-Debug "Source: $($psBoundParameters.Source)"
@@ -501,10 +551,6 @@ Add-CodeGenerationRule -Filter {
 #>
 
 Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
-    # First make sure to clear Show before Set-Property gets it
-    $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, {
-        $null = $psBoundParameters.Remove("Show")})        
-
     if (-not $script:CustomControlNameParameter) {
         $Script:CustomControlNameParameter = 
             New-Object Management.Automation.ParameterMetaData "ControlName", ([string])
@@ -515,12 +561,12 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     if (-not $script:CustomControlNameBlock) {
         $script:CustomControlNameBlock= {
             if ($ControlName) {
-                $object.SetValue([ShowUI.ShowUISetting]::ControlNameProperty, $ControlName)
-            }        
+                $OutputObject.SetValue([ShowUI.ShowUISetting]::ControlNameProperty, $ControlName)
+            }
         }
     }
        
-    $null = $ProcessBlocks.AddBefore($ProcessBlocks.Last, $CustomControlNameBlock)        
+    $null = $OutputBlocks.AddBefore($OutputBlocks.Last, $CustomControlNameBlock)        
 
     if (-not $script:StyleNameParameter) {
         $Script:StyleNameParameter = 
@@ -531,13 +577,13 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     if (-not $script:StyleNameBlock) {
         $script:StyleNameBlock= {
             if ($PSBoundParameters.ContainsKey("VisualStyle")) {
-                $Object.SetValue([ShowUI.ShowUISetting]::StyleNameProperty, $PSBoundParameters.VisualStyle)
+                $OutputObject.SetValue([ShowUI.ShowUISetting]::StyleNameProperty, $PSBoundParameters.VisualStyle)
                 $Null = $PSBoundParameters.Remove("VisualStyle")
             }
         }
     }
        
-    $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $StyleNameBlock)      
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, $StyleNameBlock)      
     
     # Add the -Show parameter, caching the little parameter metadata object so the 
     # generator runs more quickly
@@ -553,17 +599,15 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     }
     $null = $Parameters.AddLast($script:CachedShowUIParameter)
 
-    
-    
-    
     # Add the -show block
     if (-not $script:CachedShowBlock) {
         $script:CachedShowBlock = {
-        if ($show -or $showUI) {
-            return Show-Window $Object 
+        if ($ShowUI -or $PSBoundParameters.ShowUI -or $PSBoundParameters.Show) {
+            return Show-Window $OutputObject 
         }}        
     }
-    $null = $ProcessBlocks.AddBefore($ProcessBlocks.Last, $Script:CachedShowBlock)        
+    
+    $null = $OutputBlocks.AddBefore($OutputBlocks.Last, $Script:CachedShowBlock)        
     
     
     $help.Parameter.Show = "
@@ -612,33 +656,33 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     if (-not $Script:CachedGridAndZIndexBlock) {
         $script:CachedGridAndZIndexBlock = {
         if ($PSBoundParameters.ContainsKey("Row")) {
-            $Object.SetValue([Windows.Controls.Grid]::RowProperty, $row)
+            $OutputObject.SetValue([Windows.Controls.Grid]::RowProperty, $row)
             $Null = $PSBoundParameters.Remove("Row")
         }
         if ($PSBoundParameters.ContainsKey("Column")) {
-            $Object.SetValue([Windows.Controls.Grid]::ColumnProperty, $column)
+            $OutputObject.SetValue([Windows.Controls.Grid]::ColumnProperty, $column)
             $Null = $PSBoundParameters.Remove("Column")
         }
         if ($PSBoundParameters.ContainsKey("RowSpan")) {
-            $Object.SetValue([Windows.Controls.Grid]::RowSpanProperty, $rowSpan)
+            $OutputObject.SetValue([Windows.Controls.Grid]::RowSpanProperty, $rowSpan)
             $Null = $PSBoundParameters.Remove("RowSpan")
         }
         if ($PSBoundParameters.ContainsKey("ColumnSpan")) {
-            $Object.SetValue([Windows.Controls.Grid]::ColumnSpanProperty, $columnSpan)
+            $OutputObject.SetValue([Windows.Controls.Grid]::ColumnSpanProperty, $columnSpan)
             $Null = $PSBoundParameters.Remove("ColumnSpan")
         }
         if ($PSBoundParameters.ContainsKey("ZIndex")) {
-            $Object.SetValue([Windows.Controls.Panel]::ZIndexProperty, $ZIndex)
+            $OutputObject.SetValue([Windows.Controls.Panel]::ZIndexProperty, $ZIndex)
             $Null = $PSBoundParameters.Remove("ZIndex")
         }
         if ($PSBoundParameters.ContainsKey("Dock")) {
-            $Object.SetValue([Windows.Controls.DockPanel]::DockProperty, $Dock)
+            $OutputObject.SetValue([Windows.Controls.DockPanel]::DockProperty, $Dock)
             $Null = $PSBoundParameters.Remove("Dock")
         }}
     }
     
     
-    $null = $processBlocks.AddAfter($processBlocks.First, 
+    $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
         $Script:CachedGridAndZIndexBlock)
     # Check for a Top Parameter, and add blocks for Top if none exist
     $TopFound = $false 
@@ -657,11 +701,11 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
         if (-not $script:CachedTopScriptBlock) {
             $Script:CachedTopScriptBlock = {
         if ($PSBoundParameters.ContainsKey("Top")) {            
-            $object.SetValue([Windows.Controls.Canvas]::TopProperty, $top)
+            $OutputObject.SetValue([Windows.Controls.Canvas]::TopProperty, $top)
             $Null = $PSBoundParameters.Remove("Top")
         }}
         }
-        $null = $processBlocks.AddAfter($processBlocks.First, 
+        $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
             $Script:CachedTopScriptBlock)
     }
     
@@ -683,11 +727,11 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
         if (-not $script:CachedLeftScriptBlock) {
             $Script:CachedLeftScriptBlock = {
         if ($PSBoundParameters.ContainsKey("Left")) {            
-            $object.SetValue([Windows.Controls.Canvas]::LeftProperty, $Left)
+            $OutputObject.SetValue([Windows.Controls.Canvas]::LeftProperty, $Left)
             $Null = $PSBoundParameters.Remove("Left")
         }}
         }
-        $null = $processBlocks.AddAfter($processBlocks.First, 
+        $null = $OutputBlocks.AddAfter($OutputBlocks.First, 
             $Script:CachedLeftScriptBlock)
     }
     
@@ -766,7 +810,11 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     $help.Example += "New-$Noun -AsJob"    
  
     
-    $null = $ProcessBlocks.AddFirst($Script:CachedJobSection)
+    $null = $OutputBlocks.AddFirst($Script:CachedJobSection)
+    $null = $BeginBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'BEGIN a $BaseType'")))
+    $null = $ProcessBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'PROCESS the $BaseType'")))
+    $null = $OutputBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'OUTPUT that $BaseType'")))
+    $null = $EndBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'END the $BaseType'")))
 }
 
 Add-CodeGenerationRule -Type ([Windows.Shapes.Shape]) -Change {

@@ -32,6 +32,7 @@ function ConvertFrom-TypeToScriptCmdlet
     
     process {
         foreach ($t in $type) {
+            trap { Write-Warning "Error Converting $t to Cmdlet:`n$($_|Out-String)" }
             $Parameters = 
                 New-Object "$LinkedListType[Management.Automation.ParameterMetaData]"
             $BeginBlocks = 
@@ -40,37 +41,46 @@ function ConvertFrom-TypeToScriptCmdlet
                 New-Object "$LinkedListType[ScriptBlock]"
             $EndBlocks = 
                 New-Object "$LinkedListType[ScriptBlock]"
+            ## Output Blocks are the ones which we'll magically put in the right place based on IsUIContentCollector
+            $OutputBlocks  = 
+                New-Object "$LinkedListType[ScriptBlock]" (,[ScriptBlock[]]@({}))
+            ## You shouldn't need to mess with the Constructor Blocks unless you don't want constructors
+            $AutoConstructor = [bool]($t.GetConstructor(@()))
+            
             if ($PSVersionTable.BuildVersion.Build -lt 7100) {
                 $CmdletBinding = "[CmdletBinding()]"
             } else {
                 $CmdletBinding = ""
             }
-            try {
-                $Help = @{
-                    Parameter = @{}
-                }
-                $Verb = ""
-                $Noun = ""
-                
-                $BaseType = $t            
 
-                foreach ($rule in $CodeGenerationRuleOrder) {
-                    if (-not $rule) { continue } 
-                    if ($rule -is [Type] -and 
-                        (($t -eq $rule) -or ($t.IsSubclassOf($rule)))) {
+            $Help = @{
+                Parameter = @{}
+            }
+            $Verb = ""
+            $Noun = ""
+            
+            ## These are the core which allows us to generate pipeline enabled cmdlets
+            ## But the UIContentProperty has to be set by a code generation rule for anything to happen
+            $BaseType = $t | Add-Member -Passthru -Type NoteProperty   -Name UIContentProperty    -Value $null |
+                             Add-Member -Passthru -Type ScriptProperty -Name IsUIContentCollector -Value {
+                                ($this.UIContentProperty -ne $null) -and ($this.GetProperty($this.UIContentProperty).PropertyType.GetInterface([System.Collections.IList]) -ne $null)
+                             }
+
+            foreach ($rule in $CodeGenerationRuleOrder) {
+                trap { Write-Warning "Error Converting $t to Cmdlet`n$($_|Out-String)`nIn Rule:`n$rule" }
+
+                if (-not $rule) { continue } 
+                if ($rule -is [Type] -and 
+                    (($t -eq $rule) -or ($t.IsSubclassOf($rule)))) {
+                    $nsb = $ExecutionContext.InvokeCommand.NewScriptBlock($codeGenerationCustomizations[$rule])
+                    $null = . $nsb 
+                } else {
+                    if ($rule -is [ScriptBlock] -and
+                        ($t | Where-Object -FilterScript $rule)) {
                         $nsb = $ExecutionContext.InvokeCommand.NewScriptBlock($codeGenerationCustomizations[$rule])
                         $null = . $nsb 
-                    } else {
-                        if ($rule -is [ScriptBlock] -and
-                            ($t | Where-Object -FilterScript $rule)) {
-                            $nsb = $ExecutionContext.InvokeCommand.NewScriptBlock($codeGenerationCustomizations[$rule])
-                            $null = . $nsb 
-                        }
                     }
                 }
-            } catch {
-                Write-Error "Problem building $t"
-                Write-Error $_
             }
             
             if ((-not $Noun) -or (-not $Verb)) {
@@ -170,11 +180,21 @@ function ConvertFrom-TypeToScriptCmdlet
         )
         begin {
             $BeginBlocks
+            $(if($AutoConstructor -and $BaseType.IsUIContentCollector){ '$outputObject = New-Object ' + $BaseType.FullName })
         }
         process {
+            $(if($AutoConstructor -and !$BaseType.IsUIContentCollector){ '$outputObject = New-Object ' + $BaseType.FullName })
             $ProcessBlocks
+            $(if(!$BaseType.IsUIContentCollector){ 
+                $OutputBlocks 
+                "Write-Output (,`$Object)"
+            })
         }
         end {
+            $(if($BaseType.IsUIContentCollector){ 
+                $OutputBlocks 
+                "Write-Output (,`$Object)"
+            })
             $EndBlocks
         }
     }
@@ -203,7 +223,6 @@ using System.Management.Automation.Runspaces;
         private Pipeline pipeline;    
 "@)
                 
-                $defaultParameterPosition =0 
                 $namespaces = "$usingBlock" -split ([Environment]::NewLine) | 
                     Where-Object { $_ } | 
                     ForEach-Object { $_.Trim().Replace("using ", "").Replace(";","") 
@@ -222,7 +241,7 @@ using System.Management.Automation.Runspaces;
                         $fieldName.Substring(1)
                                                             
                     $parameterType = $p.ParameterType
-                    if (-not $parameterType) { $parameterType = [PSObject] } 
+                    if (-not $parameterType) { $parameterType = [Object] } 
                     $parameterTypeFullName = $parameterType.Fullname
                     $parameterNamespace = $parameterType.Namespace    
                     
@@ -276,8 +295,7 @@ using System.Management.Automation.Runspaces;
                     if (-not $parameterAttributes) {
                         # In this case, the parameter is not mandatory, 
                         # and will be marked ValueFromPipelineByPropertyName and will assume the first default position                        
-                        $parameterAttributes += "[Parameter(Position=$defaultParameterPosition)]"
-                        $defaultParameterPosition++
+                        $parameterAttributes += "[Parameter()]"
                     }
                     $ofs = [Environment]::NewLine
                     $ParameterDeclaration = "$parameterAttributes"            
@@ -301,13 +319,19 @@ using System.Management.Automation.Runspaces;
                 # with all of the values passed in as positional arguments                 
                 
                 
-                $pNames=  @("BoundParameters") + $parameterNames
+                $pNames=  @("BoundParameters", "OutputObject") + $parameterNames
                 $ofs = ',$'
                 $parameterDeclaration = "param(`$$pNames)"
                                 
                 $beginBlocks = @($beginBlocks)
                 $processBlocks = @($processBlocks)
                 $endBlocks = @($endBlocks)
+                
+                if(!$BaseType.IsUIContentCollector){ 
+                    $processBlocks = @($processBlocks) + @($outputBlocks)
+                } else {
+                    $endBlocks = @($outputBlocks) + @($endBlocks)
+                }
                 $beginProcessingCode = ""
                 
                 if ($beginBlocks)  {
@@ -320,9 +344,33 @@ $beginBlocks".Replace('"','""')
                 
                     $beginProcessingCode = @"
                     System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
-this.InvokeCommand.InvokeScript(@"
+
+                    try {
+                        pipeline.Commands.AddScript(@"
 $fullBeginBlock
-", new Object[] { $pNames } );
+", true );
+                        pipeline.Commands[0].Parameters.Add("BoundParameters", BoundParameters);
+                        pipeline.Commands[0].Parameters.Add("OutputObject", outputObject);
+                    
+                        foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
+                            pipeline.Commands[0].Parameters.Add(param.Key, param.Value);
+                        }
+                    
+                        pipeline.Invoke();
+
+                    } catch (Exception ex) {
+                        this.WriteWarning( "There was an Exception" );
+                        ErrorRecord errorRec; 
+                        if (ex is ActionPreferenceStopException) {
+                            ActionPreferenceStopException aex = ex as ActionPreferenceStopException;
+                            errorRec = aex.ErrorRecord;
+                        } else {
+                            errorRec = new ErrorRecord(ex, "EmbeddedProcessRecordError", ErrorCategory.NotSpecified, null);
+                        }
+                        if (errorRec != null) {
+                            this.WriteError(errorRec);
+                        }
+                    }
 "@                
 
                 }
@@ -340,18 +388,24 @@ $endBlocks".Replace('"','""')
                     $null = $EndProcessingCode.Append(@"
 System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
                     
-                    pipeline.Commands.AddScript(@"
+                    try {
+                        pipeline.Commands.AddScript(@"
 $fullEndBlock
 ", true);
+                        pipeline.Commands[0].Parameters.Add("BoundParameters", BoundParameters);
+                        pipeline.Commands[0].Parameters.Add("OutputObject", outputObject);
 
-                    foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
-                        pipeline.Commands[0].Parameters.Add(param.Key, param.Value);                    
-                    }
-                    
-                    try {
-                        this.WriteObject(
-                            pipeline.Invoke(),
-                            true);
+                        foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
+                            pipeline.Commands[0].Parameters.Add(param.Key, param.Value);                    
+                        }
+
+                        $(
+                        if(($pNames -contains "Show" -or $pNames -contains "ShowUI") -and $BaseType.IsUIContentCollector){
+                            "if(Show||ShowUI) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
+                        } else {
+                            "pipeline.Invoke();"
+                        }
+                        )
 
                     } catch (Exception ex) {
                         ErrorRecord errorRec; 
@@ -368,7 +422,8 @@ $fullEndBlock
 "@)                    
                     foreach ($param in $parameterNames) {
                         $null = $EndProcessingCode.Append(@"
-this.SessionState..PSVariable.Remove("$param");
+
+this.SessionState.PSVariable.Remove("$param");
 "@)                     
                     }
                 }
@@ -385,18 +440,24 @@ $processBlocks".Replace('"','""')
                     $ProcessRecordCode = @"
                     System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
                     
-                    pipeline.Commands.AddScript(@"
+                    try {
+                    
+                        pipeline.Commands.AddScript(@"
 $fullProcessBlock
 ", true);
+                        pipeline.Commands[0].Parameters.Add("BoundParameters", BoundParameters);
+                        pipeline.Commands[0].Parameters.Add("OutputObject", outputObject);
 
-                    foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
-                        pipeline.Commands[0].Parameters.Add(param.Key, param.Value);                    
-                    }
-                    
-                    try {
-                        this.WriteObject(
-                            pipeline.Invoke(),
-                            true);
+                        foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
+                            pipeline.Commands[0].Parameters.Add(param.Key, param.Value);
+                        }
+                        $(
+                        if(($pNames -contains "Show" -or $pNames -contains "ShowUI") -and !$BaseType.IsUIContentCollector){
+                            "if(Show||ShowUI) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
+                        } else {
+                            "pipeline.Invoke();"
+                        }
+                        )
 
                     } catch (Exception ex) {
                         ErrorRecord errorRec; 
@@ -411,12 +472,11 @@ $fullProcessBlock
                         }
                     }
 
-"@                
-
+"@
                 }
                 #endregion
-                
-                #region Generate the final cmdlet                                                                             
+
+                #region Generate the final cmdlet
 $namespaceID = Get-Random
 @"
 namespace AutoGenerateCmdlets$namespaceID
@@ -430,25 +490,49 @@ namespace AutoGenerateCmdlets$namespaceID
         $fieldBlock
         $propertyBlock
         
+        $(if($AutoConstructor) {
+            "$($BaseType.FullName) outputObject;"
+        } else {
+            "object outputObject;"
+        })
+        
         protected override void BeginProcessing()
         {
             pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
-                
+            $(if($AutoConstructor -and $BaseType.IsUIContentCollector){ "outputObject = new " + $BaseType.FullName + "();" })
             $BeginProcessingCode
-        }    
-
-        protected override void ProcessRecord() 
-        {
-            pipeline.Commands.Clear();            
-            $ProcessRecordCode
-        }
-
-        protected override void EndProcessing() 
-        {
-            $EndProcessingCode
             pipeline.Dispose();
         }
-    }           
+
+        protected override void ProcessRecord()
+        {
+            pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+            $(if($AutoConstructor -and !$BaseType.IsUIContentCollector){ "outputObject = new " + $BaseType.FullName + "();" })
+            $ProcessRecordCode
+            $(if(!$BaseType.IsUIContentCollector){
+                if($pNames -contains "Show" -or $pNames -contains "ShowUI") {
+                    "if(!Show&&!ShowUI) { WriteObject(outputObject, true); }" 
+                } else {
+                    "WriteObject(outputObject, true);"
+                }
+            })
+            pipeline.Dispose();
+        }
+
+        protected override void EndProcessing()
+        {
+            pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+            $EndProcessingCode
+            $(if($BaseType.IsUIContentCollector){
+                if($pNames -contains "Show" -or $pNames -contains "ShowUI") {
+                    "if(!Show&&!ShowUI) { WriteObject(outputObject, true); }" 
+                } else {
+                    "WriteObject(outputObject, true);"
+                }
+            })            
+            pipeline.Dispose();
+        }
+    }
 }
 "@
                 #endregion
