@@ -210,7 +210,6 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-// using ShowUI;
 
 ")                
                 $propertyBlock = New-Object Text.StringBuilder
@@ -309,7 +308,6 @@ using System.Management.Automation.Runspaces;
 ")     
                 }
 
-                
                 #endregion   
                 
                 #region Create the Begin/Process/End code chunks
@@ -319,7 +317,7 @@ using System.Management.Automation.Runspaces;
                 # with all of the values passed in as positional arguments                 
                 
                 
-                $pNames=  @("BoundParameters", "OutputObject") + $parameterNames
+                $pNames=  @("BoundParameters") + $parameterNames
                 $ofs = ',$'
                 $parameterDeclaration = "param(`$$pNames)"
                                 
@@ -350,8 +348,6 @@ $beginBlocks".Replace('"','""')
 $fullBeginBlock
 ", true );
                         pipeline.Commands[0].Parameters.Add("BoundParameters", BoundParameters);
-                        pipeline.Commands[0].Parameters.Add("OutputObject", outputObject);
-                    
                         foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
                             pipeline.Commands[0].Parameters.Add(param.Key, param.Value);
                         }
@@ -375,9 +371,29 @@ $fullBeginBlock
 
                 }
                 
+                $pNames=  @("BoundParameters", "OutputObject") + $parameterNames
+                $ofs = ',$'
+                $parameterDeclaration = "param(`$$pNames)"
+
+                
+$ofs = [Environment]::NewLine
+$AsJobScript = "
+$parameterDeclaration
+#BEGIN ############################################################
+$beginBlocks
+#CONSTRUCTOR ############################################################
+`$OutputObject = New-Object $($BaseType.FullName)
+#PROCESS ############################################################
+$ProcessBlocks
+#OUTPUT ############################################################
+$OutputBlocks
+#END ############################################################
+$endBlocks
+".Replace('"','""')
+
                 $endProcessingCode = ""
                 if ($endBlocks) {
-                    $ofs = [Environment]::NewLine                
+                    $ofs = [Environment]::NewLine
                     $fullEndBlock = "
 $parameterDeclaration
 $endBlocks".Replace('"','""')
@@ -389,19 +405,27 @@ $endBlocks".Replace('"','""')
 System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
                     
                     try {
+                        $( if($pNames -contains "AsJob" ) { "if(!AsJob){" } )
                         pipeline.Commands.AddScript(@"
 $fullEndBlock
 ", true);
+                        $( if($pNames -contains "AsJob" ) { @"
+                        } else {
+                        pipeline.Commands.AddScript(@"
+$AsJobScript
+", true);
+                        }
+"@ } )
                         pipeline.Commands[0].Parameters.Add("BoundParameters", BoundParameters);
                         pipeline.Commands[0].Parameters.Add("OutputObject", outputObject);
 
                         foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
-                            pipeline.Commands[0].Parameters.Add(param.Key, param.Value);                    
+                            pipeline.Commands[0].Parameters.Add(param.Key, param.Value);
                         }
 
                         $(
-                        if(($pNames -contains "Show" -or $pNames -contains "ShowUI") -and $BaseType.IsUIContentCollector){
-                            "if(Show||ShowUI) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
+                        if(($pNames -contains "AsJob") -and !$BaseType.IsUIContentCollector){
+                            "if(Show||ShowUI||AsJob) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
                         } else {
                             "pipeline.Invoke();"
                         }
@@ -413,13 +437,13 @@ $fullEndBlock
                             ActionPreferenceStopException aex = ex as ActionPreferenceStopException;
                             errorRec = aex.ErrorRecord;
                         } else {
-                            errorRec = new ErrorRecord(ex, "EmbeddedProcessRecordError", ErrorCategory.NotSpecified, null);                        
-                        }                       
+                            errorRec = new ErrorRecord(ex, "EmbeddedProcessRecordError", ErrorCategory.NotSpecified, null);
+                        }
                         if (errorRec != null) {
-                            this.WriteError(errorRec);                                                
+                            this.WriteError(errorRec);
                         }
                     }
-"@)                    
+"@)
                     foreach ($param in $parameterNames) {
                         $null = $EndProcessingCode.Append(@"
 
@@ -452,8 +476,8 @@ $fullProcessBlock
                             pipeline.Commands[0].Parameters.Add(param.Key, param.Value);
                         }
                         $(
-                        if(($pNames -contains "Show" -or $pNames -contains "ShowUI") -and !$BaseType.IsUIContentCollector){
-                            "if(Show||ShowUI) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
+                        if(($pNames -contains "AsJob") -and !$BaseType.IsUIContentCollector){
+                            "if(Show||ShowUI||AsJob) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
                         } else {
                             "pipeline.Invoke();"
                         }
@@ -498,25 +522,31 @@ namespace AutoGenerateCmdlets$namespaceID
         
         protected override void BeginProcessing()
         {
-            pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
-            $(if($AutoConstructor -and $BaseType.IsUIContentCollector){ "outputObject = new " + $BaseType.FullName + "();" })
-            $BeginProcessingCode
-            pipeline.Dispose();
+            $( if($pNames -contains "AsJob" ) { "if(!AsJob){" } )
+                pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+                $BeginProcessingCode
+                $(if($AutoConstructor -and $BaseType.IsUIContentCollector){
+                    "outputObject = new " + $BaseType.FullName + "();"
+                })
+                pipeline.Dispose();
+            $( if($pNames -contains "AsJob" ) { "}" } )
         }
 
         protected override void ProcessRecord()
         {
-            pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
-            $(if($AutoConstructor -and !$BaseType.IsUIContentCollector){ "outputObject = new " + $BaseType.FullName + "();" })
-            $ProcessRecordCode
-            $(if(!$BaseType.IsUIContentCollector){
-                if($pNames -contains "Show" -or $pNames -contains "ShowUI") {
-                    "if(!Show&&!ShowUI) { WriteObject(outputObject, true); }" 
-                } else {
-                    "WriteObject(outputObject, true);"
-                }
-            })
-            pipeline.Dispose();
+            $( if($pNames -contains "AsJob") { "if(!AsJob){" } )
+                pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+                $(if($AutoConstructor -and !$BaseType.IsUIContentCollector){ "outputObject = new " + $BaseType.FullName + "();" })
+                $ProcessRecordCode
+                $(if(!$BaseType.IsUIContentCollector){
+                    if($pNames -contains "Show" -or $pNames -contains "ShowUI") {
+                        "if(!Show&&!ShowUI&&!AsJob) { WriteObject(outputObject, true); }" 
+                    } else {
+                        "WriteObject(outputObject, true);"
+                    }
+                })
+                pipeline.Dispose();
+            $( if($pNames -contains "AsJob" ) { "}" } )
         }
 
         protected override void EndProcessing()
@@ -524,12 +554,12 @@ namespace AutoGenerateCmdlets$namespaceID
             pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
             $EndProcessingCode
             $(if($BaseType.IsUIContentCollector){
-                if($pNames -contains "Show" -or $pNames -contains "ShowUI") {
-                    "if(!Show&&!ShowUI) { WriteObject(outputObject, true); }" 
+                if($pNames -contains "AsJob") {
+                    "if(!Show&&!ShowUI&&!AsJob) { WriteObject(outputObject, true); }" 
                 } else {
                     "WriteObject(outputObject, true);"
                 }
-            })            
+            })
             pipeline.Dispose();
         }
     }

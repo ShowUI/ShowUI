@@ -3,14 +3,14 @@
 # This file contains a series of rules which will help convert the types WPF
 # interacts with the most to Script Cmdlets in PowerShell.  The rules are processed 
 # in the order that they appear
-Add-CodeGenerationRule -Filter {    
-    $_.Fullname -like "*Commands"    
+Add-CodeGenerationRule -Filter {
+    $_.Fullname -like "*Commands"
 } -Change {
     $verb = "Get"
     $Noun = $baseType.Name.TrimEnd("s")
 
     # Give it a little bit of help
-    $help.Synopsis = "Gets WPF Commands for $Noun" 
+    $help.Synopsis = "Gets WPF Commands for $Noun"
     $help.Description = "Gets WPF Commands for $Noun.
     These Commands are static properties from [$($baseType.FullName)]"
     $help.Example = @()
@@ -90,6 +90,7 @@ Add-CodeGenerationRule -Filter {
         # Keep a record of the current ShowUI parameter (for later)
         `$ShowUI = `$psBoundParameters.Show -or `$psBoundParameters.ShowUI
         `$null = `$psBoundParameters.Remove("Show")
+        `$null = `$psBoundParameters.Remove("ShowUI")
         `$null = `$psBoundParameters.Remove("OutputObject")
         `$null = `$psBoundParameters.Remove("BoundParameters")
         Set-Property -property `$psBoundParameters -inputObject `$OutputObject
@@ -744,7 +745,9 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     
     if (-not $Script:CachedJobSection) {
         $Script:CachedJobSection = {
-        if ($PSBoundParameters.ContainsKey("AsJob")) {
+        if ($PSBoundParameters.ContainsKey("AsJob") -and $PSBoundParameters.AsJob) {
+            Write-Host "Invoking as Job!"
+            trap { Write-Warning "Couldn't Start AsJob: `n$($_|OUt-String)" }
             $null = $psBoundParameters.Remove("AsJob")
             $ScriptBlock = $MyInvocation.MyCommand.ScriptBlock
             $Command = $MyInvocation.InvocationName
@@ -770,9 +773,7 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
             }         
             $Parameters = $PSBoundParameters
             
-            
             $AdditionalContext = @(Get-PSCallstack)[1].InvocationInfo.MyCommand.Definition
-            
             
             if (-not $AdditionalContext) { $AdditionalContext += {} }
             if ($AdditionalContext -like "*.ps1") { 
@@ -794,9 +795,13 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
             if (-not $JobParameters.Name) {
                 $JobParameters.Name = $MyInvocation.InvocationName
             }
+            
+            Write-Host ($JobParameters | Out-String)
+            Write-Host ($JobParameters.ScriptBlock | Out-String)
+            Write-Host ($Parameters | Out-String)
 
             if ($Parameters) {
-                Start-WPFJob @JobParameters -Parameter $Parameters         
+                Start-WPFJob @JobParameters -Parameter $Parameters
             } else {
                 Start-WPFJob @JobParameters
             }
@@ -808,9 +813,8 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     If Set, will show the visual in a background WPF Job
     "
     $help.Example += "New-$Noun -AsJob"    
- 
+    $null = $BeginBlocks.AddFirst($Script:CachedJobSection)
     
-    $null = $OutputBlocks.AddFirst($Script:CachedJobSection)
     $null = $BeginBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'BEGIN a $BaseType'")))
     $null = $ProcessBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'PROCESS the $BaseType'")))
     $null = $OutputBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'OUTPUT that $BaseType'")))
