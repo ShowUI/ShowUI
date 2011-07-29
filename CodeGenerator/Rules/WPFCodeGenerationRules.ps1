@@ -746,7 +746,6 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     if (-not $Script:CachedJobSection) {
         $Script:CachedJobSection = {
         if ($PSBoundParameters.ContainsKey("AsJob") -and $PSBoundParameters.AsJob) {
-            Write-Host "Invoking as Job!"
             trap { Write-Warning "Couldn't Start AsJob: `n$($_|OUt-String)" }
             $null = $psBoundParameters.Remove("AsJob")
             $ScriptBlock = $MyInvocation.MyCommand.ScriptBlock
@@ -796,10 +795,6 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
                 $JobParameters.Name = $MyInvocation.InvocationName
             }
             
-            Write-Host ($JobParameters | Out-String)
-            Write-Host ($JobParameters.ScriptBlock | Out-String)
-            Write-Host ($Parameters | Out-String)
-
             if ($Parameters) {
                 Start-WPFJob @JobParameters -Parameter $Parameters
             } else {

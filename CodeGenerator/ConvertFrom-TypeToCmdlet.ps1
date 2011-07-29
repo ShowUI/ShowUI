@@ -387,6 +387,7 @@ $beginBlocks
 $ProcessBlocks
 #OUTPUT ############################################################
 $OutputBlocks
+Write-Output (,`$OutputObject)
 #END ############################################################
 $endBlocks
 ".Replace('"','""')

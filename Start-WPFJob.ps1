@@ -68,11 +68,9 @@ function Start-WPFJob
         if (-not $name) {$name = [GUID]::NewGuid() } 
         $iss = [SHOWUI.WPFJob]::GetSessionStateForCommands($cmds)       
         if ($psBoundParameters.ContainsKey("Parameter") -and $Parameter.Count) {
-            $wpfJob = New-Object SHOWUI.WPFJob ($name, $Command,
-                $ScriptBlock, $Iss, $Parameter)
+            $wpfJob = New-Object SHOWUI.WPFJob ($name, $Command, $ScriptBlock, $Iss, $Parameter)
         } else {
-            $wpfJob = New-Object SHOWUI.WPFJob ($name, $Command,
-                $ScriptBlock, $Iss)
+            $wpfJob = New-Object SHOWUI.WPFJob ($name, $Command, $ScriptBlock, $Iss)
         }
         if ($wpfJob) {
             $null = $PSCmdlet.JobRepository.Add($wpfJob)
