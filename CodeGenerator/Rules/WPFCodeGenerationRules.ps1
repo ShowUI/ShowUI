@@ -73,27 +73,27 @@ Add-CodeGenerationRule -Filter {
     }
 
     # Each time through the process block, it needs to set the content property
-    $script:SetContentPropertyScriptBlock = if($BaseType.IsUIContentCollector) {
-         [ScriptBlock]::Create(@"
+    $script:SetContentPropertyScriptBlock = if($BaseType.UIContentProperty) {
+    [ScriptBlock]::Create(@"
         `$content = @{$($BaseType.UIContentProperty)=`$psBoundParameters.$($BaseType.UIContentProperty)}
         Set-Property -property `$content -inputObject `$OutputObject
-"@)
-    } else { {} }
+"@) } else { {} }
     
     
     # Before it outputs the object, it needs to set the properties
     $script:SetPropertyScriptBlock = 
         [ScriptBlock]::Create(@"
-        $( if($BaseType.IsUIContentCollector) {
+        $( if($BaseType.UIContentProperty) {
         "`$null = `$psBoundParameters.Remove( `"$($BaseType.UIContentProperty)`" )"
         } )
         # Keep a record of the current ShowUI parameter (for later)
-        `$ShowUI = `$psBoundParameters.Show -or `$psBoundParameters.ShowUI
-        `$null = `$psBoundParameters.Remove("Show")
-        `$null = `$psBoundParameters.Remove("ShowUI")
+        Write-Verbose "BEFORE SET-PROPERTY (`${OutputObject}) `$(`$PSBoundParameters.Keys)"
+        `$Properties = @{} + `$PSBoundParameters
         `$null = `$psBoundParameters.Remove("OutputObject")
         `$null = `$psBoundParameters.Remove("BoundParameters")
-        Set-Property -property `$psBoundParameters -inputObject `$OutputObject
+        Set-Property -property `$Properties -inputObject `$OutputObject
+        Write-Verbose "AFTER SET-PROPERTY (`${OutputObject}) `$(`$PSBoundParameters.Keys)"
+        `$local:ShowUI = `$psBoundParameters.Show -or `$psBoundParameters.ShowUI
 "@)
 
     # Collect all of the parameters for the type and add them to the parameters to the command    
@@ -119,12 +119,10 @@ Add-CodeGenerationRule -Filter {
         }}
     }
     
-    if($BaseType.IsUIContentCollector) {
-        # Each time through the process block, it needs to set the content property
-        $null = $ProcessBlocks.AddLast(($script:SetContentPropertyScriptBlock))
-    }
+    # Each time through the process block, it needs to set the content property
+    $null = $ProcessBlocks.AddLast($script:SetContentPropertyScriptBlock)
     # Before it outputs the object, it needs to set all the properties
-    $null = $OutputBlocks.AddLast(($script:SetPropertyScriptBlock))
+    $null = $OutputBlocks.AddLast($script:SetPropertyScriptBlock)
     # The last thing the command should do is output the object
     $null = $OutputBlocks.AddLast($script:OutputXamlScriptBlock)
 }
@@ -603,9 +601,13 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     # Add the -show block
     if (-not $script:CachedShowBlock) {
         $script:CachedShowBlock = {
-        if ($ShowUI -or $PSBoundParameters.ShowUI -or $PSBoundParameters.Show) {
-            return Show-Window $OutputObject 
-        }}        
+        if ($ShowUI -or $PSBoundParameters.ShowUI -or $PSBoundParameters.Show -or $OutputObject.ShowUI) {
+            Write-Verbose "Show $OutputObject"
+            return Show-Window $OutputObject
+        } else {
+            Write-Verbose "NoShow $OutputObject"
+        }
+        }
     }
     
     $null = $OutputBlocks.AddBefore($OutputBlocks.Last, $Script:CachedShowBlock)        
@@ -808,8 +810,8 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     If Set, will show the visual in a background WPF Job
     "
     $help.Example += "New-$Noun -AsJob"    
-    $null = $BeginBlocks.AddFirst($Script:CachedJobSection)
-    
+    $null = $ProcessBlocks.AddFirst($Script:CachedJobSection)
+
     $null = $BeginBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'BEGIN a $BaseType'")))
     $null = $ProcessBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'PROCESS the $BaseType'")))
     $null = $OutputBlocks.AddFirst(([ScriptBlock]::Create("Write-Verbose 'OUTPUT that $BaseType'")))

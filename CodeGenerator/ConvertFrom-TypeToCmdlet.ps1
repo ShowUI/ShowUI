@@ -325,11 +325,11 @@ using System.Management.Automation.Runspaces;
                 $processBlocks = @($processBlocks)
                 $endBlocks = @($endBlocks)
                 
-                if(!$BaseType.IsUIContentCollector){ 
-                    $processBlocks = @($processBlocks) + @($outputBlocks)
-                } else {
-                    $endBlocks = @($outputBlocks) + @($endBlocks)
-                }
+                #  if(!$BaseType.IsUIContentCollector){ 
+                    #  $processBlocks = @($processBlocks) + @($outputBlocks)
+                #  } else {
+                    #  $endBlocks = @($outputBlocks) + @($endBlocks)
+                #  }
                 $beginProcessingCode = ""
                 
                 if ($beginBlocks)  {
@@ -341,8 +341,6 @@ $beginBlocks".Replace('"','""')
                     $ofs =','
                 
                     $beginProcessingCode = @"
-                    System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
-
                     try {
                         pipeline.Commands.AddScript(@"
 $fullBeginBlock
@@ -403,8 +401,6 @@ $endBlocks".Replace('"','""')
                 
                     $EndProcessingCode = New-Object Text.StringBuilder
                     $null = $EndProcessingCode.Append(@"
-System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
-                    
                     try {
                         $( if($pNames -contains "AsJob" ) { "if(!AsJob){" } )
                         pipeline.Commands.AddScript(@"
@@ -452,7 +448,7 @@ this.SessionState.PSVariable.Remove("$param");
 "@)                     
                     }
                 }
-                
+
                 $ProcessRecordCode=""
                 if ($processBlocks) {
                     $ofs = [Environment]::NewLine                
@@ -463,8 +459,6 @@ $processBlocks".Replace('"','""')
                     $ofs =','
    
                     $ProcessRecordCode = @"
-                    System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
-                    
                     try {
                     
                         pipeline.Commands.AddScript(@"
@@ -499,6 +493,50 @@ $fullProcessBlock
 
 "@
                 }
+                
+                $OutputRecordCode=""
+                if ($OutputBlocks) {
+                    $ofs = [Environment]::NewLine                
+                    $fullOutputBlock = "
+$parameterDeclaration
+$OutputBlocks".Replace('"','""')
+
+                    $ofs =','
+   
+                    $OutputRecordCode = @"
+                    try {
+                    
+                        pipeline.Commands.AddScript(@"
+$fullOutputBlock
+", true);
+                        pipeline.Commands[0].Parameters.Add("BoundParameters", BoundParameters);
+                        pipeline.Commands[0].Parameters.Add("OutputObject", outputObject);
+
+                        foreach (System.Collections.Generic.KeyValuePair<string,Object> param in this.MyInvocation.BoundParameters) {
+                            pipeline.Commands[0].Parameters.Add(param.Key, param.Value);
+                        }
+                        $(
+                        if(($pNames -contains "AsJob") -and !$BaseType.IsUIContentCollector){
+                            "if(Show||ShowUI||AsJob) { WriteObject(pipeline.Invoke(), true); } else { pipeline.Invoke(); }"
+                        } else {
+                            "pipeline.Invoke();"
+                        }
+                        )
+
+                    } catch (Exception ex) {
+                        ErrorRecord errorRec; 
+                        if (ex is ActionPreferenceStopException) {
+                            ActionPreferenceStopException aex = ex as ActionPreferenceStopException;
+                            errorRec = aex.ErrorRecord;
+                        } else {
+                            errorRec = new ErrorRecord(ex, "EmbeddedProcessRecordError", ErrorCategory.NotSpecified, null);                        
+                        }                       
+                        if (errorRec != null) {
+                            this.WriteError(errorRec);                                                
+                        }
+                    }
+"@
+                }
                 #endregion
 
                 #region Generate the final cmdlet
@@ -523,6 +561,7 @@ namespace AutoGenerateCmdlets$namespaceID
         
         protected override void BeginProcessing()
         {
+            System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
             $( if($pNames -contains "AsJob" ) { "if(!AsJob){" } )
                 pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
                 $BeginProcessingCode
@@ -535,10 +574,19 @@ namespace AutoGenerateCmdlets$namespaceID
 
         protected override void ProcessRecord()
         {
+            System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
             $( if($pNames -contains "AsJob") { "if(!AsJob){" } )
                 pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
                 $(if($AutoConstructor -and !$BaseType.IsUIContentCollector){ "outputObject = new " + $BaseType.FullName + "();" })
                 $ProcessRecordCode
+                $(if(!$BaseType.IsUIContentCollector){
+                    "
+                    pipeline.Dispose();
+                    BoundParameters = this.MyInvocation.BoundParameters;
+                    pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+                    $OutputRecordCode
+                    "
+                })
                 $(if(!$BaseType.IsUIContentCollector){
                     if($pNames -contains "Show" -or $pNames -contains "ShowUI") {
                         "if(!Show&&!ShowUI&&!AsJob) { WriteObject(outputObject, true); }" 
@@ -552,7 +600,16 @@ namespace AutoGenerateCmdlets$namespaceID
 
         protected override void EndProcessing()
         {
+            System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
             pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+            $(if($BaseType.IsUIContentCollector){ 
+                "
+                $OutputRecordCode 
+                pipeline.Dispose();
+                BoundParameters = this.MyInvocation.BoundParameters;
+                pipeline = Runspace.DefaultRunspace.CreateNestedPipeline();
+                "
+            })
             $EndProcessingCode
             $(if($BaseType.IsUIContentCollector){
                 if($pNames -contains "AsJob") {
