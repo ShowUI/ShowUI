@@ -70,7 +70,7 @@
             - Made -Path parameter first for New-Binding
 	1.0 -
             - Implemented rest of style system
-	    - Added Sample Styles
+            - Added Sample Styles
             - Added Get/Set-UIValue (to enable getting data out in a splattable form)
             - Added Edit-StringList
             - Added some missing functions from WPK: Get-PowerShellDataSource, Add-GridRow/Add-GridColumn
@@ -85,9 +85,22 @@
                 New-Grid -Children { $x =5; New-StackPanel { NEw-Label "$x" } } -show
             - Fixing code generator to include missing New-CommandBinding and other primitives
             - Fixing scope of generated rules so ConvertFrom-TypeToScriptCmdlet works
-    1.1    - Using callstack peeking to create automatic variables for parent function parameters
-           - Creates automatic functions for resources containing functions
-           - Making UI Styles persistent
-           - Initial checkin of Get-Input           
-           - Improvements in background data sources (can now handle events on UI thread, easier to launch and manage)
-           
+    1.1    
+            - Using callstack peeking to create automatic variables for parent function parameters
+            - Creates automatic functions for resources containing functions
+            - Making UI Styles persistent
+            - Initial checkin of Get-Input           
+            - Improvements in background data sources (can now handle events on UI thread, easier to launch and manage)
+    1.2
+            - Major fixes to Add-UIModule:
+               - Add Type whitelist and blacklist (making it easier to add an extra class or two)
+               - Support generating one module for multiple assemblies
+               - Support pipelining assemblies: ls *.dll | add-uimodule ...
+               - Refactor initial run (InstallShowUIAssembly) so that it calls Add-UIModule -- we're using the same code that's in the function.
+            - Fix Update-WPFJob so that it sets up all the variables (for control names) the way our event handlers do
+            - Add the Module Name to aliases so that name clashes with New-Thing can usually be resolved by using: Thing instead of needing ShowUI\New-Thing
+            - Fix Import-UIStyle
+            - Add SimpleEditor.ps1 to Examples -- shows menus and commands
+            - Add New-UIWidget 
+               - Add UIWidgets.ps1 to Examples -- several examples of how to create gadget-style windows
+               - Add "Widget" style 
