@@ -15,8 +15,7 @@ function Update-WPFJob
     [CmdletBinding(DefaultParameterSetName='NoParameters')]
     param(
     # The Job to update
-    [Parameter(Mandatory=$true,
-        ValueFromPipeline=$true)]
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
     [Management.Automation.Job]
     $Job,
     
@@ -36,18 +35,31 @@ function Update-WPFJob
     )
     
     process {
+    
+    $realCommand = ([ScriptBlock]::Create(@"
+Initialize-EventHandler -resource (Get-Resource `$Window.Content) -parent `$Window.Content
+`$ErrorActionPreference = 'stop'
+
+$Command
+
+trap {
+    . Write-WPFError `$_
+    continue
+}
+"@))
+    
         if ($job.InvokeScriptInJob) {
             switch ($psCmdlet.ParameterSetName) {
                 NoParameters {
-                    $job.InvokeScriptInJob($Command, $null, $Asynchronously)
+                    $job.InvokeScriptInJob($realCommand, $null, $Asynchronously)
                 }
                 List {
-                    $job.InvokeScriptInJob($command, $List, $Asynchronously)
+                    $job.InvokeScriptInJob($realCommand, $List, $Asynchronously)
                 }
                 Dictionary {
-                    $job.InvokeScriptInJob($Command, $Dictionary, $Asynchronously)
+                    $job.InvokeScriptInJob($realCommand, $Dictionary, $Asynchronously)
                 }
-            }                        
+            }
         }
     }    
 }

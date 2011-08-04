@@ -1,37 +1,43 @@
 function New-UIWidget {
 [CmdletBinding()]
 param(
+    [Parameter(Position=0,ValueFromPipeline=$true)]
     [ScriptBlock]$Content,
     [Alias("Refresh")]
     [TimeSpan]$Interval = "0:0:2",
-    [ScriptBlock]$UpdateBlock,
-    [Switch]$Show, [Switch]$AsJob
+    [ScriptBlock]$UpdateBlock = $([ScriptBlock]::Create("`$Window.Content = ( `n${Content}`n )")),
+    [Switch]$ShowInTaskbar,
+    [Switch]$Show,
+    [Switch]$AsJob
 )
 
-$WidgetValues = @{ 
-    # AllowsTransparency = $true
-    WindowStyle = "None" 
-    ShowInTaskbar = $true
-    Background = "Transparent" 
+process { 
+$Widget = @{
     On_MouseLeftButtonDown = { $Window.DragMove() }
     On_Closing = { $Window.Resources.Timers."Clock".Stop() }
     Tag = @{"UpdateBlock"=$UpdateBlock;"Interval"=$Interval}
-    SizeToContent = "WidthAndHeight"
-    ResizeMode = "NoResize"
     On_SourceInitialized = {
         $Window.Resources.Timers.Clock = (New-Object Windows.Threading.DispatcherTimer).PSObject.BaseObject
         $Window.Resources.Timers.Clock.Interval = $Window.Tag.Interval
         Add-EventHandler $Window.Resources.Timers.Clock Tick $Window.Tag.UpdateBlock
         $Window.Resources.Timers.Clock.Start()
         $Window.Tag = $Null
-        
-        #  Import-Module HuddledTricks
-        #  Set-Window -Handle (New-Object System.Windows.Interop.WindowInteropHelper $Window).Handle -BottomMost
+
+        if(!("Win32.Dwm" -as [Type])) {
+            add-type -Name Dwm -Namespace Win32 -MemberDefinition @"
+            [DllImport("dwmapi.dll", PreserveSig = false)]
+            public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+"@          }
+        $enable = 2
+        [Win32.Dwm]::DwmSetWindowAttribute( (New-Object System.Windows.Interop.WindowInteropHelper $Window).Handle, 12, [ref]$enable, 4 )
     }
-    On_ContentRendered = $UpdateBlock
-    
+    On_Loaded = $UpdateBlock
+} + $PSBoundParameters
+
+$null = $Widget.Remove("Interval")
+$null = $Widget.Remove("UpdateBlock")
+
+New-Window -VisualStyle Widget @Widget
+
 }
-
-New-Window @WidgetValues -Content $Content -Show:$Show -AsJob:$AsJob
-
 }
