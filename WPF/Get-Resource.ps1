@@ -38,7 +38,7 @@ function Get-Resource
                         return $item.Resources.$k
                     }
                 }
-                $item = [Windows.Media.VisualTreeHelper]::GetParent($item)
+                $item = [Windows.Media.VisualTreeHelper]::GetParent($item)                
             }
         } else {
             $outputObject = @{}
@@ -46,11 +46,11 @@ function Get-Resource
             while ($item) {
                 foreach ($k in $item.Resources.Keys) {
                     if (-not $k) { continue }
-                    if (-not $outputObject.$k) { $outputObject.$k = $item.Resources.$k }
+                    if (-not $outputObject.$k) { $outputObject.$k = $item.Resources.$k }                     
                 }
-                $item = [Windows.Media.VisualTreeHelper]::GetParent($item)
+                $item = [Windows.Media.VisualTreeHelper]::GetParent($item)                
             }
             $outputObject
-        }
+        }        
     }
 }

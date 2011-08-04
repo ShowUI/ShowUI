@@ -19,9 +19,9 @@ if('CleanCore' -eq $LoadBehavior) {
     $exclude = "ShowUI.CLR$($psVersionTable.clrVersion)*"
 }
 if ('Clean', 'CleanCore', 'CleanAndDoNothing' -contains $LoadBehavior) {
-    Get-ChildItem $psScriptRoot\GeneratedAssemblies -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
+    Get-ChildItem $psScriptRoot\GeneratedAssemblies -Force -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
-    Get-ChildItem $psScriptRoot\GeneratedCode  -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
+    Get-ChildItem $psScriptRoot\GeneratedCode  -Recurse -Force -Exclude $exclude -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
     if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
@@ -44,6 +44,8 @@ if ($PSVersionTable.ClrVersion.Major -ge 4) {
 #region Code Generator Functions
 . $psScriptRoot\CodeGenerator\Add-CodeGenerationRule.ps1
 . $psScriptRoot\CodeGenerator\Add-UiModule.ps1
+. $psScriptRoot\CodeGenerator\Select-UiType.ps1
+. $psScriptRoot\CodeGenerator\Get-AssemblyName.ps1
 . $psScriptRoot\CodeGenerator\ConvertFrom-TypeToCmdlet.ps1
 . $psScriptRoot\CodeGenerator\ConvertTo-ParameterMetaData.ps1
 #endregion Code Generator Functions
@@ -114,7 +116,19 @@ if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
         -Assemblies $Assemblies `
         -Force:$($LoadBehavior -eq 'CleanAll')
 
-    $importedModule  = Import-Module $CommandsPath, $CoreOutputPath -PassThru
+    if ($CoreOutputPath -like "\\*" -or $commandsPath -like "\\*") {
+        $tempOutputPath = Join-Path $env:Temp (Split-Path -Leaf $CoreOutputPath)
+        $tempCommandsPath= Join-Path $env:Temp (Split-Path -Leaf $commandsPath)
+        Copy-Item -LiteralPath $CoreOutputPath -Destination $tempOutputPath -Force
+        Copy-Item -LiteralPath $commandsPath -Destination $tempCommandsPath -Force
+        $importedModule  = Import-Module $tempOutputPath, $tempCommandsPath -PassThru
+    } else {
+        $importedModule  = Import-Module $CommandsPath, $CoreOutputPath -PassThru
+    }
+    
+    attrib "$psScriptRoot\GeneratedAssemblies" +h /d /s
+    attrib "$psScriptRoot\GeneratedCode" +h /d /s
+    attrib "$psScriptRoot\Styles" +h /d /s
 }
 ## Fix xaml Serialization 
 [ShowUI.XamlTricks]::FixSerialization()
