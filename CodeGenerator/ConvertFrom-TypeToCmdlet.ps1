@@ -79,7 +79,7 @@ function ConvertFrom-TypeToScriptCmdlet
             
             ## A hack to get a list of constructor cmdlets
             if($Verb -eq "New" -and (Test-Path Variable:ConstructorCmdletNames)) {
-               $ConstructorCmdletNames.Value += $Noun
+               $ConstructorCmdletNames.Value.Add( $Noun )
             }
             
             $cmd = New-Object Management.Automation.CommandMetaData ([PSObject])
@@ -281,8 +281,6 @@ using System.Management.Automation.Runspaces;
                     }
                     $ofs = [Environment]::NewLine
                     $ParameterDeclaration = "$parameterAttributes"            
-                    $null = $fieldBlock.Append("
-")               
 
                     $null = $propertyBlock.Append("
         /// <summary>
