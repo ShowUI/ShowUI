@@ -1,4 +1,4 @@
-uniformgrid -ControlName "Get-FirstNameLastNameAndAge" -Columns 2 {
+﻿uniformgrid -ControlName "Get-FirstNameLastNameAndAge" -Columns 2 {
     "Age" 
     textBox -Name "Age" 18
     "First Name"

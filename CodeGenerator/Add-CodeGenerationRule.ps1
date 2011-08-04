@@ -1,4 +1,4 @@
-function Add-CodeGenerationRule
+﻿function Add-CodeGenerationRule
 {
     <#
     .Synopsis
