@@ -525,6 +525,7 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     if (-not $script:StyleNameParameter) {
         $Script:StyleNameParameter = 
             New-Object Management.Automation.ParameterMetaData "VisualStyle", ([string])
+        $Script:StyleNameParameter.Aliases.Add("UIStyle")
     }
     $null = $Parameters.AddLast($script:StyleNameParameter)
     # Add the -VisualStyle block

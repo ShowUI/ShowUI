@@ -199,6 +199,15 @@ if (-not (Test-Path $psScriptRoot\Styles)) {
             }
         }
     }
+    
+    Set-UIStyle -StyleName "Widget" -Style @{
+        AllowsTransparency = $true
+        WindowStyle = "None"
+        Background = "Transparent"
+        SizeToContent = "WidthAndHeight"
+        ResizeMode = "NoResize"
+    }
+    
 } else {
     Use-UiStyle "Current"
 }
