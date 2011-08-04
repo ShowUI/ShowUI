@@ -86,7 +86,7 @@ function Invoke-Background
                 if (-not $target.CommandsBindings.Count) { 
                     $cmdBind = New-Object Windows.Input.CommandBinding @(
                         [ShowUI.ShowUICommands]::BackgroundPowerShellCommand,{
-                            . Initialize-EventHandler
+                            Initialize-EventHandler
                             $sb = try { [ScriptBlock]::Create($_.Parameter) } catch { }
                             Invoke-Background -ScriptBlock $sb
                             trap {
@@ -95,7 +95,7 @@ function Invoke-Background
                             }
                         }, {
                             $sb = try { [ScriptBlock]::Create($_.Parameter) } catch { }
-                            . Initialize-EventHandler                                                        
+                            Initialize-EventHandler                                                        
                             $_.CanExecute = -not (Get-PowerShellOutput -GetDataSource | Select-Object -ExpandProperty IsRunning)
                             trap {
                                 . Write-WPFError

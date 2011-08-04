@@ -1,4 +1,4 @@
-﻿function Set-DependencyProperty
+function Set-DependencyProperty
 {
     <#
     .Synopsis
@@ -21,27 +21,36 @@
     #>
     [CmdletBinding(DefaultParameterSetName="Name")]
     param(
-    [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    [Parameter(Mandatory=$true,
+        ValueFromPipeline=$true)]
     [ValidateNotNullOrEmpty()]
     [Windows.DependencyObject[]]
     $Target,
     
     # The Dependency Property to Set
-    [Parameter(Mandatory=$true, Position=1, ValueFromPipelineByPropertyName=$true, ParameterSetName="Property")]
+    [Parameter(ValueFromPipelineByPropertyName=$true, 
+        ParameterSetName="Property",
+        Mandatory=$true)]
     [Windows.DependencyProperty[]]
     [ValidateNotNullOrEmpty()]
     $Property,
     
     # The name of the depencency property to set.  The dependency property must exist on the current object.
-    [Parameter(Mandatory=$true, Position=1, ValueFromPipelineByPropertyName=$true, ParameterSetName="Name")]
+    [Parameter(ValueFromPipelineByPropertyName=$true, 
+        ParameterSetName="Name",
+        Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
     [String[]]
     $Name,
     
 
     # The value or values to use.
-    [Parameter(Mandatory=$true, Position=2, ValueFromPipelineByPropertyName=$true, ParameterSetName="Name")]
-    [Parameter(Mandatory=$true, Position=2, ValueFromPipelineByPropertyName=$true, ParameterSetName="Property")]
+    [Parameter(ValueFromPipelineByPropertyName=$true,        
+        ParameterSetName="Name",
+        Mandatory=$true)]
+    [Parameter(ValueFromPipelineByPropertyName=$true,        
+        ParameterSetName="Property",
+        Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
     [Array]
     $Value

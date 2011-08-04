@@ -1,0 +1,27 @@
+# Show-UI is the merger of two projects: WPK and PowerBoots.
+# At various times, both projects have had user feedback either 
+# because they too long to load, or because they did not load completely
+# Show-UI fixes this by switching the backbone of the project 
+# (a code generator that lets you create cmdlets for WPF controls)
+# from a script generator to a C# generator.
+
+# This has several advantages:
+
+# - Load time drops thru the floor
+# - The memory footprint drops considerably
+# - Because the generated code is built once, the distributable will be a lot smaller
+
+# Let's go ahead and do a clean generation of the module.  
+
+# Please make sure you have not loaded the any process, it will not be able to clean.
+# This will take a while, and we'll use Measure-Command to know just how long
+Measure-Command { 
+    Import-Module 'Show-UI' -ArgumentList 'Clean' -Force
+}
+
+# Ok, now let's import this the second time, the way most users should.
+Measure-Command { 
+    Import-Module 'Show-UI' -Force
+}
+
+

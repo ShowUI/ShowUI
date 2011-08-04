@@ -1,4 +1,4 @@
-﻿function Hide-UIElement
+function Hide-UIElement
 {
     <#
     .Synopsis

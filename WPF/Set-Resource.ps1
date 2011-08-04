@@ -1,4 +1,4 @@
-﻿function Set-Resource
+function Set-Resource
 {
     <#
     .Synopsis

@@ -1,4 +1,4 @@
-﻿function Add-EventHandler {
+function Add-EventHandler {
     <#
     .Synopsis
         Adds an event handler to an object
@@ -70,7 +70,7 @@
                 
         $realHandler = ([ScriptBlock]::Create(@"
 `$eventName = 'On_$eventName';
-. Initialize-EventHandler
+Initialize-EventHandler
 `$ErrorActionPreference = 'stop'
             
 $Handler
@@ -92,6 +92,8 @@ trap {
                 }
                 $InputObject.Resources.EventHandlers."On_$EventName" = $realHandler
             }
+            #$InputObject."add_$($Event.Name)".Invoke(@($realHandler))
+            #$event.GetAddMethod().Invoke($InputObject, @($realHandler))
             $event.AddEventHandler($InputObject, $realHandler)
         }
         if ($passThru) {
