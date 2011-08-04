@@ -232,7 +232,6 @@ if (-not (Test-Path $psScriptRoot\Styles)) {
 
 #region Common Controls
 . $psScriptRoot\CommonControls\Select-Date.ps1
-. $psScriptRoot\CommonControls\Select-ViaUI.ps1
 . $psScriptRoot\CommonControls\Edit-StringList.ps1
 . $psScriptRoot\CommonControls\Get-Input.ps1
 #endregion Common Controls
