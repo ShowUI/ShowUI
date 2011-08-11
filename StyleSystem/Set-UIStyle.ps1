@@ -93,6 +93,10 @@ function Set-UIStyle {
                 $null = $styleSettings.Remove($ts)
             }
             
+            foreach ($eventName in @($styleSettings.Keys -like "On_*")) {
+                $styleSettings[$eventName] = [ScriptBlock]::Create($styleSettings[$eventName])
+            }
+            
             $objectAfterChanges = Set-Property -inputObject $visual -property $StyleSettings -passThru
             
         } elseif ($psCmdlet.ParameterSetName -eq 'SetStyle') {
