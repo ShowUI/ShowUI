@@ -5,14 +5,15 @@ function Out-Xaml
     $InputObject,
     
     [switch]
-    $ShowQuickly,
+    [Alias('ShowQuickly')]
+    $Flash,
     
     [switch]
     $AsXml    
     )
     
     process {
-        if ($showQuickly) {
+        if ($Flash) {
             New-Window -On_Loaded {            
                 Register-PowerShellCommand -ScriptBlock { $window.Close() } -Run -In "0:0:1"                
             } -Content $inputObject -Show

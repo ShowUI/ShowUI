@@ -104,3 +104,5 @@
             - Add New-UIWidget 
                - Add UIWidgets.ps1 to Examples -- several examples of how to create gadget-style windows
                - Add "Widget" style 
+            - Fixed UI Styles that used script blocks in -AsJob
+               

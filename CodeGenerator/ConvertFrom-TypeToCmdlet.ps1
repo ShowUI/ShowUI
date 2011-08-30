@@ -339,7 +339,10 @@ $endBlocks".Replace('"','""')
                     $EndProcessingCode = New-Object Text.StringBuilder
                     $null = $EndProcessingCode.Append(@"
 System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
-                    
+                    PSLanguageMode languageMode = this.SessionState.LanguageMode;
+                    if (languageMode != PSLanguageMode.Full) {
+                        this.SessionState.LanguageMode=PSLanguageMode.FullLanguage;
+                    }
                     pipeline.Commands.AddScript(@"
 $fullEndBlock
 ", true);
@@ -365,6 +368,10 @@ $fullEndBlock
                             this.WriteError(errorRec);                                                
                         }
                     }
+                    
+                    if (languageMode != PSLanguageMode.FullLanguage) {
+                        this.SessionState.LanguageMode=languageMode;
+                    }
 "@)                    
                     foreach ($param in $parameterNames) {
                         $null = $EndProcessingCode.Append(@"
@@ -384,6 +391,10 @@ $processBlocks".Replace('"','""')
    
                     $ProcessRecordCode = @"
                     System.Collections.Generic.Dictionary<string,Object> BoundParameters = this.MyInvocation.BoundParameters;
+                    PSLanguageMode languageMode = this.SessionState.LanguageMode;
+                    if (languageMode != PSLanguageMode.FullLanguage) {
+                        this.SessionState.LanguageMode=PSLanguageMode.FullLanguage;
+                    }
                     
                     pipeline.Commands.AddScript(@"
 $fullProcessBlock
@@ -410,6 +421,10 @@ $fullProcessBlock
                             this.WriteError(errorRec);                                                
                         }
                     }
+                    if (languageMode != PSLanguageMode.FullLanguage) {
+                        this.SessionState.LanguageMode=languageMode;
+                    }
+
 
 "@                
 

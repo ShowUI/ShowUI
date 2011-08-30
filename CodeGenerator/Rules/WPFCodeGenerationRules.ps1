@@ -100,10 +100,8 @@ Add-CodeGenerationRule -Filter {
     $null = $parameters.AddLast($Script:OutputXamlParameter)
     if (-not $script:OutputXamlScriptBock) {
         $script:OutputXamlScriptBlock = {
-        if ($outputXaml) {                
-            $strWrite = New-Object IO.StringWriter
-            ([xml]([Windows.Markup.XamlWriter]::Save($Object))).Save($strWrite)
-            return "$strWrite"
+        if ($outputXaml) {                            
+            return $object | Out-Xaml -Flash 
         }}
     }    
     $null = $processBlocks.AddBefore($processBlocks.Last, $script:OutputXamlScriptBlock)
