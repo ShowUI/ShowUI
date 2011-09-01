@@ -28,6 +28,10 @@ function ConvertFrom-TypeToScriptCmdlet
         if(!$AsScript) {
             $AsCSharp = $true
         }
+        ## If there are no rules, then we should use the default rules, or we'll get no code!
+        if($CodeGenerationRuleOrder -eq $null -or $CodeGenerationRuleOrder.Count -eq 0) {
+           . $psScriptRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1
+        }
     }
     
     process {
@@ -52,7 +56,7 @@ function ConvertFrom-TypeToScriptCmdlet
                 $Verb = ""
                 $Noun = ""
                 
-                $BaseType = $t            
+                $BaseType = $t
 
                 foreach ($rule in $CodeGenerationRuleOrder) {
                     if (-not $rule) { continue } 
