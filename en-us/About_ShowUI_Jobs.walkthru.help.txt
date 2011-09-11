@@ -18,7 +18,7 @@ foreach ($n in 1..5) {
 $jobs | Stop-Job
 
 
-# You can also interact with the window.  To demostrate this, let's go ahead 
+# You can also interact with the window.  To demonstrate this, let's go ahead 
 # and launch a simple details dialog
 $job = New-StackPanel -ControlName 'Get-PersonalInformation' -Columns 1 -Children {
     New-Label "What is your first name?"
