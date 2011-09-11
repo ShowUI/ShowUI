@@ -148,7 +148,7 @@ $ResourceChange = {
                 foreach ($kv in $psBoundParameters['Resource'].GetEnumerator())
                 {
                     $null = $object.Resources.Add($kv.Key, $kv.Value)
-                    if ('Object', 'psBoundParameters' -notcontains $kv.Key -and
+                    if ('Object', 'psBoundParameters','Show','AsJob','OutputXaml' -notcontains $kv.Key -and
                         $psBoundParameters.Keys -notcontains $kv.Key) {
                         Set-Variable -Name $kv.Key -Value $kv.Value
                     }
