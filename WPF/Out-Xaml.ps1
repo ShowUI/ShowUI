@@ -14,8 +14,8 @@ function Out-Xaml
     
     process {
         if ($Flash) {
-            New-Window -On_Loaded {            
-                Register-PowerShellCommand -ScriptBlock { $window.Close() } -Run -In "0:0:1"                
+            New-Window -Top -10000 -Left -10000 -On_ContentRendered {            
+                $window.Close()#Register-PowerShellCommand -ScriptBlock { $window.Close() } -Run -In "0:0:1"                
             } -Content $inputObject -Show
         }
         $xaml = [Windows.Markup.XamlWriter]::Save($inputObject)
