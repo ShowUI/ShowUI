@@ -1,4 +1,4 @@
-﻿function Remove-ChildControl
+function Remove-ChildControl
 {
     <#
     .Synopsis

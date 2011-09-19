@@ -1,4 +1,4 @@
-﻿function Test-Ancestor {
+function Test-Ancestor {
     param(
     [Parameter(Mandatory=$true)]
     [Windows.UIElement]

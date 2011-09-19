@@ -1,4 +1,4 @@
-﻿function Start-Animation{
+function Start-Animation{
     <#
     .Synopsis
         Starts animations on a property in any number of inputObjects

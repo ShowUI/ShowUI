@@ -1,4 +1,4 @@
-﻿function Add-EventHandler {
+function Add-EventHandler {
     <#
     .Synopsis
         Adds an event handler to an object

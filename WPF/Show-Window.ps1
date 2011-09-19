@@ -1,4 +1,4 @@
-﻿function Show-Window {
+function Show-Window {
     <#
     .Synopsis
         Show-Window shows a WPF control within a window, 
@@ -78,7 +78,6 @@
                 } elseif ($instanceName) {
                     $Window.Title = $instanceName
                 } else {
-
                     $controlName = $Control.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
                     if ($controlName) {
                         $Window.Title = $controlName
