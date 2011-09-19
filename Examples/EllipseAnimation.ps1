@@ -1,4 +1,4 @@
-New-Window -Width 200 -Height 200 {
+﻿New-Window -Width 200 -Height 200 {
     New-Ellipse -Fill Black -Width 200 -Height 100 -RenderTransform { 
         New-RotateTransform -CenterX 75 -CenterY 50
     } -On_Loaded {

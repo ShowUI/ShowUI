@@ -1,4 +1,4 @@
-New-Grid -Columns ('Auto', '1*') -Rows ('1*','Auto') -Resource @{
+﻿New-Grid -Columns ('Auto', '1*') -Rows ('1*','Auto') -Resource @{
     'Import-ModuleData' = {
         $modules = @(Get-Module) + @(Get-Module -ListAvailable) | 
             Select-Object Name, Path, ExportedCommands -Unique | 

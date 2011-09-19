@@ -7,8 +7,7 @@ function Get-Input
         Get-Input collects a series of fields.    
     #>
     param(
-    # A map of field names to their types, or commands/scripts, or cue text
-    [Parameter(Mandatory=$true,ParameterSetName="FieldOrder")]
+    [Parameter(Mandatory=$true)]
     [ValidateScript({
         $in = $_
         $badKeys =$in.Keys | Where-Object { $_ -isnot [string] }
@@ -29,9 +28,7 @@ function Get-Input
         }   
         return $true             
     })]
-    [Hashtable]$Field,
-    # The order for the inputs (since the Field hashtable isn't ordered)
-    [Parameter(Mandatory=$false,ParameterSetName="FieldOrder")]
+    [Hashtable]$Field,    
     [string[]]$Order,
     [switch]$HideOKCancel,    
     # The name of the control        

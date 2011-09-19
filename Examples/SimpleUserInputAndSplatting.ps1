@@ -1,4 +1,4 @@
-$getCommandInput = UniformGrid -ControlName 'Get-InputForGetCommand' -Columns 2 {
+﻿$getCommandInput = UniformGrid -ControlName 'Get-InputForGetCommand' -Columns 2 {
     "Command Name"
     New-TextBox -Name Name
     "Verb"

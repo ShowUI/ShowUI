@@ -3,14 +3,15 @@ $outputPathBase = "$psScriptRoot\GeneratedAssemblies\",
 $CommandPath    = "$outputPathBase\ShowUI.CLR$($psVersionTable.clrVersion).dll",
 $CoreOutputPath = "$outputPathBase\ShowUICore.CLR$($psVersionTable.clrVersion).dll",
 $Assemblies,
-$Force
+$Force,
+$FileRoot = "$psScriptRoot"
 )
 
 # If the expected output already exists, then we've nothing to do here :)
 if((Test-Path $CommandPath, $CoreOutputPath) -notcontains $False) { return }
 
 # But otherwise, we need to start regenerating the code ...
-. $psScriptRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1
+. $fileRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1
 # Regenerate the code
 $progressId = Get-Random
 $childId = Get-Random    
@@ -116,13 +117,13 @@ $ofs = [Environment]::NewLine
 
 $generatedCode = $generatedCode | Where-Object { $_ } 
 #>
-$controlNameDependencyObject = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUIDependencyObjects.cs")
-$cmdCode = [IO.File]::ReadAllText("$psScriptRoot\C#\ShowUICommand.cs")
-$ValueConverter = [IO.File]::ReadAllText("$psScriptRoot\C#\LanguagePrimitivesValueConverter.cs")
-$wpfJob = [IO.File]::ReadAllText("$psScriptRoot\C#\WPFJob.cs")
-$PowerShellDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\PowerShellDataSource.cs")
-$OutXamlCmdlet = [IO.File]::ReadAllText("$psScriptRoot\C#\OutXaml.cs")
-#$ScriptDataSource = [IO.File]::ReadAllText("$psScriptRoot\C#\ScriptDataSource.cs")
+$controlNameDependencyObject = [IO.File]::ReadAllText("$fileRoot\C#\ShowUIDependencyObjects.cs")
+$cmdCode = [IO.File]::ReadAllText("$fileRoot\C#\ShowUICommand.cs")
+$ValueConverter = [IO.File]::ReadAllText("$fileRoot\C#\LanguagePrimitivesValueConverter.cs")
+$wpfJob = [IO.File]::ReadAllText("$fileRoot\C#\WPFJob.cs")
+$PowerShellDataSource = [IO.File]::ReadAllText("$fileRoot\C#\PowerShellDataSource.cs")
+$OutXamlCmdlet = [IO.File]::ReadAllText("$fileRoot\C#\OutXaml.cs")
+#$ScriptDataSource = [IO.File]::ReadAllText("$fileRoot\C#\ScriptDataSource.cs")
 
 $generatedCode = "
 $controlNameDependencyObject
@@ -130,7 +131,6 @@ $cmdCode
 $ValueConverter
 $wpfJob 
 $PowerShellDataSource
-$generatedCode
 $OutXamlCmdlet
 
 "
