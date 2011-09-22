@@ -1,4 +1,4 @@
-﻿function Initialize-EventHandler
+function Initialize-EventHandler
 {
     param(
         $resource = $(try { Get-Resource -ErrorAction SilentlyContinue } catch { Write-Debug "$_" }),

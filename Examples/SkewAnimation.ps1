@@ -1,4 +1,4 @@
-﻿New-Window -Width 200 -Height 200 {
+New-Window -Width 200 -Height 200 {
     New-Rectangle -Fill Black -Width 200 -Height 100 -RenderTransform {
         New-SkewTransform -AngleY 89
     } -On_Loaded {

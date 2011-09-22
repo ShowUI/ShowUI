@@ -1,17 +1,15 @@
 param(
-$outputPathBase = "$psScriptRoot\GeneratedAssemblies\",
+$outputPathBase = "$ShowUIModuleRoot\GeneratedAssemblies\",
 $CommandPath    = "$outputPathBase\ShowUI.CLR$($psVersionTable.clrVersion).dll",
 $CoreOutputPath = "$outputPathBase\ShowUICore.CLR$($psVersionTable.clrVersion).dll",
 $Assemblies,
-$Force,
-$FileRoot = "$psScriptRoot"
+$Force
 )
 
 # If the expected output already exists, then we've nothing to do here :)
 if((Test-Path $CommandPath, $CoreOutputPath) -notcontains $False) { return }
 
-# But otherwise, we need to start regenerating the code ...
-. $fileRoot\CodeGenerator\Rules\WpfCodeGenerationRules.ps1
+
 # Regenerate the code
 $progressId = Get-Random
 $childId = Get-Random    
@@ -117,13 +115,12 @@ $ofs = [Environment]::NewLine
 
 $generatedCode = $generatedCode | Where-Object { $_ } 
 #>
-$controlNameDependencyObject = [IO.File]::ReadAllText("$fileRoot\C#\ShowUIDependencyObjects.cs")
-$cmdCode = [IO.File]::ReadAllText("$fileRoot\C#\ShowUICommand.cs")
-$ValueConverter = [IO.File]::ReadAllText("$fileRoot\C#\LanguagePrimitivesValueConverter.cs")
-$wpfJob = [IO.File]::ReadAllText("$fileRoot\C#\WPFJob.cs")
-$PowerShellDataSource = [IO.File]::ReadAllText("$fileRoot\C#\PowerShellDataSource.cs")
-$OutXamlCmdlet = [IO.File]::ReadAllText("$fileRoot\C#\OutXaml.cs")
-#$ScriptDataSource = [IO.File]::ReadAllText("$fileRoot\C#\ScriptDataSource.cs")
+$controlNameDependencyObject = [IO.File]::ReadAllText("$ShowUIModuleRoot\C#\ShowUIDependencyObjects.cs")
+$cmdCode = [IO.File]::ReadAllText("$ShowUIModuleRoot\C#\ShowUICommand.cs")
+$ValueConverter = [IO.File]::ReadAllText("$ShowUIModuleRoot\C#\LanguagePrimitivesValueConverter.cs")
+$wpfJob = [IO.File]::ReadAllText("$ShowUIModuleRoot\C#\WPFJob.cs")
+$PowerShellDataSource = [IO.File]::ReadAllText("$ShowUIModuleRoot\C#\PowerShellDataSource.cs")
+$OutXamlCmdlet = [IO.File]::ReadAllText("$ShowUIModuleRoot\C#\OutXaml.cs")
 
 $generatedCode = "
 $controlNameDependencyObject

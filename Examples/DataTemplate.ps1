@@ -1,4 +1,4 @@
-﻿New-ListBox -ItemsSource { Get-Process } -ItemTemplate {
+New-ListBox -ItemsSource { Get-Process } -ItemTemplate {
     New-StackPanel -Orientation Horizontal -Children {
         New-Label -Name ProcessName -FontSize 14 
         New-Label -Name Id -FontSize 8

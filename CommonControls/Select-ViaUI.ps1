@@ -1,4 +1,4 @@
-﻿function Select-ViaUI {
+function Select-ViaUI {
 #.Synopsis
 #   Select objects through a visual interface
 #.Description
@@ -8,6 +8,8 @@
 #   Get-ChildItem | Select-ViaUI -show | Remove-Item -WhatIf
     [OutputType([Windows.Controls.Grid])]
     param(
+    [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+    [Array]$InputObject,
     # The name of the control        
     [string]$Name,
     # If the control is a child element of a Grid control (see New-Grid),
@@ -60,17 +62,18 @@
 
     # We're going to need the parameters later
     $uiParameters = @{} + $psBoundParameters
+    $null = $uiParameters.Remove("InputObject")
 
     # we need to store the original items ... so we can output them later
     # But we're going to convert them to strings to display them
-    $SelectViaUIStringItems = New-Object System.Collections.ArrayList
+    $SelectViaUIStringItems = New-Object System.Collections.ObjectModel.ObservableCollection[PSObject]
     # So, use a hashtable, with the strings as the keys to the original values 
     $Script:SelectViaUIOriginalItems = @{}
     ## Convert input to string representations and store ...
-    foreach($item in $Input) {
+    foreach($i in @($InputObject)) {
         ## Get the item as it would be displayed by Format-Table
-        $stringRepresentation = (($item | ft -HideTableHeaders | Out-String )-Split"\n")[-4].trimEnd()
-        $SelectViaUIOriginalItems[$stringRepresentation] = $item
+        $stringRepresentation = (($i | ft -HideTableHeaders | Out-String )-Split"\n")[-4].trimEnd()
+        $SelectViaUIOriginalItems[$stringRepresentation] = $i
         $null = $SelectViaUIStringItems.Add($stringRepresentation)
     }
 
@@ -87,12 +90,12 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
 
     ## Put the items in a ListBox, inside a ScrollViewer so it can scroll :)
     ScrollViewer -Margin 5 -Row 1 {
-        ListBox -SelectionMode Multiple -ItemsSource $SelectViaUIStringItems -Name SelectedItems  `
+        ListBox -SelectionMode Multiple -ItemsSource $SelectViaUIStringItems -Name TheList  `
                 -FontFamily "Consolas, Courier New"  -On_SelectionChanged {
-                    $source = $selectedItems.Items
-                    if($selectedItems.SelectedItems.Count -gt 0)
+                    $source = $TheList.Items
+                    if($TheList.SelectedItems.Count -gt 0)
                     {
-                        $source = $selectedItems.SelectedItems
+                        $source = $TheList.SelectedItems
                     }
                     $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
                 }
@@ -102,7 +105,7 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
     ## This is the filter box: Notice we update the filter on_KeyUp
     TextBox -Margin 5 -Name SearchText -Row 2 -On_KeyUp {
         $filterText = $this.Text
-        [System.Windows.Data.CollectionViewSource]::GetDefaultView( $SelectedItems.ItemsSource ).Filter = [Predicate[Object]]{ 
+        [System.Windows.Data.CollectionViewSource]::GetDefaultView( $TheList.ItemsSource ).Filter = [Predicate[Object]]{ 
             param([string]$item)
             ## default to true
             trap { return $true }
@@ -111,10 +114,10 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
         }
         
         ## Update the output after the filter
-        $source = $selectedItems.Items
-        if($selectedItems.SelectedItems.Count -gt 0)
+        $source = $TheList.Items
+        if($TheList.SelectedItems.Count -gt 0)
         {
-            $source = $selectedItems.SelectedItems
+            $source = $TheList.SelectedItems
         }
         $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
     }
@@ -128,7 +131,7 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
 } -On_Loaded { 
     $SearchText.Focus()
     ## Default output, in case you close the window without selecting anything
-    $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$selectedItems.Items]
+    $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems #[$TheList.Items]
 } @uiParameters
 
 }

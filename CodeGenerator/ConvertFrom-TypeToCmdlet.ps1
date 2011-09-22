@@ -1,4 +1,4 @@
-﻿function ConvertFrom-TypeToScriptCmdlet
+function ConvertFrom-TypeToScriptCmdlet
 {
     <#
     .Synopsis
@@ -51,8 +51,7 @@
                 }
                 $Verb = ""
                 $Noun = ""
-                
-                $BaseType = $t            
+                $BaseType = $t
 
                 foreach ($rule in $CodeGenerationRuleOrder) {
                     if (-not $rule) { continue } 

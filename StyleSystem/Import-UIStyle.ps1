@@ -30,7 +30,7 @@ function Import-UIStyle
             } 
         } elseif ($psCmdlet.ParameterSetName -eq 'EasyName') {
             $found = $false
-            foreach ($style in (Get-ChildItem -Force -Filter *.style -Path $psScriptRoot\Styles)) {
+            foreach ($style in (Get-ChildItem -Force -Filter *.style -Path $ShowUIModuleRoot\Styles)) {
                 if ($Name -eq $style.Name.Replace(".style","")) {
                     Import-UIStyle -FileName $style.Fullname -ErrorVariable failed
                     $found = $failed.Count -eq 0

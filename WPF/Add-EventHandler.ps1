@@ -71,8 +71,7 @@ function Add-EventHandler {
         $realHandler = ([ScriptBlock]::Create(@"
 `$eventName = 'On_$eventName';
 . Initialize-EventHandler
-`$ErrorActionPreference = 'stop'
-            
+
 $Handler
 
 trap {                        

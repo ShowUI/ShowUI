@@ -1,4 +1,4 @@
-﻿function ConvertTo-ISEAddOn
+function ConvertTo-ISEAddOn
 {
     [CmdletBinding(DefaultParameterSetName="CreateOnly")]
     param(
