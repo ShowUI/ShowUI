@@ -1,9 +1,12 @@
 ﻿function Initialize-EventHandler
 {
-    param(
-        $resource = $(try { Get-Resource -ErrorAction SilentlyContinue } catch { Write-Debug "$_" }),
-        $parent = $(try { Get-ParentControl -ErrorAction SilentlyContinue } catch { Write-Debug "$_" })
-    )
+    param()
+    try {
+        $resource = Get-Resource
+        $parent = Get-ParentControl -ErrorAction SilentlyContinue
+    } catch {
+        Write-Debug "$_"
+    }
     if ($parent) { 
         $namedControls = Get-ChildControl -OutputNamedControl -Control $parent 
         if ($namedControls) { 

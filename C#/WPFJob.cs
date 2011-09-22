@@ -180,7 +180,34 @@ using System.Collections.ObjectModel;
             foreach (CommandInfo cmd in commands)
             {
                 if (cmd.Module != null)
-                {                    
+                {
+                    if (cmd.ModuleName == "WPK")
+                    {
+                        if (cmd is AliasInfo)
+                        {
+                            SessionStateAliasEntry alias = new SessionStateAliasEntry(cmd.Name, cmd.Definition);
+                            iss.Commands.Add(alias);
+                            continue;
+                        }
+                        if (cmd is FunctionInfo)
+                        {
+                            SessionStateFunctionEntry func = new SessionStateFunctionEntry(cmd.Name, cmd.Definition);
+                            iss.Commands.Add(func);
+                            continue;
+                        }
+                        if (cmd is CmdletInfo)
+                        {
+                            CmdletInfo cmdletData = cmd as CmdletInfo;
+                            SessionStateCmdletEntry cmdlet = new SessionStateCmdletEntry(cmd.Name,
+                                cmdletData.ImplementingType,
+                                cmdletData.HelpFile);
+                            iss.Commands.Add(cmdlet);
+                        }
+
+                    }
+                    else
+                    {
+                    
                         string manifestPath = cmd.Module.Path.Replace(".psm1",".psd1").Replace(".dll", ".psd1");
                         if (System.IO.File.Exists(manifestPath)) {  
                             iss.ImportPSModule(new string[] { manifestPath });
@@ -189,6 +216,7 @@ using System.Collections.ObjectModel;
                         }
                         
                         continue;
+                    }
                 }
                 if (cmd is AliasInfo)
                 {
@@ -271,7 +299,6 @@ using System.Collections.ObjectModel;
                 this.ChildJobs.Add(childJob);
             }
         }
-
 
         void childJob_StateChanged(object sender, JobStateEventArgs e)
         {

@@ -103,8 +103,6 @@ $script:UIStyles = @{}
 . $psScriptRoot\Get-PowerShellCommand.ps1
 . $psScriptRoot\Invoke-Background.ps1
 
-. $psScriptRoot\ConvertTo-ISEAddOn.ps1
-
 if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
 if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
@@ -116,8 +114,7 @@ if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
         -CommandPath $CommandsPath `
         -CoreOutputPath $CoreOutputPath `
         -Assemblies $Assemblies `
-        -Force:$($LoadBehavior -eq 'CleanAll') `
-        -FileRoot:"$psScriptRoot"
+        -Force:$($LoadBehavior -eq 'CleanAll')
 
     if ($CoreOutputPath -like "\\*" -or $commandsPath -like "\\*") {
         $tempOutputPath = Join-Path $env:Temp (Split-Path -Leaf $CoreOutputPath)

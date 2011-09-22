@@ -1,4 +1,4 @@
-function Set-Property
+﻿function Set-Property
 {
     <#
     .Synopsis

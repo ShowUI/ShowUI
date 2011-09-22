@@ -1,4 +1,4 @@
-function Set-DependencyProperty
+﻿function Set-DependencyProperty
 {
     <#
     .Synopsis

@@ -1,4 +1,4 @@
-function Show-UIElement
+﻿function Show-UIElement
 {   
     <#
     .Synopsis
