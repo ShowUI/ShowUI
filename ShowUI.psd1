@@ -1,5 +1,5 @@
 @{
-    ModuleVersion = '1.2'
+    ModuleVersion = '1.4'
     Author='Joel Bennett, James Brundage, & Doug Finke'
     Copyright='Start-Automating 2011'    
     Description='Show-UI is a module to help you write user interfaces to interact with PowerShell'

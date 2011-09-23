@@ -1,4 +1,4 @@
-﻿New-Grid -Rows 2 -Columns 2 -On_Loaded {
+New-Grid -Rows 2 -Columns 2 -On_Loaded {
         Register-PowerShellCommand -name UpdateClock -scriptBlock {
             $stopWatch = Get-ChildControl StopWatch
             $stopWatch.Content = [Datetime]::Now - $stopWatch.Tag

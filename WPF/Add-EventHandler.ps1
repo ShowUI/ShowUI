@@ -1,4 +1,4 @@
-﻿function Add-EventHandler {
+function Add-EventHandler {
     <#
     .Synopsis
         Adds an event handler to an object
@@ -71,8 +71,7 @@
         $realHandler = ([ScriptBlock]::Create(@"
 `$eventName = 'On_$eventName';
 . Initialize-EventHandler
-`$ErrorActionPreference = 'stop'
-            
+
 $Handler
 
 trap {                        

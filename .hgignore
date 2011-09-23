@@ -1,3 +1,5 @@
 glob:GeneratedAssemblies/*
 glob:GeneratedCode/*
 glob:*.orig
+syntax: glob
+ToDo/*

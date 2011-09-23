@@ -1,4 +1,4 @@
-﻿New-Grid -ControlName ToggleExample -Rows (@('Auto')*5) -Columns (@('Auto')*5) -On_Loaded {
+New-Grid -ControlName ToggleExample -Rows (@('Auto')*5) -Columns (@('Auto')*5) -On_Loaded {
     foreach ($n in (1..25)) {
         [int]$row = [Math]::Floor(($n  -1)/ $toggleExample.RowDefinitions.Count)
         [int]$column = ($n - 1)% $toggleExample.ColumnDefinitions.Count

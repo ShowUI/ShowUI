@@ -1,4 +1,4 @@
-﻿New-Window -Width 640 -Height 480 {
+New-Window -Width 640 -Height 480 {
     New-Grid -Rows 2 -Columns 2 -ShowGridLines {
         New-Button -Row 0 -Column 0 -On_Click {
             $addingRow = $true, $false | Get-Random

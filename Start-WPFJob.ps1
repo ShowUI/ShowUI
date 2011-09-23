@@ -45,7 +45,7 @@ function Start-WPFJob
 # First, make the job type if it does not exist:
         if (-not ('SHOWUI.WPFJob' -as [Type])) {
             Write-Verbose "Compiling WPFJob"
-            Add-Type -Path $psScriptRoot\C#\WPFJob.cs -IgnoreWarnings -ReferencedAssemblies "WindowsBase",
+            Add-Type -Path $ShowUIModuleRoot\C#\WPFJob.cs -IgnoreWarnings -ReferencedAssemblies "WindowsBase",
             "PresentationCore", 
             "PresentationFramework" 
         }        

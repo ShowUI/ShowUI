@@ -51,10 +51,7 @@ function Get-UICommand {
             $null = $psBoundParameters.Remove("Syntax")
             Get-Command @psBoundParameters |
                 Where-Object $filter |
-                ForEach-Object {
-                    Get-Command -Name $_.Name -Syntax
-                }
-                
+                Get-Command -Syntax
         }
         
     }

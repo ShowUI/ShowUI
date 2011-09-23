@@ -108,15 +108,15 @@ function Set-UIStyle {
             }
             $script:UiStyles.$StyleName = $Style                                    
             try {
-                if (-not (Test-Path $psScriptRoot\Styles)) {
-                    $ni = New-Item -ItemType Directory -Path $psScriptRoot\Styles -ErrorAction Stop                    
+                if (-not (Test-Path $ShowUIModuleRoot\Styles)) {
+                    $ni = New-Item -ItemType Directory -Path $ShowUIModuleRoot\Styles -ErrorAction Stop                    
                 }
-                $null = Export-Clixml -InputObject $script:UIStyles -Path $psScriptRoot\Styles\Current.style
+                $null = Export-Clixml -InputObject $script:UIStyles -Path $ShowUIModuleRoot\Styles\Current.style
                 $tempStyle = $null
                 $timeSpentWaitingForWriteToFinish = Measure-Command { 
                     while (-not $tempStyle) {
                         try {
-                            $tempStyle  =  Import-Clixml -Path $psScriptRoot\Styles\Current.style                    
+                            $tempStyle  =  Import-Clixml -Path $ShowUIModuleRoot\Styles\Current.style                    
                         } catch {
                         }
                     } 
