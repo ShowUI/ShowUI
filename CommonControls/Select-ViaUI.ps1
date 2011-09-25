@@ -58,8 +58,7 @@ function Select-ViaUI {
     # If AsJob is set, then the UI will displayed within a WPF job.
     [Switch]$AsJob        
 )
-
-
+begin {
     # We're going to need the parameters later
     $uiParameters = @{} + $psBoundParameters
     $null = $uiParameters.Remove("InputObject")
@@ -69,6 +68,8 @@ function Select-ViaUI {
     $SelectViaUIStringItems = New-Object System.Collections.ObjectModel.ObservableCollection[PSObject]
     # So, use a hashtable, with the strings as the keys to the original values 
     $Script:SelectViaUIOriginalItems = @{}
+}
+process {
     ## Convert input to string representations and store ...
     foreach($i in @($InputObject)) {
         ## Get the item as it would be displayed by Format-Table
@@ -76,21 +77,25 @@ function Select-ViaUI {
         $SelectViaUIOriginalItems[$stringRepresentation] = $i
         $null = $SelectViaUIStringItems.Add($stringRepresentation)
     }
+}
+end {
 
 ## Generate the window
 # Show-UI -Title "Object Filter" -MinWidth 400 -Height 600 {
-Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
+New-Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
     # The Resource dictionary is used to store information and default settings
     Cmdlet = $psCmdlet
     PSBoundParameters = $PSBoundParameters
     Args = $args
 } -Children {
     ## This is just a label ...
-    TextBlock -Margin 5 -Row 0 "Type or click to search. Press Enter or click OK to pass the items down the pipeline." 
+    New-TextBlock -Margin 5 -Row 0 "Type or click to search. Press Enter or click OK to pass the items down the pipeline." 
 
     ## Put the items in a ListBox, inside a ScrollViewer so it can scroll :)
-    ScrollViewer -Margin 5 -Row 1 {
-        ListBox -SelectionMode Multiple -ItemsSource $SelectViaUIStringItems -Name TheList  `
+    New-ScrollViewer -Margin 5 -Row 1 {
+        Write-Verbose ($SelectViaUIStringItems | OUt-String) -fore cyan
+      
+        New-ListBox -ItemsSource $SelectViaUIStringItems -SelectionMode Multiple -Name TheList  
                 -FontFamily "Consolas, Courier New"  -On_SelectionChanged {
                     $source = $TheList.Items
                     if($TheList.SelectedItems.Count -gt 0)
@@ -99,11 +104,11 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
                     }
                     $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
                 }
-                # -On_MouseDoubleClick { Close-Control $parent }
+                -On_MouseDoubleClick { Close-Control $parent }
     }
 
     ## This is the filter box: Notice we update the filter on_KeyUp
-    TextBox -Margin 5 -Name SearchText -Row 2 -On_KeyUp {
+    New-TextBox -Margin 5 -Name SearchText -Row 2 -On_KeyUp {
         $filterText = $this.Text
         [System.Windows.Data.CollectionViewSource]::GetDefaultView( $TheList.ItemsSource ).Filter = [Predicate[Object]]{ 
             param([string]$item)
@@ -123,15 +128,15 @@ Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resource @{
     }
 
     ## Use a GridPanel ... it's a simple, yet effective way to lay out a couple of buttons.
-    Grid -Margin 5 -HorizontalAlignment Right -Columns 65, 10, 65 {
-        Button "OK" -IsDefault -Width 65 -On_Click { Close-Control $window } -Column 0
-        Button "Cancel" -IsCancel -Width 65 -On_Click { $SelectFTList | Set-UIValue -value $null } -Column 2
+    New-Grid -Margin 5 -HorizontalAlignment Right -Columns 65, 10, 65 {
+        New-Button "OK" -IsDefault -Width 65 -On_Click { Close-Control $window } -Column 0
+        New-Button "Cancel" -IsCancel -Width 65 -On_Click { $SelectFTList | Set-UIValue -value $null } -Column 2
     } -Row 3
     ## Focus on the Search box by default
 } -On_Loaded { 
     $SearchText.Focus()
     ## Default output, in case you close the window without selecting anything
-    $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems #[$TheList.Items]
+    $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$TheList.Items]
 } @uiParameters
 
-}
+}}

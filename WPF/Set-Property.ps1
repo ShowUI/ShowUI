@@ -54,13 +54,14 @@ function Set-Property
             }
                 
             if ($property) {
-                # Write-Verbose "Setting $($property.Keys -join ',') on $object"
+                Write-Verbose "Setting $($property.Keys -join ',') on $object"
                 $p = $property
                 foreach ($k in $p.Keys) {
-                    $realKey = $k
+                    $realKey = $k                    
                     if ($k.StartsWith("On_")) {
                         $realKey = $k.Substring(3)
                     }
+                    Write-Verbose "Setting $realKey on $object to $($p[$k])"
 
                     if ($object.GetType().GetEvent($realKey)) {
                         # It's an Event!
@@ -167,7 +168,8 @@ function Set-Property
                                     $object.$itemName = $v
                                 }
                             } else {
-                                $object.$itemName = $v
+                                Write-Verbose "Setting $($object.GetType().Name).$itemName to $($v.GetType().Name)"
+                                $object.$itemName = $v -as $v.GetType()
                             }
                         }
                     } elseif ($realItem.MemberType -eq 'Method') {
