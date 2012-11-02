@@ -117,13 +117,13 @@ $ofs = [Environment]::NewLine
 
 $generatedCode = $generatedCode | Where-Object { $_ } 
 #>
-$controlNameDependencyObject = [IO.File]::ReadAllText("$fileRoot\C#\ShowUIDependencyObjects.cs")
-$cmdCode = [IO.File]::ReadAllText("$fileRoot\C#\ShowUICommand.cs")
-$ValueConverter = [IO.File]::ReadAllText("$fileRoot\C#\LanguagePrimitivesValueConverter.cs")
-$wpfJob = [IO.File]::ReadAllText("$fileRoot\C#\WPFJob.cs")
-$PowerShellDataSource = [IO.File]::ReadAllText("$fileRoot\C#\PowerShellDataSource.cs")
-$OutXamlCmdlet = [IO.File]::ReadAllText("$fileRoot\C#\OutXaml.cs")
-#$ScriptDataSource = [IO.File]::ReadAllText("$fileRoot\C#\ScriptDataSource.cs")
+$controlNameDependencyObject = [IO.File]::ReadAllText("$fileRoot\CSharp\ShowUIDependencyObjects.cs")
+$cmdCode = [IO.File]::ReadAllText("$fileRoot\CSharp\ShowUICommand.cs")
+$ValueConverter = [IO.File]::ReadAllText("$fileRoot\CSharp\LanguagePrimitivesValueConverter.cs")
+$wpfJob = [IO.File]::ReadAllText("$fileRoot\CSharp\WPFJob.cs")
+$PowerShellDataSource = [IO.File]::ReadAllText("$fileRoot\CSharp\PowerShellDataSource.cs")
+$OutXamlCmdlet = [IO.File]::ReadAllText("$fileRoot\CSharp\OutXaml.cs")
+#$ScriptDataSource = [IO.File]::ReadAllText("$fileRoot\CSharp\ScriptDataSource.cs")
 
 $generatedCode = "
 $controlNameDependencyObject

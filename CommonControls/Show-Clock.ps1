@@ -252,9 +252,9 @@ function Show-Clock
                         if ($timeLeft.TotalMilliseconds -le 0) {            
                             "Completed"            
                         } else {            
-                            $timeLeft                                        
+                            $timeLeft                                         
                         }                                    
-                        Start-Sleep -Milliseconds 500             
+                        Start-Sleep -Seconds 1
                     } while ($timeLeft.TotalMilliseconds -gt 0)            
                 }            
                 )            

@@ -26,14 +26,18 @@ function Get-ChildControl
         $hasEnumeratedChildren = $false
         if (-not $Control) { return }
         $namedNestedControls = @{}
-        $queue = New-Object Collections.Generic.Queue[Windows.DependencyObject]
+        $queue = New-Object Collections.Generic.Queue[PSObject]
         $queue.Enqueue($control)
         $hasOutputtedSomething = $false
         while ($queue.count) {
             $parent = $queue.Peek()
             
             if ('ShowUI.ShowUISetting' -as [type]) {
-                $controlname = $parent.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
+                $controlname = try {
+                    $parent.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
+                } catch {
+                    $controlname  = ""
+                }
             } else {
                 $controlname = ""
             }
@@ -83,8 +87,13 @@ function Get-ChildControl
                     
                 }
             }
-            $childCount = [Windows.Media.VisualTreeHelper]::GetChildrenCount($parent)
             
+            
+            $childCount = try {
+                [Windows.Media.VisualTreeHelper]::GetChildrenCount($parent)
+            } catch {
+                Write-Debug $_
+            }
             
             
             $shouldEnumerateChildren = $false            

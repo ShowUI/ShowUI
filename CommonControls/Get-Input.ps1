@@ -84,14 +84,7 @@ function Get-Input
     $null = $uiParameters.Remove('Field')
     $null = $uiParameters.Remove('Order')
     $null = $uiParameters.Remove('HideOKCancel')
-    New-Grid -Columns 'Auto', 1* -ControlName Get-Input @uiParameters -DataContext {
-        # Create a timed update
-        Get-PowerShellDataSource -On_OutputChanged {
-            Set-UIValue -Ui $this 
-        } -Script {
-            while ($true) { Get-Date; Start-Sleep 1}
-        }
-    } -On_Loaded {
+    New-Grid -Columns 'Auto', 1* -ControlName Get-Input @uiParameters -On_Loaded {
         $this.RowDefinitions.Clear()
         $rows = ConvertTo-GridLength (@('Auto')*($field.Count + 2))
         foreach ($rd in $rows) {
