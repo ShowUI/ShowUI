@@ -70,8 +70,10 @@ function Add-EventHandler {
                 
         $realHandler = ([ScriptBlock]::Create(@"
 `$eventName = 'On_$eventName';
-. Initialize-EventHandler
-
+`$parent = . Get-ParentControl
+. Initialize-EventHandler -parent `$parent 
+`$ErrorActionPreference = [Management.Automation.ActionPreference]::Stop
+            
 $Handler
 
 trap {                        

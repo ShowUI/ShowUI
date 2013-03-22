@@ -18,7 +18,7 @@ function Initialize-EventHandler
             $($controlname = $parent.GetValue([ShowUI.ShowUISetting]::ControlNameProperty);$controlName))
         {
             Set-Variable -Name $controlname -Value $parent
-            Remove-Variable -Name ControlName
+            Remove-Variable -Name $ControlName
         }
     }
     
