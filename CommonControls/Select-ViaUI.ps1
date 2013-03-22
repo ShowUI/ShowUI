@@ -73,7 +73,7 @@ process {
     ## Convert input to string representations and store ...
     foreach($i in @($InputObject)) {
         ## Get the item as it would be displayed by Format-Table
-        $stringRepresentation = (($i | ft -HideTableHeaders | Out-String )-Split"\n")[-4].trimEnd()
+        $stringRepresentation = (($i | Format-Table -HideTableHeaders | Out-String )-Split"\n")[-4].TrimEnd()
         $SelectViaUIOriginalItems[$stringRepresentation] = $i
         $null = $SelectViaUIStringItems.Add($stringRepresentation)
     }
@@ -103,8 +103,7 @@ New-Grid -Margin 5  -ControlName SelectFTList -Rows Auto, *, Auto, Auto -Resourc
                         $source = $TheList.SelectedItems
                     }
                     $SelectFTList | Set-UIValue -value $SelectViaUIOriginalItems[$source]
-                }
-                -On_MouseDoubleClick { Close-Control $parent }
+                } -On_MouseDoubleClick { Close-Control $parent }
     }
 
     ## This is the filter box: Notice we update the filter on_KeyUp
