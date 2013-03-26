@@ -80,6 +80,8 @@ if ($PSVersionTable.ClrVersion.Major -ge 4) {
 . $ShowUIModuleRoot\WPF\Set-Resource.ps1
 . $ShowUIModuleRoot\WPF\Show-UIElement.ps1
 . $ShowUIModuleRoot\WPF\Show-Window.ps1
+Write-Host "Show-UI"
+. $ShowUIModuleRoot\WPF\Show-UI.ps1
 . $ShowUIModuleRoot\WPF\Start-Animation.ps1
 . $ShowUIModuleRoot\WPF\Test-Ancestor.ps1
 . $ShowUIModuleRoot\WPF\Test-Descendent.ps1

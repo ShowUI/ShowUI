@@ -222,5 +222,5 @@ function Show-Window {
 }
 
 
-Set-Alias Show-BootsWindow Show-Window 
-Set-Alias Show-UI Show-Window 
+# Set-Alias Show-BootsWindow Show-Window 
+# Set-Alias Show-UI Show-Window 
