@@ -126,20 +126,23 @@ function Set-Property
                             }
 
                             if($debugPreference -ne 'SilentlyContinue') {
+                                Write-Host
                                 Write-Debug "Control: $($object.GetType().FullName)"
                                 Write-Debug "Type: $(@($v)[0].GetType().FullName)"
-                                Write-debug "Property: $($realItem.TypeNameOfValue)"
+                                Write-Debug "Property: $($realItem.TypeNameOfValue)"
+                                Write-Debug "IsBinding? $(@($v)[0] -is [System.Windows.Data.Binding]) -and ( $($realItem.TypeNameOfValue -eq "System.Object") -or $(!($realItem.TypeNameOfValue -as [Type]).IsAssignableFrom([System.Windows.Data.BindingBase])) )"
                             }
 
                             # Two Special cases: Templates and Bindings
                             if([System.Windows.FrameworkTemplate].IsAssignableFrom( $realItem.TypeNameOfValue -as [Type]) -and 
-                               $v -isnot [System.Windows.FrameworkTemplate]) {
+                                $v -isnot [System.Windows.FrameworkTemplate]
+                            ) {
                                 if($debugPreference -ne 'SilentlyContinue') {
-                                    Write-Debug "TEMPLATING: $object" -fore Yellow
+                                    Write-Debug "TEMPLATING: $object"
                                 }
                                 $Template = $v | ConvertTo-DataTemplate -TemplateType ( $realItem.TypeNameOfValue -as [Type])
                                 if($debugPreference -ne 'SilentlyContinue') {
-                                    Write-Debug "TEMPLATING: $([System.Windows.Markup.XamlWriter]::Save( $Template ))" -fore Yellow
+                                    Write-Debug "TEMPLATING: $([System.Windows.Markup.XamlWriter]::Save( $Template ))"
                                 }
                                 $object.$itemName = $Template
 
@@ -148,26 +151,35 @@ function Set-Property
                                     !($realItem.TypeNameOfValue -as [Type]).IsAssignableFrom([System.Windows.Data.BindingBase]))
                             ) {
                                 $Binding = @($v)[0];
+
                                 if($debugPreference -ne 'SilentlyContinue') {
-                                    Write-Debug "BINDING: $($object.GetType()::"${realKey}Property")" -fore Green
+                                    Write-Debug "BINDING: $($object.GetType()::"${realKey}Property") $(if($object.GetType()::"${realKey}Property" -is [Windows.DependencyProperty]){ '(A DependencyProperty)' })"
                                 }
 
-                                if(!$Binding.Source -and !$Binding.ElementName) {
-                                    $Binding.Source = $object.DataContext
-                                }
-                                if($object.GetType()::"${realKey}Property" -is [Windows.DependencyProperty]) {
+                                $Prop = $Object.GetType()::"${realKey}Property"
+
+                                if($Prop -and $Prop -is [Windows.DependencyProperty]) {
                                     try {
-                                        # $object.Resources.Clear()
-                                        $null = $object.SetBinding( ($object.GetType()::"${realKey}Property"), $Binding )
+                                        Write-Debug (
+                                            $Object.SetBinding(
+                                                $Prop,
+                                                $Binding) | Out-String
+                                            ) 
                                     } catch {
-                                        Write-Debug "Nope, was not able to set it." -fore Red
-                                        Write-Debug $_ -fore Red
-                                        Write-Debug $this -fore DarkRed
+                                        Write-Debug "Nope, was not able to set it."
+                                        Write-Debug $_
+                                        Write-Debug $this
+                                        $object.$itemName = $v -as $v.GetType()
                                     }
                                 } else {
-                                    $object.$itemName = $v
+                                    Write-Debug "Oh Shoot, that's not a Dependency Property"
+                                    $object.$itemName = $v -as $v.GetType()
                                 }
+
                             } else {
+                                if($debugPreference -ne 'SilentlyContinue') {
+                                    Write-Debug "Setting $($object.GetType().Name).$itemName to $($v.GetType().Name)"
+                                }
                                 Write-Verbose "Setting $($object.GetType().Name).$itemName to $($v.GetType().Name)"
                                 $object.$itemName = $v -as $v.GetType()
                             }
