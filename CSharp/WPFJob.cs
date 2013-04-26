@@ -42,7 +42,7 @@ using System.Collections.ObjectModel;
         delegate Collection<PSObject> RunScriptCallback(string script);
         delegate Collection<PSObject> RunScriptWithParameters(string script, Object parameters);
 
-        public PSObject[] InvokeScriptInJob(string script, object parameters, bool async)
+        public PSObject[] InvokeScriptInJob(string script, object parameters, bool asynchronous)
         {
             if (this.JobStateInfo.State == JobState.Running)
             {
@@ -99,7 +99,7 @@ using System.Collections.ObjectModel;
                         }
                         return resultArray;
                     }),
-                    async);
+                    asynchronous);
             }
             else
             {
@@ -107,7 +107,7 @@ using System.Collections.ObjectModel;
             }
         }
 
-        object RunOnUIThread(DispatcherOperationCallback dispatcherMethod, bool async)
+        object RunOnUIThread(DispatcherOperationCallback dispatcherMethod, bool asynchronous)
         {
             if (Application.Current != null)
             {
@@ -123,7 +123,7 @@ using System.Collections.ObjectModel;
             object returnValue = null;
             SynchronizationContext sync = new DispatcherSynchronizationContext(JobWindow.Dispatcher);
             if (sync == null) { return null; }
-            if (async) {
+            if (asynchronous) {
                 sync.Post(
                     new SendOrPostCallback(delegate(object obj)
                     {
