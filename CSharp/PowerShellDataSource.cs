@@ -28,7 +28,7 @@ namespace ShowUI
             set;
         }
 
-        object RunOnUIThread(DispatcherOperationCallback dispatcherMethod, bool async)
+        object RunOnUIThread(DispatcherOperationCallback dispatcherMethod, bool asynchronous)
         {
             if (Application.Current != null)
             {
@@ -44,7 +44,7 @@ namespace ShowUI
             object returnValue = null;
             SynchronizationContext sync = new DispatcherSynchronizationContext(Dispatcher);
             if (sync == null) { return null; }
-            if (async)
+            if (asynchronous)
             {
                 sync.Post(
                     new SendOrPostCallback(delegate(object obj)
