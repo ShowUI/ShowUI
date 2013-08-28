@@ -11,12 +11,12 @@ function ConvertTo-ParameterMetaData {
         are discovered.
     .Example
         [Windows.Window] | ConvertTo-ParameterMetaData
-    .Parameter Type
-        The Type that will be converted into parameter metadata
     #>
+    [CmdletBinding()]
     param(
-    [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-    [Type]$Type
+        # The Type that will be converted into parameter metadata
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Type]$Type
     )
     
     begin {
@@ -26,13 +26,15 @@ function ConvertTo-ParameterMetaData {
     }
     process {
         $params = @()
-        $constructors = $type.GetConstructors()
-        if (-not ($constructors -and 
-            -not $constructors[0].GetParameters()))
+        $constructors = $type.GetConstructors() | Where { !$_.GetParameters() }
+        if (-not $constructors)
         {
+            Write-Warning "$($type.FullName) has no suitable constructor."
             return
         }
         foreach ($p in $type.GetProperties("Instance,Public")) {
+            Write-Verbose "$($p.DeclaringType).$($p.Name)"
+
             switch ($p.PropertyType) {
                 {$script:CachedParameters."$($p.DeclaringType).$($p.Name)"} {
                     $params+=($script:CachedParameters."$($p.DeclaringType).$($p.Name)")
@@ -78,6 +80,7 @@ function ConvertTo-ParameterMetaData {
                 }
                 
                 {$p.CanWrite} {
+                    Write-Verbose "But at least it's writable: $($p.DeclaringType).$($p.Name)"
                     $param = New-Object Management.Automation.ParameterMetaData $p.Name
                     $script:CachedParameters."$($p.DeclaringType).$($p.Name)" = $param 
                     $params += $param
