@@ -210,34 +210,32 @@ You need to pass it a number (between 1 and 29) for the samples you want to run!
 16 {
    function Get-UIInput {
       Param([string]$Prompt = "Please enter your name:")
-      $global:UIInputPrompt = $Prompt
-      Show-UI {
+      Window {
          Border -BorderThickness 4 -BorderBrush "#BE8" -Background "#EFC" {
             StackPanel -Margin 10  {
-               Label $UIInputPrompt
+               Label $Prompt
                StackPanel -Orientation Horizontal {
-                  TextBox -Width 150 -On_KeyDown { 
+                  TextBox -Name TextBox -Width 150 -On_KeyDown { 
                      if($_.Key -eq "Return") { 
-                        Write-UIOutput $global:textbox.Text
-                        $ShowUI.ActiveWindow.Close()
+                        Write-Output $textbox.Text
+                        $Window.Close()
                      }
                   } | Tee -Variable global:textbox
                   Button "Ok" -On_Click { 
-                     Write-UIOutput $global:textbox.Text
-                     $ShowUI.ActiveWindow.Close()
+                     Write-Output $textbox.Text
+                     $Window.Close()
                   }
                }
             }
          }
-      } -On_Load { Invoke-UIWindow $global:textbox { $global:textbox.Focus() } } `
+      } -On_Load { $textbox.Focus() } } `
       -WindowStyle None -AllowsTransparency `
       -On_PreviewMouseLeftButtonDown { 
-         if($_.Source -notmatch ".*\.(TextBox|Button)") 
+         if($Source -notmatch ".*\.(TextBox|Button)") 
          {
-            $ShowUI.ActiveWindow.DragMove() 
+            $Window.DragMove() 
          }
-      }
-      Remove-Item Variable:Global:UIInputPrompt
+      } -Show -SizeToContent WidthAndHeight
    }
    Get-UIInput
 }
