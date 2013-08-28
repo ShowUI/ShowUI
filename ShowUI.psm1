@@ -158,7 +158,7 @@ foreach($m in @($importedModule)) {
 . $ShowUIModuleRoot\StyleSystem\Set-UIStyle.ps1
 . $ShowUIModuleRoot\StyleSystem\Import-UIStyle.ps1
 
-if (-not (Test-Path $ShowUIModuleRoot\Styles)) {
+if (-not (Test-Path $ShowUIModuleRoot\Styles\*)) {
     Set-UIStyle -StyleName "Hyperlink" -Style @{
         Resource = @{
                 AllowedSchemes = 'http','https'
