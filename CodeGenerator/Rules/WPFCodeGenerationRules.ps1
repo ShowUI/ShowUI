@@ -77,7 +77,7 @@ Add-CodeGenerationRule -Filter {
         $script:SetPropertyScriptBlock = {
         Set-Property -property $psBoundParameters -inputObject $Object}
     }
-    $null = $ProcessBLocks.AddLast(($script:SetPropertyScriptBlock))
+    $null = $ProcessBlocks.AddLast(($script:SetPropertyScriptBlock))
     
     # The last thing the command should do is output the object
     $null = $ProcessBlocks.AddLast(([ScriptBlock]::Create("

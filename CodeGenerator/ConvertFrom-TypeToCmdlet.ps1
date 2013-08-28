@@ -24,7 +24,7 @@ function ConvertFrom-TypeToScriptCmdlet
     begin {
         $LinkedListType = "Collections.Generic.LinkedList"
         Set-StrictMode -Off
-        # Default as Script
+        # Default as AsCSharp
         if(!$AsScript) {
             $AsCSharp = $true
         }

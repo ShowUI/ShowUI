@@ -8,8 +8,8 @@ $ShowUIModuleRoot = (Get-Variable PSScriptRoot).Value
 
 $CommandsPath = "$ShowUIModuleRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
 $CoreOutputPath = "$ShowUIModuleRoot\GeneratedAssemblies\ShowUICore.CLR$($psVersionTable.clrVersion).dll"
-#region Cleanup Parameter Handling
 
+#region Cleanup Parameter Handling
 if ($LoadBehavior -eq 'DoNothing') { return } 
 
 # turn off strict mode for the module context
@@ -44,7 +44,7 @@ if ($PSVersionTable.ClrVersion.Major -ge 4) {
 #endregion
 
 #region Code Generator Functions
-# But otherwise, we need to start regenerating the code ...
+# We need to be able to generate code ...
 . $ShowUIModuleRoot\CodeGenerator\Add-CodeGenerationRule.ps1
 . $ShowUIModuleRoot\CodeGenerator\Add-UiModule.ps1
 . $ShowUIModuleRoot\CodeGenerator\Select-UiType.ps1
@@ -80,7 +80,6 @@ if ($PSVersionTable.ClrVersion.Major -ge 4) {
 . $ShowUIModuleRoot\WPF\Set-Resource.ps1
 . $ShowUIModuleRoot\WPF\Show-UIElement.ps1
 . $ShowUIModuleRoot\WPF\Show-Window.ps1
-Write-Host "Show-UI"
 . $ShowUIModuleRoot\WPF\Show-UI.ps1
 . $ShowUIModuleRoot\WPF\Start-Animation.ps1
 . $ShowUIModuleRoot\WPF\Test-Ancestor.ps1
