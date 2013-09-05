@@ -107,6 +107,8 @@ $script:UIStyles = @{}
 . $ShowUIModuleRoot\Get-PowerShellOutput.ps1
 . $ShowUIModuleRoot\Get-PowerShellCommand.ps1
 . $ShowUIModuleRoot\Invoke-Background.ps1
+. $ShowUIModuleRoot\Get-ReferencedCommand.ps1
+. $ShowUIModuleRoot\Get-UICommand.ps1
 
 . $ShowUIModuleRoot\ConvertTo-ISEAddOn.ps1
 
