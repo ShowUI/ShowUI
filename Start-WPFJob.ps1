@@ -40,18 +40,7 @@ function Start-WPFJob
     [String]
     $Name
     )
-    
-    begin {
-# First, make the job type if it does not exist:
-        if (-not ('SHOWUI.WPFJob' -as [Type])) {
-            Write-Verbose "Compiling WPFJob"
-            Add-Type -Path $ShowUIModuleRoot\C#\WPFJob.cs -IgnoreWarnings -ReferencedAssemblies "WindowsBase",
-            "PresentationCore", 
-            "PresentationFramework" 
-        }        
 
-    }
-    
     process {            
         $src= @($ScriptBlock) + {
             Show-Window 
@@ -66,12 +55,12 @@ function Start-WPFJob
             Get-ReferencedCommand |
             Select-Object -Unique
         if (-not $name) {$name = [GUID]::NewGuid() } 
-        $iss = [SHOWUI.WPFJob]::GetSessionStateForCommands($cmds)       
+        $iss = [ShowUI.WPFJob]::GetSessionStateForCommands($cmds)       
         if ($psBoundParameters.ContainsKey("Parameter") -and $Parameter.Count) {
-            $wpfJob = New-Object SHOWUI.WPFJob ($name, $Command,
+            $wpfJob = New-Object ShowUI.WPFJob ($name, $Command,
                 $ScriptBlock, $Iss, $Parameter)
         } else {
-            $wpfJob = New-Object SHOWUI.WPFJob ($name, $Command,
+            $wpfJob = New-Object ShowUI.WPFJob ($name, $Command,
                 $ScriptBlock, $Iss)
         }
         if ($wpfJob) {
