@@ -1,14 +1,14 @@
 namespace ShowUI
 {
 
-using System;
-using System.ComponentModel;
-using System.Globalization;
-using System.Linq;
-using System.Management.Automation;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Markup;
+   using System;
+   using System.ComponentModel;
+   using System.Globalization;
+   using System.Linq;
+   using System.Management.Automation;
+   using System.Windows;
+   using System.Windows.Data;
+   using System.Windows.Markup;
 
 
    public class BindingTypeDescriptionProvider : TypeDescriptionProvider

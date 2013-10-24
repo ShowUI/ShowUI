@@ -120,6 +120,8 @@ $cmdCode = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\ShowUICommand.cs")
 $ValueConverter = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\LanguagePrimitivesValueConverter.cs")
 $wpfJob = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\WPFJob.cs")
 $PowerShellDataSource = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\PowerShellDataSource.cs")
+$GetReferencedCommandSource = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\GetReferencedCommand.cs")
+$ScriptBlockBindingAttributeSource = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\ScriptBlockBindingAttribute.cs")
 $OutXamlCmdlet = [IO.File]::ReadAllText("$ShowUIModuleRoot\CSharp\OutXaml.cs")
 
 $generatedCode = "
@@ -128,6 +130,8 @@ $cmdCode
 $ValueConverter
 $wpfJob 
 $PowerShellDataSource
+$GetReferencedCommandSource
+$ScriptBlockBindingAttributeSource
 $OutXamlCmdlet
 
 "

@@ -271,6 +271,18 @@ using System.Management.Automation.Runspaces;
                             $ofs = ","
                             "[Parameter($attributeParts)]"
                         }
+                    $parameterAttributes = $p.Attributes | 
+                        Where-Object { 
+                            $_ -isnot [Management.Automation.ParameterAttribute] 
+                        } |
+                        ForEach-Object {
+                            $pstring = $_.ToString()
+                            if($pstring -match "\[.*\)\]"){
+                                $pstring
+                            } else {
+                                "[{0}()]" -f $_.Fullname
+                            }
+                        }
                     
                     if (-not $parameterAttributes) {
                         # In this case, the parameter is not mandatory, 

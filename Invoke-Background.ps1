@@ -11,9 +11,14 @@ function Invoke-Background
     [Parameter(Mandatory=$true,ParameterSetName='Command',Position=0)]
     [string]
     $Command,    
-    
+
+    # Parameters to pass to the ScriptBlock (or Command)
     [Hashtable]$Parameter,    
+    
+    # The Control to bind (Invoke-Background sets the DataContext on this control)
     $control = $this,
+
+    # An alternate runspace to use for background commands
     [ValidateScript({
         if ($_.RunspaceStateInfo.State -ne 'Opened') {
             throw 'If a runspace is provided, it must be opened'
@@ -21,8 +26,11 @@ function Invoke-Background
         return $true
     })]
     [Management.Automation.Runspaces.Runspace]$InRunspace,
+
     [Switch]$DoNotAutomaticallyCreate,
+
     [Switch]$CreateDataContextHere,
+
     [Switch]$ResetDataSource,
     
     [System.Management.Automation.ScriptBlock[]]
@@ -66,21 +74,14 @@ function Invoke-Background
             $target = $parent
         } 
         
-
-                                           
         
-        
-        if ($ResetDataSource -or 
-            $target.DataContext -isnot [ShowUI.PowerShellDataSource]) {
-            
+        if ($ResetDataSource -or $target.DataContext -isnot [ShowUI.PowerShellDataSource]) {
+            Write-Host "Setting DataContext on $target"            
             if ($target.DataContext) {
-                Write-Debug "Overwriting existing data context"
+                Write-Host "Overwriting existing data context"
             }
-              
             
-            $target.DataContext = Get-PowerShellDataSource -Parent $target -Script { 
-                
-            }
+            $target.DataContext = Get-PowerShellDataSource -Parent $target -Script { }
             
             if ($target.CommandBindings.Add) {
                 if (-not $target.CommandsBindings.Count) { 
@@ -104,14 +105,16 @@ function Invoke-Background
                         }
                     )
                     $target.CommandBindings.Add($cmdBind)
-                }                
-            }                                     
-        }                                         
+                }
+            }
+        } else {
+            Write-Host "Using existing DataContext"
+        }
         
         $eventParameters = @{}
         foreach ($eventName in ($psBoundParameters.Keys -like "On_*")) {
             $eventParameters.$eventName = $psBoundParameters[$eventName]
-        } 
+        }
         $handlerNames = @($target.DataContext.Resources.EventHandlers.Keys)
         if ($handlerNames) {
             foreach ($handler in $handlerNames) {
@@ -122,8 +125,7 @@ function Invoke-Background
         }
         
         Set-Property -inputObject $target.DataContext -property $eventParameters 
-        
-        
+
         $target.DataContext.Parent = $target
         $target.DataContext.Command.Commands.Clear()
         
@@ -142,7 +144,7 @@ function Invoke-Background
                 $parameter
             }
             if ($psCmdlet.ParameterSetName -eq 'scriptBlock') {
-                $target.DataContext.Script = ". { $ScriptBlock} @commandParameters"
+                $target.DataContext.Script = ". { $ScriptBlock } @commandParameters"
             } else {
                 $realCommand = $target.DataContext.Command.Runspace.SessionStateProxy.InvokeCommand.GetCommand($command, "All") 
                 $target.DataContext.Script = "$($realCommand.Name) @commandParameters"

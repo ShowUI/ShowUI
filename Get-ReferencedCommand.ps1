@@ -1,105 +1,151 @@
-function Get-ReferencedCommand { 
-    <#
-    .Synopsis
-        Gets the commands referred to from within a function or external script
-    .Description
-        Uses the Tokenizer to get the commands referred to from within a function or external script    
-    .Example
-        Get-Command New-Button | Get-ReferencedCommand
-    #>
-    param(
-    # The script block to search for command references
-    [Parameter(Mandatory=$true,
-        ValueFromPipeline=$True,
-        ValueFromPipelineByPropertyName=$true)]
-    [ScriptBlock]
-    $ScriptBlock
-    ) 
+if($PSVersionTable.PSVersion -lt "3.0") {
+    function Script:Get-ReferencedCommand { 
+        <#
+        .Synopsis
+            Gets the commands referred to from within a function or external script
+        .Description
+            Uses the Tokenizer to get the commands referred to from within a function or external script    
+        .Example
+            Get-Command New-Button | Get-ReferencedCommand
+        #>
+        param(
+        # The script block to search for command references
+        [Parameter(Mandatory=$true,
+            ValueFromPipeline=$True,
+            ValueFromPipelineByPropertyName=$true)]
+        [ScriptBlock]
+        $ScriptBlock
+        ) 
 
-    begin {
-        if (-not ('WPK.GetReferencedCommand' -as [Type])) {
-            Add-Type -IgnoreWarnings @"
-using System;
-using System.Collections.Generic;
-using System.Management.Automation;
-using System.Collections.ObjectModel;
+        begin {
+            if($VerbosePreference -gt 0) {
+                Write-Verbose "Get-ReferencedCommand begin"
+                $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+            }        
+            $commandsEncountered = @{}
+        }
+        process {   
+            # $exc = $ExecutionContext.SessionState.PSVariable.Get("ExecutionContext").Value
+            # $nsb = $exc.InvokeCommand.NewScriptBlock($scriptBlock) 
+            [WPK.GetReferencedCommand]::GetReferencedCommands( $ScriptBlock, $ExecutionContext, $PSCmdlet)
+        }
+        end {
+            if($VerbosePreference -gt 0) {
+                $stopwatch.Stop();
+                Write-Verbose "Get-ReferencedCommand end ($($stopwatch.Elapsed.TotalSeconds) s)"
+            }
+        }
+    }
+} else {
+    function Script:ProcessReferencedShowUICommand {
+        param (
+            [Parameter(Mandatory=$true)]
+            [System.Management.Automation.CommandInfo]
+            $cmd,
 
-namespace WPK {
-    public class GetReferencedCommand {
-        public static IEnumerable<CommandInfo> GetReferencedCommands(ScriptBlock scriptBlock,  EngineIntrinsics executionContext, PSCmdlet cmdlet)
-        {
-            Dictionary<CommandInfo, bool> resolvedCommandCache = new Dictionary<CommandInfo, bool>();
-            Queue<PSToken> tokenQueue = new Queue<PSToken>();
-            Collection<PSParseError> errors;
-            foreach (PSToken token in PSParser.Tokenize(new object[] { scriptBlock }, out errors))
-            {
-                tokenQueue.Enqueue(token);
-            }
-            if (tokenQueue.Count == 0) { 
-                yield return null;
-            }
-            while (tokenQueue.Count > 0)
-            {
-                PSToken token = tokenQueue.Dequeue();
-                if (token.Type == PSTokenType.Command)
-                {
-                    CommandInfo cmd = null;
-                    cmd = executionContext.SessionState.InvokeCommand.GetCommand(token.Content, CommandTypes.Alias);
-                    if (cmd == null)
-                    {
-                        cmd = executionContext.SessionState.InvokeCommand.GetCommand(token.Content, CommandTypes.Function);
-                        if (cmd == null)
-                        {
-                            cmd = executionContext.SessionState.InvokeCommand.GetCommand(token.Content, CommandTypes.Cmdlet);
-                        }
-                    }
-                    else
-                    {
-                        while (cmd != null && cmd is AliasInfo)
-                        {
-                            AliasInfo alias = cmd as AliasInfo;
-                            if (!resolvedCommandCache.ContainsKey(alias))
-                            {
-                                yield return alias;
-                                resolvedCommandCache.Add(alias, true);
-                            }
-                            cmd = alias.ReferencedCommand;
-                        }
-                    }
-                    if (cmd == null) { continue; }
-                    if (cmd is FunctionInfo)
-                    {
-                        if (! resolvedCommandCache.ContainsKey(cmd))
-                        {
-                            FunctionInfo func = cmd as FunctionInfo;
-                            yield return cmd;
-                            foreach (PSToken t in PSParser.Tokenize(new object[] { func.ScriptBlock }, out errors))
-                            {
-                                tokenQueue.Enqueue(t);
-                            }
-                            resolvedCommandCache.Add(cmd, true);
-                        }
-                    } else {
-                        if (!resolvedCommandCache.ContainsKey(cmd))
-                        {
-                            yield return cmd;
-                            resolvedCommandCache.Add(cmd, true);
+            [string[]]$Exclude = @('%')
+        )
+        if ($cmd -and !$cachedCommandInfo.Contains($cmd) -and $cmd.Name -notin $Exclude) {
+            [void]$cachedCommandInfo.Add(($cmd))
+            Write-Output $cmd
+            switch ($cmd.CommandType) {
+                Alias    { ProcessReferencedShowUICommand $cmd.ResolvedCommand }
+                Function { if ($Recurse) { $queue.Enqueue($cmd.ScriptBlock) }}
+                Filter   { if ($Recurse) { $queue.Enqueue($cmd.ScriptBlock) }}
+                ExternalScript { 
+                    if ($Recurse) { 
+                        try {
+                            $ScriptBlock = $cmd.ScriptBlock
+                            if (!$ScriptBlock) { $cmd.ValidateScriptInfo($null) }
+                              $queue.Enqueue($ScriptBlock) 
+                        } catch [Management.Automation.PSSecurityException] {
+                            Write-Warning $_
                         }
                     }
                 }
             }
         }
     }
-}
-"@
+
+    function Script:Get-ReferencedCommand { 
+        <#
+        .Synopsis
+            Gets the commands referred to from within a ScriptBlock
+        .Description
+            Uses the ScriptBlock's AST to to get the commands referred to (recursively)     
+        .Example
+            { Show-Window } | Get-ReferencedCommand
+        #>
+        param(
+            [Parameter(Mandatory=$true,
+                ValueFromPipeline=$True,
+                ValueFromPipelineByPropertyName=$true)]
+            [ScriptBlock] $ScriptBlock, # The script block to search for command references
+
+            [string[]]$Exclude = @('%'),
+
+            [switch]$Recurse = $true
+        ) 
+
+        begin {
+            Set-StrictMode -Version 3
+            if($VerbosePreference -gt 0) {
+                Write-Verbose "Get-ReferencedCommand begin"
+                $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+            }
+            $queue = new-object `
+                "System.Collections.Generic.Queue[[ScriptBlock]]"
+            $cachedCommandName = new-object `
+                "System.Collections.Generic.HashSet[[string]]"
+            $cachedCommandInfo = new-object `
+                "System.Collections.Generic.HashSet[[System.Management.Automation.CommandInfo]]"
         }
-        $commandsEncountered = @{}
-    }
-    process {   
-        $exc = $ExecutionContext.SessionState.PSVariable.Get("ExecutionContext").Value
-        $nsb = $exc.InvokeCommand.NewScriptBlock($scriptBlock) 
-        [WPK.GetReferencedCommand]::GetReferencedCommands(
+
+        process {   
+            $queue.Enqueue($ScriptBlock)
+        }
+
+        end {
+            while (!$pscmdlet.Stopping -and $queue.Count) {
+                $ScriptBlock = $queue.Dequeue()
+                $cachedCommandName = new-object "System.Collections.Generic.HashSet[[string]]"
         
-        $nsb, $exc,$PSCmdlet)
+                $ScriptBlock.Ast.FindAll( { 
+                    !$pscmdlet.Stopping -and 
+                        $args[0] -is [Management.Automation.Language.FunctionDefinitionAst] 
+                 }, $true ) | % { 
+                    [void]$cachedCommandName.Add($_.Name)
+                 }
+                
+                $ScriptBlock.Ast.FindAll( { 
+                    !$pscmdlet.Stopping -and 
+                        $args[0] -is [Management.Automation.Language.CommandAst] 
+                 }, $true ) | % { 
+                    $node = $_
+                    try {
+                        if ($node.InvocationOperator -eq "Unknown") {
+                            $name = $node.CommandElements[0].value
+                            if (!$cachedCommandName.Contains($name)) {
+                                [void]$cachedCommandName.Add($name)
+                                $cmd = Get-Command $name -ErrorAction SilentlyContinue -ErrorVariable GetCommandError
+                                if ($cmd) {
+                                    ProcessReferencedShowUICommand $cmd -Exclude:$Exclude
+                                } else { 
+                                    $location = if ($_.Extent.File) { $_.Extent.File } else { "<ScriptBlock>" }
+                                    $location += ":$($_.Extent.StartLineNumber),$($_.Extent.StartColumnNumber)"
+                                    Write-Warning "$GetCommandError`r`n at $location" 
+                                }
+                            }
+                        }
+                    } catch { 
+                        Write-Warning "Unexpected warning processing command $node : $_"
+                    }
+                }
+            }
+            if($VerbosePreference -gt 0) {
+                $stopwatch.Stop();
+                Write-Verbose "Get-ReferencedCommand end ($($stopwatch.Elapsed.TotalSeconds) s)"
+            }
+        }
     }
 }

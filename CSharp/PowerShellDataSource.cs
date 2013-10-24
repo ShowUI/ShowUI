@@ -343,6 +343,7 @@ namespace ShowUI
             powerShellCommand.Runspace = runspace;
             outputCollection = new PSDataCollection<PSObject>();
             timeStampedOutput = new PSDataCollection<PSObject>();
+            powerShellCommand.InvocationStateChanged += new EventHandler<PSInvocationStateChangedEventArgs>(powerShellCommand_InvocationStateChanged);
             outputCollection.DataAdded += new EventHandler<DataAddedEventArgs>(outputCollection_DataAdded);
             timeStampedOutput.DataAdded += new EventHandler<DataAddedEventArgs>(timeStampedOutput_DataAdded);
             powerShellCommand.Streams.Debug.DataAdded += new EventHandler<DataAddedEventArgs>(Debug_DataAdded);
@@ -351,6 +352,13 @@ namespace ShowUI
             powerShellCommand.Streams.Progress.DataAdded += new EventHandler<DataAddedEventArgs>(Progress_DataAdded);
             powerShellCommand.Streams.Warning.DataAdded += new EventHandler<DataAddedEventArgs>(Warning_DataAdded);
         }
+
+        public PowerShellDataSource(string name) : this()
+        {
+            this.Name = name;
+        }
+
+        public string Name { get; private set; }
 
         #region Notification Methods
         void NotifyTimeStampedOutputChanged()

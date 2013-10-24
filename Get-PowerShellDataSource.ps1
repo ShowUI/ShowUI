@@ -29,6 +29,8 @@ function Get-PowerShellDataSource {
         
     ${Parent} = $this,
 
+    [String]${Name},
+
     [System.Management.Automation.ScriptBlock[]]
     ${On_PropertyChanged},
 
@@ -63,7 +65,12 @@ function Get-PowerShellDataSource {
     
     process {
         try {
-            $Object = New-Object ShowUI.PowerShellDataSource
+            if(${Name}) {
+                $Object = New-Object ShowUI.PowerShellDataSource ${Name}
+                $null = $psBoundParameters.Remove("Name")
+            } else {
+                $Object = New-Object ShowUI.PowerShellDataSource
+            }
         } catch {
             throw $_
             return

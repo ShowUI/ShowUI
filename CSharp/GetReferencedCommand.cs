@@ -1,9 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Management.Automation;
-using System.Collections.ObjectModel;
+namespace ShowUI {
 
-namespace WPK {
+    using System;
+    using System.Collections.Generic;
+    using System.Management.Automation;
+    using System.Collections.ObjectModel;
+
     public class GetReferencedCommand {
         public static IEnumerable<CommandInfo> GetReferencedCommands(ScriptBlock scriptBlock,  EngineIntrinsics executionContext, PSCmdlet cmdlet)
         {

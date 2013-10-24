@@ -1,17 +1,17 @@
 namespace ShowUI
 {
-using System;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Threading;
-using System.Windows.Threading;
-using System.ComponentModel;
-using System.Collections.Generic;
-using System.Collections;
-using System.Collections.ObjectModel;
+    using System;
+    using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Media;
+    using System.Management.Automation;
+    using System.Management.Automation.Runspaces;
+    using System.Threading;
+    using System.Windows.Threading;
+    using System.ComponentModel;
+    using System.Collections.Generic;
+    using System.Collections;
+    using System.Collections.ObjectModel;
 
 
     public class WPFJob : Job, INotifyPropertyChanged

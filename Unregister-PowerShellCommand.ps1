@@ -26,6 +26,12 @@ function Unregister-PowerShellCommand
                 Unregister-PowerShellCommand -name "UpdateClock"  
             }
         } -show            
+    .LINK
+        Start-PowerShellCommand
+    .LINK
+        Stop-PowerShellCommand
+    .LINK
+        Register-PowerShellCommand
     #>
     param(
     [Parameter(Mandatory=$true,
@@ -40,6 +46,8 @@ function Unregister-PowerShellCommand
             if ($window.Resources.Scripts.$name) {
                 $null = $window.Resources.Scripts.Remove($name) 
             }
+        } else {
+            Write-Warning "Window not found, can't Unregister-PowerShellCommand"
         }
     }
 }

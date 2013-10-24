@@ -20,17 +20,13 @@ function Show-UI {
     .Example
         New-Label "Hello World" | Show-UI
     #>
-    [CmdletBinding(DefaultParameterSetName="Window")]
+    [CmdletBinding(DefaultParameterSetName="ScriptBlock")]
     param(
     # The Content of the window (usually a UI element, but could also be any object)
     [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="Content", Position=0)]
     [Alias("Control")]
     [System.Windows.Media.Visual]
     ${Content},
-
-    [Parameter(Mandatory=$true,ParameterSetName="Xaml",ValueFromPipeline=$true,Position=0)]
-    [xml]
-    $Xaml,
 
     [Parameter(ParameterSetName='Window',Mandatory=$true,ValueFromPipeline=$true,Position=0)]
     [Windows.Window]
@@ -44,9 +40,12 @@ function Show-UI {
     $ScriptBlock,
 
     [Parameter(ParameterSetName="ScriptBlock")]      
-    [Hashtable]
+    [Hashtable][Alias("Args","Arguments")]
     $ScriptParameter = @{},
        
+    [Parameter(Mandatory=$true,ParameterSetName="Xaml",ValueFromPipeline=$true,Position=0)]
+    $Xaml,
+
     [Switch]
     $OutputWindowFirst,
 
@@ -686,31 +685,46 @@ function Show-UI {
 				if ($controlName) {
 					$Window.Title = $controlName
 				}
-				
             }
             Xaml {
+                if($Xaml -is [Xml.XmlDocument]) {
+                    $Xaml = $Xaml.OuterXml
+                } elseif("Xml.Linq.XDocument" -as [Type] -and ($Xaml -is [Xml.Linq.XDocument])) {
+                    $Xaml = $Xaml.ToString()
+                } elseif(Test-Path $Xaml) {
+                    $Xaml = @(Get-Content $Xaml) -join "`n"
+                } else {
+                    $Xaml = [string]$Xaml
+                }
                 if ($AsJob) {
                     Start-WPFJob -Parameter @{
                         Xaml = $xaml
                         WindowProperty = $windowProperty
                     } -ScriptBlock {
                         param($Xaml, $windowProperty)
-                        $window = New-Window
-                        Set-Property -inputObject $window -property $WindowProperty
-                        $strWrite = New-Object IO.StringWriter
-                        $xaml.Save($strWrite)
-                        $Content = [windows.Markup.XamlReader]::Parse("$strWrite")
-                        $window.Content = $Content
-                        Show-UI -Window $window
+                        # Set-Property -inputObject $window -property $WindowProperty
+                        $Content = [windows.Markup.XamlReader]::Parse($Xaml)
+                        if($Content -is [System.Windows.Window]) {
+                            Show-UI -Window $Content @WindowProperty
+                        } else {
+                            Show-UI -Content $Content @WindowProperty
+                        }
                     }   
                     return                  
                 } else {
-                    $window = New-Window
-                    Set-Property -inputObject $window -property $WindowProperty
-                    $strWrite = New-Object IO.StringWriter
-                    $xaml.Save($strWrite)
-                    $Content = [windows.Markup.XamlReader]::Parse("$strWrite")
-                    $window.Content = $Content
+                    $Content = [windows.Markup.XamlReader]::Parse($Xaml)
+                    if($Content -is [System.Windows.Window]) {
+                        $window = $Content
+                        Set-Property -inputObject $window -property $WindowProperty
+                    } else {
+                        $window = New-Window
+                        Set-Property -inputObject $window -property $WindowProperty
+                        $window.Content = $Content
+                        $controlName = $Content.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
+                        if ($controlName) {
+                            $Window.Title = $controlName
+                        }                        
+                    }
                 }                
             }
             ScriptBlock {

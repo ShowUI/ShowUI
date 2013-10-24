@@ -41,7 +41,6 @@ function Set-Property
                 # Since Set-Property will be called by Set-UIStyle, make sure to check the callstack
                 # rather than infinitely recurse            
                 $styleName = $object.GetValue([ShowUI.ShowUISetting]::StyleNameProperty)
-               
 
                 if ($styleName) {
                     $setUiStyleInCallStack = foreach ($_ in (Get-PSCallStack)) { 

@@ -377,6 +377,13 @@ Add-CodeGenerationRule -Type ([Windows.DependencyObject]) -Change {
         $script:CachedDependencyPropertyBlock)   
 }
 
+Add-CodeGenerationRule -Type ([Windows.DependencyObject]) -Change {
+    $parameters | Where-Object { $_.PropertyType -is [Windows.DependencyProperty] } |
+        ForEach-Object {  
+            $_.Attributes.Add( (New-Object ShowUI.ScriptBlockBindingAttribute) )
+        }
+}
+
 Add-CodeGenerationRule -Type ([Windows.Controls.ItemsControl]) -Change {
     $param = $parameters | Where-Object { $_.Name -eq 'Items' }
     $null = $parameters.Remove($param)

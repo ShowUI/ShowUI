@@ -26,7 +26,13 @@ function Stop-PowerShellCommand
             New-Button -Row 1 -Column 1 Stop -On_Click {
                 Stop-PowerShellCommand "UpdateClock"  
             }
-        } -show    
+        } -show
+    .LINK
+        Register-PowerShellCommand
+    .LINK
+        Start-PowerShellCommand
+    .LINK
+        Unregister-PowerShellCommand        
     #>    
     param(
     [Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true,Position=0)]
@@ -39,8 +45,14 @@ function Stop-PowerShellCommand
                     $window.Resources.Timers."Run-$Name" | ForEach-Object {
                         if ($_) { $_.Stop() } 
                     }
-                } 
-            }    
-        }    
+                }  else {
+                    Write-Warning "Timer not found, can't Stop-PowerShellCommand"
+                }
+            } else {
+                Write-Warning "Command name not found, can't Stop-PowerShellCommand"
+            }
+        } else {
+            Write-Warning "Window not found, can't Stop-PowerShellCommand"
+        }
     }
 }

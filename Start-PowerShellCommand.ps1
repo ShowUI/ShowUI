@@ -5,6 +5,8 @@ function Start-PowerShellCommand
         Starts a PowerShell Command
     .Description
         Starts a PowerShell command that has been Registered with Register-PowerShellCommand
+
+        Once a command has been started, you can use Get-Job and Receive-Job to see if there are errors
     .Parameter name
         The name of the command to start
     .Parameter interval
@@ -28,7 +30,13 @@ function Start-PowerShellCommand
             New-Button -Row 1 -Column 1 Stop -On_Click {
                 Stop-PowerShellCommand "UpdateClock"  
             }
-        } -show    
+        } -show
+    .LINK
+        Register-PowerShellCommand
+    .LINK
+        Stop-PowerShellCommand
+    .LINK
+        Unregister-PowerShellCommand        
     #>
     param(
         [Parameter(ValueFromPipeline=$true, 
@@ -44,6 +52,11 @@ function Start-PowerShellCommand
         if ($window) {
             if ($window.Resources.Scripts.$Name) {
                 if (-not $interval.TotalMilliseconds) {
+                    if( $window.Resources.Scripts.$name | Get-Member Interval ) {
+                        $interval = $window.Resources.Scripts.$name.Interval
+                    }
+                }
+                if (-not $interval.TotalMilliseconds) {
                     & $window.Resources.Scripts.$Name
                 } else {           
                     if ($window.Resources.Timers."Run-$name") {
@@ -55,7 +68,11 @@ function Start-PowerShellCommand
                     $window.Resources.Timers."Run-$name".add_Tick($window.Resources.Scripts.$name)
                     $window.Resources.Timers."Run-$name".Start()
                 }            
-            }    
+            } else {
+                Write-Warning "Named command not found, can't Start-PowerShellCommand"
+            }
+        } else {
+            Write-Warning "Window not found, can't Start-PowerShellCommand"
         }
     }    
 }

@@ -4,9 +4,9 @@ function Register-PowerShellCommand {
         Registers a PowerShell scriptblock command for use within a window
     .Description
         Registers a PowerShell scriptblock for use within a window.
-        The command can be run registered for one time use, 
-        it can register anonymously, and it can register for use 
-        at a regular interval.
+        The command can be run registered for one time use, or it can register anonymously, or it can register for use at a regular interval.
+
+        Once a command has been started (by using the -Run parameter, or Start-PowerShellCommand), you can use Get-Job and Receive-Job to see if there are errors
     .Parameter Name
         The name of the PowerShell command
     .Parameter ScriptBlock
@@ -25,8 +25,14 @@ New-Label "$($d = Get-Date ;$d.ToLongDateString() + ' ' + $d.ToLongTimeString())
             $d = Get-Date
             $content = $d.ToLongDateString() + " " + $d.ToLongTimeString()       
             $window.Content.Content = $content
-        } -run -in "0:0:0.5"
+        } -Run -Interval "0:0:0.5"
     } -AsJob
+    .LINK
+        Start-PowerShellCommand
+    .LINK
+        Stop-PowerShellCommand
+    .LINK
+        Unregister-PowerShellCommand
     #>
     param(
     [Parameter(Position=0, Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
@@ -50,16 +56,21 @@ New-Label "$($d = Get-Date ;$d.ToLongDateString() + ' ' + $d.ToLongTimeString())
             if (-not $name) { $name = [GUID]::NewGuid().ToString() } 
             if ($once) {
                 $window.Resources.Scripts.$name = [ScriptBlock]::Create(
-                    "$scriptBlock
-                    " + {
-                    Unregister-PowerShellCommand } + " '$name'" 
+                    ". Initialize-EventHandler`n${scriptBlock}`n" + { Unregister-PowerShellCommand } + " '$name'" 
                 )
             } else {
-                $window.Resources.Scripts.$name = $scriptBlock                
+                $window.Resources.Scripts.$name = [ScriptBlock]::Create(
+                    ". Initialize-EventHandler`n${scriptBlock}" 
+                )
+            }
+            if ($interval) {
+                $window.Resources.Scripts.$name | Add-Member Interval $interval
             }
             if ($run) {                
                 Start-PowerShellCommand $name -interval $interval
             }
+        } else {
+            Write-Warning "Window not found, can't Register-PowerShellCommand"
         }
     }
 }

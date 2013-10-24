@@ -1,23 +1,28 @@
-New-Grid -Columns 2 {            
-    New-TextBlock -Margin 10 -TextWrapping Wrap -ZIndex 1 -HorizontalAlignment Left -FontWeight Bold -FontSize 12 -DataBinding @{            
-        "Text" = "LastProgress.Activity"            
-    }            
-    New-TextBlock -Margin 10 -ZIndex 1 -TextWrapping Wrap -Column 1 -VerticalAlignment Bottom -HorizontalAlignment Right -FontStyle Italic -FontSize 12 -DataBinding @{            
-        "Text" = "LastProgress.StatusDescription"            
-    }            
-    New-ProgressBar -ColumnSpan 2 -MinHeight 25 -Name ProgressPercent -DataBinding @{            
-        "Value" = "LastProgress.PercentComplete"
-    }            
-} -On_Loaded {            
-    Invoke-Background -control $this -ScriptBlock {             
-        param($step = 1, $sleep = 50)
-        for ($i =0; $i -lt 100; $i+=$step) {            
-            Write-Progress "MajorProgress $i" "MinorProgress $step" -PercentComplete $i 
-            Start-Sleep -Milliseconds $sleep
+Grid -Rows 2 -ControlName Progression -Margin 5 -MinWidth 250 {
+    ProgressBar -name progress -height 28 -maximum 100 -Margin "0,0,0,5"
+    Label -name report -zindex 1 -background Transparent
+        # -DataBinding @{ "Value" = "LastProgress.PercentComplete" }
+    Button "Click" -Name "Click" -Row 1 -on_Click {
+        $this.IsEnabled = $false
+        $window.Cursor = "Wait"
+        Invoke-Background -Scriptblock { 
+            1..10 | % {
+                sleep -milli 200  # imagine this was doing real work
+                write-progress -percent ($_ * 10) -activity "Super"
+            }
+        } -On_Progress { 
+            # Write-Host ($this.DataContext.LastProgress |Out-String)
+            if($this.DataContext.LastProgress.RecordType -ne "Completed") {
+                $progress.Value = $this.DataContext.LastProgress.PercentComplete
+                $report.Content  = "{0}%" -f $this.DataContext.LastProgress.PercentComplete
+            }
+        } -On_IsFinishedChanged {
+            if($this.DataContext.IsFinished) {
+                $progress.Value = $progress.Maximum
+                $window.Cursor = "Arrow"
+                $Click.IsEnabled = $true
+            }                
         }
-        Write-Progress "All" "Done" -Completed            
-    } -parameter @{
-        Step = 25
-        Sleep = 25
-    }            
+    }
 } -show
+
