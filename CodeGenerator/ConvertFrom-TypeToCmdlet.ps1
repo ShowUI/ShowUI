@@ -52,6 +52,7 @@ function ConvertFrom-TypeToScriptCmdlet
                 $Verb = ""
                 $Noun = ""
                 $BaseType = $t
+                $OutputTypes = @($t)
 
                 foreach ($rule in $CodeGenerationRuleOrder) {
                     if (-not $rule) { continue } 
@@ -77,7 +78,7 @@ function ConvertFrom-TypeToScriptCmdlet
             }
             
             ## A hack to get a list of constructor cmdlets
-            if($Verb -eq "New" -and (Test-Path Variable:ConstructorCmdletNames)) {
+            if($Verb -eq "New" -and (Test-Path Variable:ConstructorCmdletNames) -and $ConstructorCmdletNames -ne $null) {
                $ConstructorCmdletNames.Value.Add( $Noun )
             }
             
@@ -162,7 +163,8 @@ function ConvertFrom-TypeToScriptCmdlet
 @"
     function $Verb-$Noun {
         $HelpBlock
-        
+
+        [OutputType([$(($OutputTypes | % FullName) -Join '], [')])]        
         $CmdletBinding
         param(
             $parameterBlock
@@ -444,13 +446,14 @@ $fullProcessBlock
                 
                 #region Generate the final cmdlet                                                                             
 $namespaceID = Get-Random
+$OutputTypeString = ($OutputTypes | % { "typeof({0})" -f $_.FullName }) -Join ','
 @"
 namespace AutoGenerateCmdlets$namespaceID
 {
     $usingBlock
 
     [Cmdlet("$Verb", "$Noun")]
-    [OutputType(typeof($($BaseType.FullName)))]
+    [OutputType($OutputTypeString)]
     public class ${Verb}${Noun}Command : PSCmdlet 
     {
         $fieldBlock

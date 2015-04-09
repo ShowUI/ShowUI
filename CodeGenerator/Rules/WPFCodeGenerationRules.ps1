@@ -793,3 +793,12 @@ Add-CodeGenerationRule -Type ([Windows.Controls.Button]) -Change {
     $null = $parameters.AddAfter($parameters.First, $param)
 }
 
+Add-CodeGenerationRule -Type "System.Windows.Controls.DatePicker" -Change {
+    $OutputTypes += [datetime]
+
+    $param = $parameters | Where-Object { $_.Name -eq 'SelectedDate' }
+    $null = $parameters.Remove($param)
+    $null = $parameters.AddFirst($param)
+}
+
+

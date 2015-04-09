@@ -41,14 +41,36 @@ begin {
 }
 
 process {
+    if($UI -eq $Null) { return $null }
+    
     # If Tag is not null, return that.
     if ($UI.Tag -ne $Null) {
         $newValue = $UI.Tag
         . MaybeAddUIProperty $ui
         return $newValue
-    # If SelectedItems exists and has some items, return them
+    # If SelectedItems exist, return them
     } elseif ($Ui.SelectedItems -ne $null -and $Ui.SelectedItems.Count -gt 0) {
         $newValue = $UI.SelectedItems
+        . MaybeAddUIProperty $ui
+        return $newValue
+    # If SelectedItem exists, return that
+    } elseif ($Ui.SelectedItem -ne $null) {
+        $newValue = $UI.SelectedItem
+        . MaybeAddUIProperty $ui
+        return $newValue
+    # If SelectedDates exist, return those
+    } elseif ($Ui.SelectedDates -ne $null -and $Ui.SelectedDates.Count -gt 0) {
+        $newValue = $UI.SelectedDate
+        . MaybeAddUIProperty $ui
+        return $newValue
+    # If SelectedDate exists, return that
+    } elseif ($Ui.SelectedDate -ne $null) {
+        $newValue = $UI.SelectedDate
+        . MaybeAddUIProperty $ui
+        return $newValue
+    # If SelectedValue exists, return that
+    } elseif ($Ui.SelectedValue -ne $null) {
+        $newValue = $UI.SelectedValue
         . MaybeAddUIProperty $ui
         return $newValue
     # If this has an IsChecked property, return True or False based on that
