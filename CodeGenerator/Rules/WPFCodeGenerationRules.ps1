@@ -566,7 +566,11 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     if (-not $script:CachedShowBlock) {
         $script:CachedShowBlock = {
         if ($show -or $showUI) {
-            return Show-Window $Object 
+            if($Object -is [Windows.Window]){
+                Show-UI -Window $Object
+            } else {
+                Show-UI -Content $Object
+            }
         }}        
     }
     $null = $ProcessBlocks.AddBefore($ProcessBlocks.Last, $Script:CachedShowBlock)        

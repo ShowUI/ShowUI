@@ -820,22 +820,10 @@ function Show-UI {
             $Window
         }
         $null = $Window.ShowDialog()            
-        if ($Content.Tag) {
-            $Content.Tag            
-        } else {
-            if ($Content.SelectedItems) {
-                $Content.SelectedItems
-            }
-            if ($Content.Text) {
-                $Content.Text
-            }
-            if ($Content.IsChecked) {
-                $Content.IsChecked
-            }
-        }
-        return                
+        Get-UIValue -UI $Window.Content  
    }
 }
 
 
 Set-Alias Show-BootsWindow Show-UI
+# Set-Alias Show-Window Show-UI 
