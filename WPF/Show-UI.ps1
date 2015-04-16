@@ -656,35 +656,74 @@ function Show-UI {
     [Alias('Async')]
     [Switch]$AsJob   
     )
-   
-   process {        
+    begin {
+        function Update-WindowTitle {
+            param($Window)
+            $instanceName = $control.Name
+            $specificWindowTitle = $window.Content.GetValue([Windows.Window]::TitleProperty)
+            if ($specificWindowTitle) {
+                $Window.Title = $specificWindowTitle
+            } elseif ($instanceName) {
+                $Window.Title = $instanceName
+            } else {
+                $controlName = $window.Content.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
+                if ($controlName) {
+                    $Window.Title = $controlName
+                }
+            }
+        }
+        function Update-WindowSize {
+            param($Content, [Hashtable]$WindowProperty)
+            $Margins = $Content.GetValue([Windows.FrameworkElement]::MarginProperty)
+            $Paddings = $Content.GetValue([Windows.Controls.Control]::PaddingProperty)
+            if(!$WindowProperty.ContainsKey("MinWidth")) {
+                if($MinWidth = $Content.GetValue([Windows.FrameworkElement]::MinWidthProperty)) {
+                    $WindowProperty.MinWidth = $MinWidth
+                    if($Margins) {
+                        $WindowProperty.MinWidth = $MinWidth + $Margins.Left + $Margins.Right
+                    }
+                    if($Paddings) {
+                        $WindowProperty.MinWidth = $MinWidth + $Paddings.Left + $Paddings.Right
+                    }
+                }
+            }
+            if(!$WindowProperty.ContainsKey("MinHeight")) {
+                if($MinHeight = $Content.GetValue([Windows.FrameworkElement]::MinHeightProperty)) {
+                    $WindowProperty.MinHeight = $MinHeight
+                    if($Margins) {
+                        $WindowProperty.MinHeight = $MinWidth + $Margins.Top + $Margins.Bottom
+                    }
+                    if($Paddings) {
+                        $WindowProperty.MinHeight = $MinWidth + $Paddings.Top + $Paddings.Top
+                    }                    
+                }
+            }            
+        }
+    }
+    process {        
         try {
             foreach($key in "Content", "Xaml", "Window", "WindowProperty", "ScriptBlock", "ScriptParameter", "OutputWindowFirst", "AsJob") {
                 if($PSBoundParameters.ContainsKey($key)){
-                    $PSBoundParameters.Remove($key)
+                    $null = $PSBoundParameters.Remove($key)
                 }
             }
+            $WindowProperty += $PSBoundParameters
             if(!$PSBoundParameters.ContainsKey("SizeToContent") -and !$WindowProperty.ContainsKey("WidthAndHeight")) {
                 $WindowProperty += @{
                     SizeToContent="WidthAndHeight"   
                 }
             }
-            $WindowProperty += $PSBoundParameters
-
-            Write-Warning "$($WindowProperty | Out-String)"
-
+            Write-Verbose "Set Window Properties`n$($WindowProperty | Out-String)"
         } catch {
             Write-Debug ($_ | Out-String)
-        }        
+        }
         switch ($psCmdlet.ParameterSetName) {
             Content {
                 $window = New-Window
+                Update-WindowSize $Content $WindowProperty
                 Set-Property -inputObject $window -property $WindowProperty
                 $window.Content = $Content
-				$controlName = $Content.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
-				if ($controlName) {
-					$Window.Title = $controlName
-				}
+                Update-WindowTitle $Window
             }
             Xaml {
                 if($Xaml -is [Xml.XmlDocument]) {
@@ -718,12 +757,10 @@ function Show-UI {
                         Set-Property -inputObject $window -property $WindowProperty
                     } else {
                         $window = New-Window
+                        Update-WindowSize $Content $WindowProperty
                         Set-Property -inputObject $window -property $WindowProperty
                         $window.Content = $Content
-                        $controlName = $Content.GetValue([ShowUI.ShowUISetting]::ControlNameProperty)
-                        if ($controlName) {
-                            $Window.Title = $controlName
-                        }                        
+                        Update-WindowTitle $Window                      
                     }
                 }                
             }
@@ -760,9 +797,10 @@ function Show-UI {
                                     Write-Debug ($_ | Out-String)
                                 }                        
                             }
-                        }                                                
-                        Set-Property -inputObject $window -property $WindowProperty
-                        Show-UI -Window $window
+                        }
+                        Update-WindowSize $Window.Content $WindowProperty                        
+                        Set-Property -inputObject $Window -property $WindowProperty
+                        Show-UI -Window $Window
                     } -Parameter @{
                         ScriptBlock = $ScriptBlock
                         ScriptBlockParameter = $ScriptBlockParameter
@@ -786,9 +824,9 @@ function Show-UI {
                     } catch {
                         Write-Debug ($_ | Out-String)
                     }
+                    Update-WindowSize $Window.Content $WindowProperty                    
                     Set-Property -inputObject $window -property $WindowProperty
                 }
-                
             }
         }
         $Window.Resources.Timers = 
@@ -819,9 +857,9 @@ function Show-UI {
         if ($outputWindowFirst) {
             $Window
         }
-        $null = $Window.ShowDialog()            
+        $null = $Window.ShowDialog()
         Get-UIValue -UI $Window.Content  
-   }
+    }
 }
 
 

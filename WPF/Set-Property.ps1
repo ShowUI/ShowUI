@@ -21,20 +21,23 @@ function Set-Property
     #>
     param(    
     [Parameter(ValueFromPipeline=$true)]    
-    [Object[]]$inputObject,
+    [Object[]]$InputObject,
     
     [Parameter(Position=0)] 
-    [Hashtable]$property,
+    [Hashtable]$Property,
     
     [switch]$AllowXaml,
     
-    [switch]$doNotAutoCreateLabel,
+    [switch]$DoNotAutoCreateLabel,
     
     [Switch]$PassThru
     )
        
     process {
-        foreach($object in $inputObject) {
+        Write-Verbose "Set-Property on $InputObject $(if($InputObject -eq $null) { "NULL!?"} else { $InputObject.GetType().FullName })"
+        foreach($object in $InputObject | % { $_ }) {
+            Write-Verbose "Set-Property on $object $(if($object -eq $null) { "NULL!?"} else { $object.GetType().FullName })"
+
             $inAsJob  = $host.Name -eq 'Default Host'
             if ($object.GetValue -and 
                 ($object.GetValue([ShowUI.ShowUISetting]::StyleNameProperty))) {
@@ -63,6 +66,7 @@ function Set-Property
                     Write-Verbose "Setting $realKey on $object to $($p[$k])"
 
                     if ($object.GetType().GetEvent($realKey)) {
+                        Write-Verbose "Setting EventHandler On_$realKey on $object"
                         # It's an Event!
                         foreach ($sb in $p[$k]) {
                             Add-EventHandler $object $realKey $sb
@@ -72,14 +76,44 @@ function Set-Property
                     
                     $realItem  = $object.psObject.Members[$realKey]
                     if (-not $realItem) { 
-                        continue 
+                        # Add support for Grid Options
+                        switch($realKey) {
+                            "Row" {
+                                Write-Verbose "Setting Grid.Row on $($object.GetType().FullName) to $($p[$realKey])"                                
+                                $Object.SetValue([Windows.Controls.Grid]::RowProperty, $p[$realKey])
+                            }
+                            "Column" {
+                                Write-Verbose "Setting Grid.Column on $($object.GetType().FullName) to $($p[$realKey])"                                
+                                $Object.SetValue([Windows.Controls.Grid]::ColumnProperty, $p[$realKey])
+                            }
+                            "RowSpan" {
+                                Write-Verbose "Setting Grid.RowSpan on $($object.GetType().FullName) to $($p[$realKey])"                                
+                                $Object.SetValue([Windows.Controls.Grid]::RowSpanProperty, $p[$realKey])
+                            }
+                            "ColumnSpan" {
+                                Write-Verbose "Setting Grid.ColumnSpan on $($object.GetType().FullName) to $($p[$realKey])"                                
+                                $Object.SetValue([Windows.Controls.Grid]::ColumnSpanProperty, $p[$realKey])
+                            }
+                            "ZIndex" {
+                                Write-Verbose "Setting Panel.ZIndex on $($object.GetType().FullName) to $($p[$realKey])"                                
+                                $Object.SetValue([Windows.Controls.Panel]::ZIndexProperty, $p[$realKey])
+                            }
+                            "Dock" {
+                                Write-Verbose "Setting DockPanel.Dock on $($object.GetType().FullName) to $($p[$realKey])"                                
+                                $Object.SetValue([Windows.Controls.DockPanel]::DockProperty, $p[$realKey])
+                            }
+                            default {
+                                Write-Verbose "Could not set $realKey on $($object.GetType().FullName)"
+                            }
+                        }
+                        continue
                     }
 
                     $itemName = $realItem.Name
                     if ($realItem.MemberType -eq 'Property') {
                         if ($realItem.Value -is [Collections.IList]) {
                             $v = $p[$realKey]
-                            # Write-Host "$itemName is collection on $object " -fore cyan -nonewline
+                            Write-Verbose "$itemName is collection on $($object.GetType().FullName)"
                             $collection = $object.$itemName
                             if (-not $v) { continue } 
                             if ($v -is [ScriptBlock]) { 
@@ -92,7 +126,7 @@ function Set-Property
                             if (-not $v) { continue } 
 
                             foreach ($ri in $v) {
-                                # Write-Host "`n`tAdding $ri to $object.$itemName" -fore cyan -nonewline
+                                Write-Verbose "`n`tAdding $ri to $object.$itemName"
                                 $null = $collection.Add($ri)
                                 trap [Management.Automation.PSInvalidCastException] {
                                     $label = New-Label $ri
@@ -110,6 +144,7 @@ function Set-Property
                                     $v = . $v
                                 }
                             }
+                            Write-Verbose "Setting Property $itemName ($k) on $($realItem.GetType().FullName) to $v"
 
                             if ($allowXaml) {
                                 $xaml = ConvertTo-Xaml $v
@@ -184,6 +219,7 @@ function Set-Property
                             }
                         }
                     } elseif ($realItem.MemberType -eq 'Method') {
+                        Write-Verbose "Invoking Method $itemName on $($realItem.GetType().FullName) with $($p[$realKey])"
                         $object."$($itemName)".Invoke(@($p[$realKey]))
                     }
                 }

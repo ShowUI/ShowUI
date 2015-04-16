@@ -215,9 +215,23 @@ if (-not (Test-Path $ShowUIModuleRoot\Styles\*)) {
             $this.Resources.OriginalText =  $this.Text
         }
         FontStyle = "Italic"
+        Foreground = "DarkGray"
         On_GotFocus = {
             if ($this.Text -eq $OriginalText) {
                 $this.Text = ""
+            }
+            $this.ClearValue([Windows.Controls.Control]::ForegroundProperty)
+            $this.ClearValue([Windows.Controls.Control]::FontStyleProperty)
+        }
+        On_LostFocus = {
+            if($this.Text -eq "") {
+                $this.Text = $OriginalText   
+            }
+            if ($this.Text -eq $OriginalText) {
+                $this.Foreground = "DarkGray"
+                $this.FontStyle = "Italic"
+            } else {
+                $this.ClearValue([Windows.Controls.Control]::ForegroundProperty)
                 $this.ClearValue([Windows.Controls.Control]::FontStyleProperty)
             }
         }

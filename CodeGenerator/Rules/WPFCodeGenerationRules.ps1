@@ -128,7 +128,7 @@ $ResourceChange = {
         $Script:ResourceBlock = {
             $parentFunctionParameters = 
                 try { 
-                    Get-Variable -Name psboundparameters -ValueOnly -Scope 1 -ErrorAction SilentlyContinue 
+                    Get-Variable -Name psboundparameters -ValueOnly -Scope 1 -ErrorAction Ignore 
                 } catch { 
                 } 
             
@@ -157,7 +157,8 @@ $ResourceChange = {
         }
     }
     
-    $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $Script:ResourceBlock)        
+    $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $Script:ResourceBlock)
+    # $null = $ProcessBlocks.AddLast($Script:ResourceBlock)        
 }
 
 Add-CodeGenerationRule -Type ([Windows.FrameworkTemplate]) -Change $ResourceChange
@@ -567,13 +568,13 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
         $script:CachedShowBlock = {
         if ($show -or $showUI) {
             if($Object -is [Windows.Window]){
-                Show-UI -Window $Object
+                return (Show-UI -Window $Object)
             } else {
-                Show-UI -Content $Object
+                return (Show-UI -Content $Object)
             }
         }}        
     }
-    $null = $ProcessBlocks.AddBefore($ProcessBlocks.Last, $Script:CachedShowBlock)        
+    $null = $ProcessBlocks.AddLast($ProcessBlocks.Last, $Script:CachedShowBlock)        
     
     
     $help.Parameter.Show = "
