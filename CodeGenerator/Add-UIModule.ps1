@@ -3,63 +3,98 @@ function Add-UIModule {
     #   Generate a Module with commands for creating UI Elements
     #.Description
     #   Generate a PowerShell Module from one or more assemblies (or types)
+    #   If you specify a simple name, the module will be generated in your Documents\WindowsPowerShell\Modules\ folder
+    #   If you want the module in another location, specify a full path...
+    #.Example
+    #   Add-UIModule -Path .\MahApps.Metro.dll -Name MahApps.Metro
+    #
+    #   The simplest way to use Add-UIModule is to specify the path (or assembly name, if it's in the GAC) to a dll with WPF controls in it, and the name of the module that you want to create.
+    #   
+    #.Example
+    #   Add-UIModule -Path .\MahApps.Metro.dll -Name ~\Documents\WindowsPowerShell\MahApps\MahApps.psm1
+    #
+    #   This example shows how you can specify a full path as the name, in order to generate a module in a specific location
+    #.Example
+    #   cd ~\Documents\WindowsPowerShell\Modules
+    #   nuget install MahApps.Metro -x
+    #   Add-UIModule -Path .\MahApps.Metro\lib\net45\MahApps.Metro.dll -Name MahApps.Metro
+    #
+    #   This more complete example shows one way to use nuget.exe to install an assembly, and then generate the module to go with it.
+    #   When you install a module with nuget using the -x parameter, the version number is left off the folder name, and you can usually find the .dll somewhere inside a "lib" subfolder.
     [CmdletBinding()]
     param(
-    # The Path to an assembly to generate a UIModule for
-    [Parameter(ParameterSetName='Path', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
-    [Alias('PSPath')]
-    [string[]]
-    $Path,        
-    # The name of a GAC assembly to generate a UI module for
-    [Parameter(ParameterSetName='Assembly', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
-    [Alias('AN')]
-    [string[]]
-    $AssemblyName,    
-    # The full name(s) of one or more types to generate into a UI module
-    [Parameter(ParameterSetName='Type', Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-    [Type[]]
-    $Type,
-    # A whitelist for types that you want to generate cmdlets for *in addition* to types that pass Select-UIType
-    [Parameter()]
-    [String[]]
-    $TypeNameWhiteList,
-    # A blacklist for types that you do not want to generate cmdlets for even if they pass Select-UIType
-    [Parameter()]
-    [String[]]
-    $TypeNameBlackList,
-    # The name of the module to create (either a simple name, or a full path to the psd1)
-    [string]
-    $Name,
-    # Additional assemblies (assembly names, or full paths) that are required as references for the module
-    [string[]]
-    $RequiredAssemblies,
-    # Generate CSharp Cmdlets instead of script functions
-    [switch]
-    $AsCmdlet,
-    # If set, don't generate the psd1 metadata file
-    [switch]
-    $AssemblyOnly,
-    # Override the default placement of the source code output
-    [string]
-    $SourceCodePath,
-    # Import the module after generating it
-    [switch]
-    $Import,
-    # Output the module info after generating it
-    [switch]
-    $Passthru,
-    # A scriptblock to run whenever the module is imported
-    [ScriptBlock]
-    $On_ImportModule,
-    # A scriptblock to run whenever the module is removed
-    [ScriptBlock]
-    $On_RemoveModule,
-    # The Write-Progress id for nesting with other calls to Write-Progress
-    [Int]
-    $ProgressId = $(Get-Random),
-    # The Write-Progress parent id for nesting with other calls to Write-Progress
-    [Int]
-    $ProgressParentId = -1
+        # The Path to an assembly to generate a UIModule for
+        [Parameter(ParameterSetName='Path', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
+        [Alias('PSPath')]
+        [string[]]
+        $Path,
+
+        # The name of a GAC assembly to generate a UI module for
+        [Parameter(ParameterSetName='Assembly', Mandatory=$true, ValueFromPipelineByPropertyName=$true)]
+        [Alias('AN')]
+        [string[]]
+        $AssemblyName,
+
+        # The full name(s) of one or more types to generate into a UI module
+        [Parameter(ParameterSetName='Type', Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Type[]]
+        $Type,
+
+        # A whitelist for types that you want to generate cmdlets for *in addition* to types that pass Select-UIType
+        [Parameter()]
+        [String[]]
+        $TypeNameWhiteList,
+
+        # A blacklist for types that you do not want to generate cmdlets for even if they pass Select-UIType
+        [Parameter()]
+        [String[]]
+        $TypeNameBlackList,
+
+        # The name of the module to create (either a simple name, or a full path to the psd1)
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        # Additional assemblies (assembly names, or full paths) that are required as references for the module
+        [string[]]
+        $RequiredAssemblies,
+
+        # Generate CSharp Cmdlets instead of script functions
+        [switch]
+        $AsCmdlet,
+
+        # If set, don't generate the psd1 metadata file
+        [switch]
+        $AssemblyOnly,
+
+        # Override the default placement of the source code output
+        [string]
+        $SourceCodePath,
+
+        # Import the module after generating it
+        [switch]
+        $Import,
+
+        # Output the module info after generating it
+        [switch]
+        $Passthru,
+
+        # A scriptblock to run whenever the module is imported
+        [ScriptBlock]
+        $On_ImportModule,
+
+        # A scriptblock to run whenever the module is removed
+        [ScriptBlock]
+        $On_RemoveModule,
+
+        # The Write-Progress id for nesting with other calls to Write-Progress
+        [Int]
+        $ProgressId = $(Get-Random),
+
+        # The Write-Progress parent id for nesting with other calls to Write-Progress
+        [Int]
+        $ProgressParentId = -1
     )
     begin {
         $typeCounter = 0
@@ -73,7 +108,7 @@ function Add-UIModule {
             for($p=0;$p -lt $Path.Count;$p++){
                 $Path[$p] = $ExecutionContext.SessionState.Path.GetResolvedPSPathFromPSPath(($Path[$p]))
             }
-            $RequiredAssemblies += @($Path) + @($AssemblyName)
+            $RequiredAssemblies += @($Path) + @($AssemblyName) | Where { $_ }
             Write-Progress "Filtering Types" " " -ParentId $ProgressParentId -Id $ProgressId
             [Type[]]$filteredTypes = Select-UIType -Path @($Path) -AssemblyName @($AssemblyName) -TypeNameWhiteList @($TypeNameWhiteList) -TypeNameBlackList @($TypeNameBlackList)
         }
