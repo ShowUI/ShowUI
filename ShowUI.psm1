@@ -1,30 +1,36 @@
 param(
-[ValidateSet('CleanCore','Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing', 'ResetStyles')]
+[ValidateSet('CleanCore','Clean','Normal','DoNothing','OnlyLoadCommonCommands', 'CleanAndDoNothing', 'ResetStyles', 'BuildLocal')]
 [string]
 $LoadBehavior = 'Normal'
 )
 
 $ShowUIModuleRoot = (Get-Variable PSScriptRoot).Value
+# We're storing our generated code in a shared, writeable, location now
+$CacheModuleRoot = if($LoadBehavior -eq "BuildLocal") { $ShowUIModuleRoot } else { "${Env:ProgramData}\ShowUI" }
+$ClrVersion = "" + $PSVersionTable.CLRVersion.Major + "." + $PSVersionTable.CLRVersion.Minor
 
-$CommandsPath = "$ShowUIModuleRoot\GeneratedAssemblies\ShowUI.CLR$($psVersionTable.clrVersion).dll"
-$CoreOutputPath = "$ShowUIModuleRoot\GeneratedAssemblies\ShowUICore.CLR$($psVersionTable.clrVersion).dll"
+$LocalCommandsPath = "$ShowUIModuleRoot\GeneratedModules\ShowUI.CLR${ClrVersion}.psm1"
+$LocalCoreOutputPath = "$ShowUIModuleRoot\GeneratedModules\ShowUICore.CLR${ClrVersion}.dll"
+
+$CommandsPath = "$CacheModuleRoot\GeneratedModules\ShowUI.CLR${ClrVersion}.psm1"
+$CoreOutputPath = "$CacheModuleRoot\GeneratedModules\ShowUICore.CLR${ClrVersion}.dll"
 
 #region Cleanup Parameter Handling
-if ($LoadBehavior -eq 'DoNothing') { return } 
+if ($LoadBehavior -eq 'DoNothing') { return }
 
 # turn off strict mode for the module context
 Set-StrictMode -Off
 if ('Clean', 'CleanCore', 'CleanAndDoNothing', 'ResetStyles' -contains $LoadBehavior) {
-    Remove-Item $ShowUIModuleRoot\Styles -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item $CacheModuleRoot\Styles -Recurse -Force -ErrorAction SilentlyContinue
 }
 # If they said CleanCore not CleanAll, then leave the Commands in place
 if('CleanCore' -eq $LoadBehavior) {
     $exclude = "ShowUI.CLR$($psVersionTable.clrVersion)*"
 }
 if ('Clean', 'CleanCore', 'CleanAndDoNothing' -contains $LoadBehavior) {
-    Get-ChildItem $ShowUIModuleRoot\GeneratedAssemblies -Force -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
+    Get-ChildItem $CacheModuleRoot\GeneratedModules -Force -Recurse -Exclude $exclude -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
-    Get-ChildItem $ShowUIModuleRoot\GeneratedCode  -Recurse -Force -Exclude $exclude -ErrorAction SilentlyContinue |
+    Get-ChildItem $CacheModuleRoot\GeneratedCode  -Recurse -Force -Exclude $exclude -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
     if ($LoadBehavior -eq 'CleanAndDoNothing') { return } 
 }
@@ -114,12 +120,17 @@ $script:UIStyles = @{}
 
 if ($LoadBehavior -eq 'OnlyLoadCommonCommands') { return }
 
+# If it exists, import it
 if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
     $importedModule = Import-Module $CommandsPath, $CoreOutputPath -PassThru
+# if not, check the local location
+} elseif ((Test-Path $LocalCommandsPath, $LocalCoreOutputPath) -notcontains $False) {
+    $importedModule = Import-Module $LocalCommandsPath, $LocalCoreOutputPath -PassThru
+# Otherwise, generate it
 } else {
     # Pass Parameters so we don't have to calculate them twice
     . $ShowUIModuleRoot\CodeGenerator\InstallShowUIAssembly.ps1 `
-        -OutputPathBase "$ShowUIModuleRoot\GeneratedAssemblies\" `
+        -OutputPathBase "$CacheModuleRoot\GeneratedModules\" `
         -CommandPath $CommandsPath `
         -CoreOutputPath $CoreOutputPath `
         -Assemblies $Assemblies `
@@ -135,9 +146,9 @@ if ((Test-Path $CommandsPath, $CoreOutputPath) -notcontains $False) {
         $importedModule  = Import-Module $CommandsPath, $CoreOutputPath -PassThru
     }
     
-    attrib "$ShowUIModuleRoot\GeneratedAssemblies" +h /d /s
-    attrib "$ShowUIModuleRoot\GeneratedCode" +h /d /s
-    attrib "$ShowUIModuleRoot\Styles" +h /d /s
+    attrib "$CacheModuleRoot\GeneratedModules" +h /d /s
+    attrib "$CacheModuleRoot\GeneratedCode" +h /d /s
+    attrib "$CacheModuleRoot\Styles" +h /d /s
 }
 ## Fix xaml Serialization 
 [ShowUI.XamlTricks]::FixSerialization()
@@ -159,7 +170,7 @@ foreach($m in @($importedModule)) {
 . $ShowUIModuleRoot\StyleSystem\Set-UIStyle.ps1
 . $ShowUIModuleRoot\StyleSystem\Import-UIStyle.ps1
 
-if (-not (Test-Path $ShowUIModuleRoot\Styles\*)) {
+if (-not (Test-Path $CacheModuleRoot\Styles\*)) {
     Set-UIStyle -StyleName "Hyperlink" -Style @{
         Resource = @{
                 AllowedSchemes = 'http','https'
