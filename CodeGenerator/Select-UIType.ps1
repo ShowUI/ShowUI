@@ -23,7 +23,11 @@ param(
 
     [Parameter()]
     [String[]]
-    $TypeNameBlackList
+    $TypeNameBlackList,
+
+    [Parameter()]
+    [String[]]
+    $NamespaceBlackList
 )
 begin {
     $TypeNameWhiteList = $TypeNameWhiteList + @(
@@ -43,7 +47,21 @@ begin {
         'System.Windows.Ink.GestureRecognizer',
         'System.Windows.Data.XmlNamespaceMappingCollection',
         'System.Windows.Annotations.ContentLocator',
-        'System.Windows.Annotations.ContentLocatorGroup' ) | Select -Unique
+        'System.Windows.Annotations.ContentLocatorGroup',
+        'System.Windows.UIElement',
+        'System.Windows.FrameworkElement',
+        'System.Windows.FrameworkContentElement',
+        'System.Windows.DependencyObject',
+        'System.Windows.Threading.DispatcherSynchronizationContext',
+        'System.Windows.Application' ) | Select -Unique
+
+    $NamespaceBlackList = $NamespaceBlackList + @(
+        "System.Xaml",
+        "System.Windows.Media.Imaging",
+        "System.Windows.Media.Media3D",
+        "System.Windows.Documents.DocumentStructures",
+        "System.Windows.Automation.Peers" ) | Select -Unique
+
 }
 process {
     if(!(Test-Path Variable:Type) -or ($Type -eq $null)) {
@@ -90,6 +108,8 @@ end {
             (-not $_.IsAbstract) -and
             (-not $_.IsEnum) -and
             ($_.FullName -notlike "*Internal*") -and
+            ($_.FullName -notlike '*KeyFrame') -and
+            ($_.FullName -notlike '*Presenter') -and
             (-not $_.IsSubclassOf([EventArgs])) -and
             (-not $_.IsSubclassOf([Exception])) -and
             (-not $_.IsSubclassOf([Attribute])) -and
@@ -102,10 +122,13 @@ end {
             (-not $_.IsSubclassOf([Windows.Media.ImageSource])) -and
             (-not $_.IsSubclassOf([Windows.TemplateKey])) -and
             (-not $_.IsSubclassOf([Windows.Media.Imaging.BitmapEncoder])) -and
+            (-not $_.IsSubclassOf([Windows.Controls.DefinitionBase])) -and
+            (-not $_.IsSubclassOf([Windows.Controls.ValidationRule])) -and 
+            (-not $_.IsSubclassOf([Windows.UIPropertyMetadata])) -and 
             ($_.BaseType -ne [Object]) -and
             ($_.BaseType -ne [ValueType]) -and
-            $_.Name -notlike '*KeyFrame' -and
-            $TypeNameBlackList -notcontains $_.FullName
+            ($NamespaceBlackList -notcontains $_.Namespace) -and
+            ($TypeNameBlackList -notcontains $_.FullName)
         )
     }
 }
