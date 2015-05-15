@@ -1,7 +1,7 @@
 param(
-$outputPathBase = "$ShowUIModuleRoot\GeneratedAssemblies\",
-$CommandPath    = "$outputPathBase\ShowUI.CLR$($psVersionTable.clrVersion).dll",
-$CoreOutputPath = "$outputPathBase\ShowUICore.CLR$($psVersionTable.clrVersion).dll",
+$outputPathBase = "$CacheModuleRoot\GeneratedModules\",
+$CommandPath    = "$outputPathBase\ShowUI.CLR${ClrVersion}.dll",
+$CoreOutputPath = "$outputPathBase\ShowUICore.CLR${ClrVersion}.dll",
 $Assemblies,
 $Force
 )
@@ -19,7 +19,7 @@ Write-Progress "Preparing Show-UI for First Time Use" "Please Wait" -Id $progres
 if (-not (Test-Path $outputPathBase)) {
     New-Item $outputPathBase -ItemType "Directory" -Force | Out-Null
 }
-$SourcePathBase = ($outputPathBase -replace "GeneratedAssemblies","GeneratedCode")
+$SourcePathBase = ($outputPathBase -replace "GeneratedModules","GeneratedCode")
 
 if (-not (Test-Path $SourcePathBase)) {
     New-Item $SourcePathBase -ItemType "Directory" -Force | Out-Null
@@ -150,6 +150,7 @@ $RequiredAssemblies = $Assemblies + @("System.Windows.Forms, Version=2.0.0.0, Cu
                                       
 if ($PSVersionTable.ClrVersion.Major -ge 4) {
     $RequiredAssemblies += "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+    $RequiredAssemblies += [PSObject].Assembly.Fullname
 }
 
 $global:addTypeParameters = @{
@@ -173,7 +174,7 @@ Write-Debug "Type Parameters:`n$($addTypeParameters | Out-String)"
 Add-Type @addTypeParameters
 
 if((Test-Path $CommandPath) -and !$Force) { return }
-$SourceCodePath = $CommandPath -replace "GeneratedAssemblies", "GeneratedCode" -replace '.dll$','.cs'
+$SourceCodePath = $CommandPath -replace "GeneratedModules", "GeneratedCode" -replace '.dll$','.cs'
 
 Write-Debug "Generating Commands From Assemblies:`n$($Assemblies | Format-Table @{name="Version";expr={$_.ImageRuntimeVersion}}, FullName -auto | Out-String)"
-Add-UIModule -AssemblyName $Assemblies -RequiredAssemblies $RequiredAssemblies -Name $CommandPath -SourceCodePath $SourceCodePath -AsCmdlet -AssemblyOnly -ProgressParentId $progressId -ProgressId $ChildId
+Add-UIModule -AssemblyName $Assemblies -RequiredAssemblies $RequiredAssemblies -Name $CommandPath -SourceCodePath $SourceCodePath -ProgressParentId $progressId -ProgressId $ChildId
