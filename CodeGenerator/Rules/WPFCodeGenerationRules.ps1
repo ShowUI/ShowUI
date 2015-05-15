@@ -128,7 +128,7 @@ $ResourceChange = {
         $Script:ResourceBlock = {
             $parentFunctionParameters = 
                 try { 
-                    Get-Variable -Name psboundparameters -ValueOnly -Scope 1 -ErrorAction Ignore 
+                    Get-Variable -Name psboundparameters -ValueOnly -Scope 1 -ErrorAction SilentlyContinue 
                 } catch { 
                 } 
             
@@ -148,7 +148,7 @@ $ResourceChange = {
                 foreach ($kv in $psBoundParameters['Resource'].GetEnumerator())
                 {
                     $null = $object.Resources.Add($kv.Key, $kv.Value)
-                    if ('Object', 'psBoundParameters','Show','AsJob','OutputXaml' -notcontains $kv.Key -and
+                    if ('Object', 'psBoundParameters','ShowUI','AsJob','OutputXaml' -notcontains $kv.Key -and
                         $psBoundParameters.Keys -notcontains $kv.Key) {
                         Set-Variable -Name $kv.Key -Value $kv.Value
                     }
@@ -318,7 +318,7 @@ New-Grid -Rows 'Auto', 'Auto', 'Auto', '1*', 'Auto' `
     New-Button "_Add" -Row 2
     New-ListBox -Row 3
     New-Button "_Remove" -Row 4
-} -show
+} -ShowUI
 '@
         
     if (-not $Script:CachedGridHandlerBlock) {
@@ -509,7 +509,7 @@ Add-CodeGenerationRule -Filter {
 Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     # First make sure to clear Show before Set-Property gets it
     $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, {
-        $null = $psBoundParameters.Remove("Show")})        
+        $null = $psBoundParameters.Remove("ShowUI")})        
 
     if (-not $script:CustomControlNameParameter) {
         $Script:CustomControlNameParameter = 
@@ -548,25 +548,17 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
     
     # Add the -Show parameter, caching the little parameter metadata object so the 
     # generator runs more quickly
-    if (-not $script:CachedShowParameter) {
-        $Script:CachedShowParameter = 
-            New-Object Management.Automation.ParameterMetaData "Show", ([Switch])
-    }
-    $null = $Parameters.AddLast($script:CachedShowParameter)
-    
     if (-not $script:CachedShowUIParameter) {
         $Script:CachedShowUIParameter = 
             New-Object Management.Automation.ParameterMetaData "ShowUI", ([Switch])
+        $Script:CachedShowUIParameter.Aliases.Add("Show")
     }
     $null = $Parameters.AddLast($script:CachedShowUIParameter)
-
-    
-    
     
     # Add the -show block
     if (-not $script:CachedShowBlock) {
         $script:CachedShowBlock = {
-        if ($show -or $showUI) {
+        if ($ShowUI) {
             if($Object -is [Windows.Window]){
                 return (Show-UI -Window $Object)
             } else {
@@ -574,13 +566,13 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
             }
         }}        
     }
-    $null = $ProcessBlocks.AddLast($ProcessBlocks.Last, $Script:CachedShowBlock)        
+    $null = $ProcessBlocks.AddBefore($ProcessBlocks.Last, $Script:CachedShowBlock)
     
     
-    $help.Parameter.Show = "
+    $help.Parameter.ShowUI = "
     If Set, will show the visual in a new window
     "
-    $help.Example += "New-$Noun -Show"    
+    $help.Example += "New-$Noun -ShowUI"    
     
     if (-not $script:CachedGridAndZIndexParameters) {
         $script:CachedGridAndZIndexParameters = @()
