@@ -44,6 +44,11 @@ process {
     if($UI -eq $Null) { return $null }
     
     # If Tag is not null, return that.
+    if(Get-Member -Input $UI ShowUIValue) {
+        $newValue = $UI.ShowUIValue
+        . MaybeAddUIProperty $ui
+        return $newValue
+    }
     if ($UI.Tag -ne $Null) {
         $newValue = $UI.Tag
         . MaybeAddUIProperty $ui

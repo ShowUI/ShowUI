@@ -1,15 +1,16 @@
-function Set-UIValue
-{    
+function Set-UIValue {
+    #.Synopsis
+    #   Set the UI value
     param(
-    [Parameter(ValueFromPipeline=$true)]
-    [Windows.FrameworkElement]    
-    $Ui,
-    
-    [PSObject]
-    $Value,
-    
-    [switch]
-    $passThru
+        [Parameter(ValueFromPipeline=$true)]
+        [Windows.FrameworkElement]    
+        $Ui,
+        
+        [PSObject]
+        $Value,
+        
+        [switch]
+        $passThru
     )
     
     begin {
@@ -25,17 +26,21 @@ function Set-UIValue
     
     process {
         if($ui) {
-            if ($psBoundParameters.ContainsKey('Value')) {
-                $ui.Tag = $value
-                $Ui.DataContext = $value            
+            if (!$psBoundParameters.ContainsKey('Value')) {
+                $Value = Get-UIValue -Ui $ui
+            }
+            # For backwards compatibility with people's hacks.
+            $Ui.Tag = $value
+            $Ui.DataContext = $value
+            # The new way:
+            if($Value -is [ScriptBlock]) {
+                Add-Member -InputObject $Ui ScriptProperty ShowUIValue $Value -Force
             } else {
-                $uiValue = Get-UIValue -Ui $ui
-                $ui.Tag = $uiValue
-                $ui.DataContext = $uiValue
-            }    
+                Add-Member -InputObject $Ui NoteProperty ShowUIValue $Value -Force
+            }
         }
         if ($passThru) {
-            $ui
+            $Ui
         }    
     }
 }

@@ -546,6 +546,30 @@ Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
        
     $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, $StyleNameBlock)      
     
+    # Add the -ShowUIValue parameter, caching the little parameter metadata object so the 
+    # generator runs more quickly
+    if (-not $script:CachedShowUIValueParameter) {
+        $Script:CachedShowUIValueParameter = 
+            New-Object Management.Automation.ParameterMetaData "ShowUIValue", ([ScriptBlock])
+        $Script:CachedShowUIValueParameter.Aliases.Add("PSValue")
+    }
+    $null = $Parameters.AddLast($script:CachedShowUIValueParameter)
+    
+    # Add the -show block
+    if (-not $script:CachedShowUIValueBlock) {
+        $script:CachedShowUIValueBlock = {
+        if ($ShowUIValue) {
+            Add-Member -InputObject $Object ScriptProperty ShowUIValue $ShowUIValue -Force
+        }}
+    }
+    $null = $ProcessBlocks.AddBefore($ProcessBlocks.Last, $Script:CachedShowUIValueBlock)
+    
+    
+    $help.Parameter.ShowUIValue = "
+    Set a script property to calculate a control's value
+    "
+    $help.Example += "New-$Noun -ShowUIValue { `$this }`n`n`tReturns the $Noun as it's own value (not very useful)."    
+
     # Add the -Show parameter, caching the little parameter metadata object so the 
     # generator runs more quickly
     if (-not $script:CachedShowUIParameter) {
