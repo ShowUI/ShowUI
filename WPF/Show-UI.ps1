@@ -858,7 +858,7 @@ function Show-UI {
             $Window
         }
         $null = $Window.ShowDialog()
-        Get-UIValue -UI $Window.Content  
+        Get-UIValue -UI $Window
     }
 }
 
