@@ -4,7 +4,7 @@ ShowUI is primarily focused on building WPF user interfaces that behave as part 
 
 ## Your first ShowUI program
 
-<img src="https://github.com/ShowUI/ShowUI/documentation/images/ShowUI-01.png" style="float: right">
+<img src="https://github.com/ShowUI/ShowUI/blob/dev/Documentation/images/ShowUI-01.png" style="float: right">
 
 ```
 New-Button -Content "Hello World" -Show
@@ -25,14 +25,16 @@ Note: "Label" is also the name of an executable for labelling drives in Windows,
 
 Of course, labels and buttons (and images, charts and tables) are all well and good, but if you're trying to create a user interface in PowerShell the chances are that you're probably trying to make it easier for non-PowerShell users to run a script which requires data entry. Try our Get-Input command, and notice that we can create controls in "CustomControls" with a `[OutputType()]` specified, and they'll be picked up when you require them by specifying a type in the `Get-Input` hashtable.
 
-<img src="https://github.com/ShowUI/ShowUI/documentation/images/GetInput-01.png" style="float: right">
+<img src="https://github.com/ShowUI/ShowUI/blob/dev/Documentation/images/Get-Input-01.png" style="float: right">
 
 ```
-Get-Input [ordered]@{
+$User = [ordered]@{
    FirstName = "John"
    LastName = "Doe"
    BirthDate = [DateTime]
    UserName = "JDoe"
-} -Show
+}
+
+Get-Input $User -Show
 ```
 
