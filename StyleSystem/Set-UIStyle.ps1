@@ -97,7 +97,7 @@ function Set-UIStyle {
                 $styleSettings[$eventName] = [ScriptBlock]::Create($styleSettings[$eventName])
             }
             
-            $objectAfterChanges = Set-Property -inputObject $visual -property $StyleSettings -passThru
+            $objectAfterChanges = Set-WpfProperty -inputObject $visual -property $StyleSettings -passThru
             
         } elseif ($psCmdlet.ParameterSetName -eq 'SetStyle') {
             if ($ForName) {

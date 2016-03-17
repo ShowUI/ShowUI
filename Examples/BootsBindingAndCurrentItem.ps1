@@ -1,7 +1,11 @@
-ipmo ShowUI -Min 1.5
+#requires -Modules @{ModuleName="ShowUI"; ModuleVersion="1.5"}
 
-$data = Get-Command Get-* -Type Cmdlet | 
-            Select-Object *, @{ Name="Description"; Exp={(Get-Help $_.Name).Synopsis} }
+Write-Host "Loading some data for example"
+
+$data = Get-Command Get-* -Type Cmdlet -ListAvailable | 
+            Select-Object *, @{ Name="Description"; Exp={(Get-Help $_.Name -ErrorAction Ignore).Synopsis} }
+
+Write-Host "Building a StackPanel with a DataContext consisting of $($data.Count) items"
 
 StackPanel {
     StackPanel -Orientation Horizontal {

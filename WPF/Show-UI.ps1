@@ -721,7 +721,7 @@ function Show-UI {
             Content {
                 $window = New-Window
                 Update-WindowSize $Content $WindowProperty
-                Set-Property -inputObject $window -property $WindowProperty
+                Set-WpfProperty -inputObject $window -property $WindowProperty
                 $window.Content = $Content
                 Update-WindowTitle $Window
             }
@@ -741,7 +741,7 @@ function Show-UI {
                         WindowProperty = $windowProperty
                     } -ScriptBlock {
                         param($Xaml, $windowProperty)
-                        # Set-Property -inputObject $window -property $WindowProperty
+                        # Set-WpfProperty -inputObject $window -property $WindowProperty
                         $Content = [windows.Markup.XamlReader]::Parse($Xaml)
                         if($Content -is [System.Windows.Window]) {
                             Show-UI -Window $Content @WindowProperty
@@ -754,11 +754,11 @@ function Show-UI {
                     $Content = [windows.Markup.XamlReader]::Parse($Xaml)
                     if($Content -is [System.Windows.Window]) {
                         $window = $Content
-                        Set-Property -inputObject $window -property $WindowProperty
+                        Set-WpfProperty -inputObject $window -property $WindowProperty
                     } else {
                         $window = New-Window
                         Update-WindowSize $Content $WindowProperty
-                        Set-Property -inputObject $window -property $WindowProperty
+                        Set-WpfProperty -inputObject $window -property $WindowProperty
                         $window.Content = $Content
                         Update-WindowTitle $Window                      
                     }
@@ -799,7 +799,7 @@ function Show-UI {
                             }
                         }
                         Update-WindowSize $Window.Content $WindowProperty                        
-                        Set-Property -inputObject $Window -property $WindowProperty
+                        Set-WpfProperty -inputObject $Window -property $WindowProperty
                         Show-UI -Window $Window
                     } -Parameter @{
                         ScriptBlock = $ScriptBlock
@@ -825,7 +825,7 @@ function Show-UI {
                         Write-Debug ($_ | Out-String)
                     }
                     Update-WindowSize $Window.Content $WindowProperty                    
-                    Set-Property -inputObject $window -property $WindowProperty
+                    Set-WpfProperty -inputObject $window -property $WindowProperty
                 }
             }
         }
@@ -857,7 +857,14 @@ function Show-UI {
         if ($outputWindowFirst) {
             $Window
         }
+
         $null = $Window.ShowDialog()
+
+        # if(!${global:ShowUI Application Context}) {
+        #     ${global:ShowUI Application Context} = [Windows.Application]::new()
+        # }
+        # $null = ${global:ShowUI Application Context}.Run($window)
+
         Get-UIValue -UI $Window
     }
 }

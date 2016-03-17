@@ -197,7 +197,7 @@ function Get-Input
                 }
 
                 if($command) {
-                    #& $command | Set-Property -Property $Properties -PassThru #| Add-ChildControl -parent $this
+                    #& $command | Set-WpfProperty -Property $Properties -PassThru #| Add-ChildControl -parent $this
                     & $command @Properties -ControlName $key
                 } else {
                     New-TextBox @Properties -VisualStyle CueText -Resource @{

@@ -7,28 +7,35 @@ function Get-ChildControl
         
     #>
     param(
-    [Parameter(ValueFromPipeline=$true, Mandatory=$false)]
-    [Alias('Tree')]
-    $Control = $Window,
-    [Parameter(Position=0)][string[]]$ByName,
+        [Parameter(ValueFromPipeline=$true, Mandatory=$false)]
+        [Alias('Tree')]
+        $Control = $Window,
 
-    [Switch]$OnlyDirectChildren,       
-    [string[]]$ByControlName,
-    [Type[]]$ByType,
-    [string]$ByUid,
-    [String]$GetProperty,        
-    [switch]$OutputNamedControl,
-    [Switch]$PeekIntoNestedControl
+        [Parameter(Position=0)][string[]]$ByName,
+
+        [Switch]$OnlyDirectChildren,       
+        [string[]]$ByControlName,
+        [Type[]]$ByType,
+        [string]$ByUid,
+        [String]$GetProperty,        
+        [switch]$OutputNamedControl,
+        [Switch]$PeekIntoNestedControl
     )
     
     process {
-        if ($byUid) { $PeekIntoNestedControl = $true } 
+        if ($byUid) {
+            $PeekIntoNestedControl = $true
+        }
         $hasEnumeratedChildren = $false
+        
         if (-not $Control) { return }
+        
         $namedNestedControls = @{}
         $queue = New-Object Collections.Generic.Queue[PSObject]
+        
         $queue.Enqueue($control)
         $hasOutputtedSomething = $false
+        
         while ($queue.count) {
             $parent = $queue.Peek()
             
@@ -88,23 +95,36 @@ function Get-ChildControl
                 }
             }
             
+
+
             
-            $childCount = try {
-                [Windows.Media.VisualTreeHelper]::GetChildrenCount($parent)
+            $children = try {
+                if($parent -is [System.Windows.FrameworkContentElement]) {
+                    [Windows.LogicalTreeHelper]::GetChildren(([System.Windows.FrameworkContentElement]$parent))
+                }
+                elseif($parent -is [System.Windows.FrameworkElement]) {
+                    [Windows.LogicalTreeHelper]::GetChildren(([System.Windows.FrameworkElement]$parent))
+                }
+                elseif($parent -is [System.Windows.DependencyObject]) {
+                    [Windows.LogicalTreeHelper]::GetChildren(([System.Windows.DependencyObject]$parent))
+                }
             } catch {
                 Write-Debug $_
             }
             
             
+            
             $shouldEnumerateChildren = $false            
             
-            if ($childCount) {            
+            if ($children) {            
                 if (-not ($hasEnumeratedChildren -and $OnlyDirectChildren)) {
                     if ((-not $HasEnumeratedChildren) -or                 
                         (-not $controlname -or $PeekIntoNestedControl)) {
                         $hasEnumeratedChildren = $true
-                        for ($__i =0; $__i -lt $childCount; $__i++) {
-                            $child = [Windows.Media.VisualTreeHelper]::GetChild($parent, $__i)
+
+                        for ($__i =0; $__i -lt $children.Count; $__i++) {
+                            $child = $children[$__i]
+                            # Write-Debug "$($child.GetType().Name) '$($child.Name)' is child of $($parent.GetType().Name) '$($parent.Name)'"
                             $queue.Enqueue($child)
                         }            
                     }                                        
@@ -129,6 +149,52 @@ function Get-ChildControl
                     }
                 }
             }
+
+            <#
+            $childCount = try {
+                [Windows.Media.VisualTreeHelper]::GetChildrenCount($parent)
+            } catch {
+                Write-Debug $_
+            }
+            
+
+            
+            $shouldEnumerateChildren = $false            
+            
+            if ($childCount) {            
+                if (-not ($hasEnumeratedChildren -and $OnlyDirectChildren)) {
+                    if ((-not $HasEnumeratedChildren) -or                 
+                        (-not $controlname -or $PeekIntoNestedControl)) {
+                        $hasEnumeratedChildren = $true
+
+                        for ($__i =0; $__i -lt $childCount; $__i++) {
+                            $child = [Windows.Media.VisualTreeHelper]::GetChild($parent, $__i)
+                            Write-Debug "$($child.GetType().Name) '$($child.Name)' is child of $($parent.GetType().Name) '$($parent.Name)'"
+                            $queue.Enqueue($child)
+                        }            
+                    }                                        
+                }
+            } else {
+                if ($parent -is [Windows.Controls.ContentControl]) {
+                    $child = $parent.Content
+                    
+                    if ($child -and $child -is [Windows.Media.Visual]) {
+                        $hasEnumeratedChildren = $true
+                        $queue.Enqueue($child)
+                    } else {
+                        if (-not $outputNamedControl -and
+                            -not $byType -and
+                            -not $byName -and
+                            -not $byUid -and 
+                            -not $byControlName) {
+                            $hasEnumeratedChildren = $true
+                            $child
+                        }
+                        
+                    }
+                }
+            }
+            #>
             
             $parent = $queue.Dequeue() 
         }

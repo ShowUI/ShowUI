@@ -32,13 +32,13 @@ $Stack = New-StackPanel -Name Panel
 
 # Add the CollectionView if they want that on the top
 if($FilterOnBottom) {
-   Set-Property -InputObject $Stack -Property @{
+   Set-WpfProperty -InputObject $Stack -Property @{
       Children = $ItemsControl
    }
 }
 
 # Add the filter control(s)
-Set-Property -InputObject $Stack -Property @{
+Set-WpfProperty -InputObject $Stack -Property @{
    Children = { New-Grid -Columns *,Auto -Name SearchBox {
       ## Create a Filter Function 
       $Filter = {
@@ -92,7 +92,7 @@ Set-Property -InputObject $Stack -Property @{
 
 # Add the CollectionView if they want that on the bottom
 if(!$FilterOnBottom) {
-   Set-Property -InputObject $Stack -Property @{
+   Set-WpfProperty -InputObject $Stack -Property @{
       Children = $ItemsControl
    }
 }

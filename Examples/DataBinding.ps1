@@ -21,5 +21,5 @@ Stackpanel -Margin 5 {
     Label -name fname2
 } -On_Load {
     # Sometimes we want to bind to the control, instead of the underlying data
-    Set-Property -Input $fname2 -Property @{ Text = Binding -Element tbx -Path Text -UpdateSourceTrigger PropertyChanged }
+    Set-WpfProperty -Input $fname2 -Property @{ Text = Binding -Element tbx -Path Text -UpdateSourceTrigger PropertyChanged }
 } -show 

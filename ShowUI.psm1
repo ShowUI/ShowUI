@@ -82,7 +82,7 @@ try {
 . $ShowUIModuleRoot\WPF\Move-Control.ps1
 . $ShowUIModuleRoot\WPF\Remove-ChildControl.ps1
 . $ShowUIModuleRoot\WPF\Set-DependencyProperty.ps1
-. $ShowUIModuleRoot\WPF\Set-Property.ps1
+. $ShowUIModuleRoot\WPF\Set-WpfProperty.ps1
 . $ShowUIModuleRoot\WPF\Set-Resource.ps1
 . $ShowUIModuleRoot\WPF\Show-UIElement.ps1
 . $ShowUIModuleRoot\WPF\Show-Window.ps1

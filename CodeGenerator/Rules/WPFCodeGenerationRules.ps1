@@ -75,7 +75,7 @@ Add-CodeGenerationRule -Filter {
     # Before it outputs the object, it needs to set the properties
     if (-not $script:SetPropertyScriptBlock) {
         $script:SetPropertyScriptBlock = {
-        Set-Property -property $psBoundParameters -inputObject $Object}
+        Set-WpfProperty -property $psBoundParameters -inputObject $Object}
     }
     $null = $ProcessBlocks.AddLast(($script:SetPropertyScriptBlock))
     
@@ -507,7 +507,7 @@ Add-CodeGenerationRule -Filter {
 #>
 
 Add-CodeGenerationRule -Type ([Windows.Media.Visual]) -Change {
-    # First make sure to clear Show before Set-Property gets it
+    # First make sure to clear Show before Set-WpfProperty gets it
     $null = $ProcessBlocks.AddAfter($ProcessBlocks.First, {
         $null = $psBoundParameters.Remove("ShowUI")})        
 

@@ -69,7 +69,7 @@ function Show-Window {
         switch ($psCmdlet.ParameterSetName) {
             Control {
                 $window = New-Window
-                Set-Property -inputObject $window -property $WindowProperty
+                Set-WpfProperty -inputObject $window -property $WindowProperty
                 $window.Content = $Control
                 $instanceName = $control.Name
                 $specificWindowTitle = $Control.GetValue([Windows.Window]::TitleProperty)
@@ -92,7 +92,7 @@ function Show-Window {
                     } -ScriptBlock {
                         param($Xaml, $windowProperty)
                         $window = New-Window
-                        Set-Property -inputObject $window -property $WindowProperty
+                        Set-WpfProperty -inputObject $window -property $WindowProperty
                         $strWrite = New-Object IO.StringWriter
                         $xaml.Save($strWrite)
                         $Control = [windows.Markup.XamlReader]::Parse("$strWrite")
@@ -102,7 +102,7 @@ function Show-Window {
                     return                  
                 } else {
                     $window = New-Window
-                    Set-Property -inputObject $window -property $WindowProperty
+                    Set-WpfProperty -inputObject $window -property $WindowProperty
                     $strWrite = New-Object IO.StringWriter
                     $xaml.Save($strWrite)
                     $Control = [windows.Markup.XamlReader]::Parse("$strWrite")
@@ -143,7 +143,7 @@ function Show-Window {
                                 }                        
                             }
                         }                                                
-                        Set-Property -inputObject $window -property $WindowProperty
+                        Set-WpfProperty -inputObject $window -property $WindowProperty
                         Show-Window -Window $window
                     } -Parameter @{
                         ScriptBlock = $ScriptBlock
@@ -168,7 +168,7 @@ function Show-Window {
                     } catch {
                         Write-Debug ($_ | Out-String)
                     }
-                    Set-Property -inputObject $window -property $WindowProperty
+                    Set-WpfProperty -inputObject $window -property $WindowProperty
                 }
                 
             }
